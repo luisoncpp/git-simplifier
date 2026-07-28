@@ -5,6 +5,7 @@ mod push;
 mod recording;
 mod repository;
 mod rewrite;
+mod split;
 mod switch;
 mod sync;
 
@@ -24,6 +25,7 @@ pub use rewrite::{
     RepoPath, RewriteAction, RewriteError, RewriteOperation, RewritePlan, Signature, TreeEntry,
     UncommitRequest,
 };
+pub use split::{SplitBranchPlan, SplitBranchRequest, SplitBranchResult, SplitError};
 pub use switch::{
     DeleteSavedWorkResult, QuickSwitchPlan, QuickSwitchRequest, QuickSwitchResult,
     RestoreSavedWorkResult, SavedWork, SwitchError,

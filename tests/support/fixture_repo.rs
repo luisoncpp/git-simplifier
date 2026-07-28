@@ -35,6 +35,11 @@ impl FixtureRepo {
         run(&self.repo, &["commit", "-m", message]);
     }
 
+    pub fn remove_file(&self, path: &str, message: &str) {
+        run(&self.repo, &["rm", "--quiet", "--", path]);
+        run(&self.repo, &["commit", "-m", message]);
+    }
+
     pub fn set_base_ref(&self) {
         run(
             &self.repo,

@@ -1,6 +1,6 @@
 use git_helper_core::{
     ExcludeSubmodulePlan, ForcePushPlan, ObjectId, QuickSwitchPlan, RefName, RewritePlan,
-    SyncRequest,
+    SplitBranchPlan, SyncRequest,
 };
 
 use super::data::{OperationOutcome, PendingOperation};
@@ -16,6 +16,7 @@ pub(super) fn apply(
             rewrite(state, plan)
         }
         PendingOperation::Exclude { plan, .. } => exclude(state, plan),
+        PendingOperation::Split { plan, .. } => split_branch(state, plan),
         PendingOperation::QuickSwitch { plan, .. } => quick_switch(state, plan),
         PendingOperation::ForcePush { plan, .. } => force_push(state, plan),
         PendingOperation::Sync { base, head, .. } => sync(state, base, head),
@@ -66,6 +67,25 @@ fn exclude(state: &AppState, plan: ExcludeSubmodulePlan) -> Result<OperationOutc
         kind: "exclude_submodule".to_string(),
         headline: "Submodule excluded".to_string(),
         details,
+        offer_force_push: false,
+    })
+}
+
+fn split_branch(state: &AppState, plan: SplitBranchPlan) -> Result<OperationOutcome, String> {
+    let result = with_repository(state, |repo| {
+        repo.apply_split_branch(&plan).map_err(|e| e.to_string())
+    })?;
+    Ok(OperationOutcome {
+        kind: "split_branch".to_string(),
+        headline: "Branch created".to_string(),
+        details: vec![
+            format!("{} points at {}", result.branch, result.commit),
+            format!(
+                "{} still carries the same {} file(s)",
+                plan.source_branch,
+                result.paths.len()
+            ),
+        ],
         offer_force_push: false,
     })
 }

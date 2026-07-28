@@ -41,6 +41,17 @@ _Avoid_: pinned submodule, frozen submodule, ignored submodule
 A snapshot of a branch's uncommitted *tracked* changes, held under `refs/githelper/wip/<branch>` so it belongs to that branch by name rather than to a stack position. Untracked files are never part of it — they stay in the working tree.
 _Avoid_: stash, WIP, shelved changes — the shared stash stack is a different thing and the app does not use it.
 
+**Split branch**:
+Creating a new branch that contains only some of the current branch's changes, selected by file path. Rooted at the merge base of **Base** and HEAD, so it carries the selected work and nothing else.
+_Avoid_: extract, carve out, cherry-pick — cherry-pick moves whole commits, and Split works by path.
+
+**Copy** (the only implemented mode of **Split branch**):
+The original branch is left exactly as it was. The same change now exists on two branches, and removing it from the original is a separate decision the user makes later.
+_Avoid_: duplicate, branch off
+
+**Move** (not implemented):
+The same selection, but the original branch must also lose the change — by **Rewrite** or by a revert commit. Deliberately out of scope: it is a different, destructive operation, and the word "split" hides the difference. UI must never offer "split" without saying which of the two it does.
+
 **Undo**:
 Reversing the effect of an operation the app itself performed. A safety net over any operation, not a git concept.
 _Avoid_: rollback, revert
@@ -48,5 +59,7 @@ _Avoid_: rollback, revert
 ## Flagged ambiguities
 
 - **"uncommit" vs "undo"** — three letters apart, unrelated meanings. **Uncommit** is a git operation the user asks for; **Undo** reverses an app operation. "Undo the uncommit" is legal and means the opposite of "uncommit". UI labels must never abbreviate either into the other.
+
+- **"split" alone is ambiguous** — it names two operations with opposite risk profiles (**Copy** and **Move**). Only **Copy** exists. Any label, message, or doc that says "split" without qualifying it is a bug.
 
 - **"base" vs "upstream"** — the design doc uses both, plus a bare `develop`, interchangeably. Resolved above: they are different refs and never substitute for each other.

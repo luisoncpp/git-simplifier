@@ -63,7 +63,11 @@ impl From<OperationRecord> for RecoveryEntry {
 fn restore_refs(refs: &BTreeMap<String, String>) -> String {
     refs.iter()
         .filter(|(name, _)| name.starts_with("refs/"))
-        .map(|(name, value)| format!("git update-ref {name} {value}"))
+        .map(|(name, value)| match value.is_empty() {
+            // An empty recorded value means the ref did not exist before.
+            true => format!("git update-ref -d {name}"),
+            false => format!("git update-ref {name} {value}"),
+        })
         .collect::<Vec<_>>()
         .join(" && ")
 }

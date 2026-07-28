@@ -1,10 +1,11 @@
-import { messageChanged, messageFor, selectedCommit } from "./draft.js";
+import { messageChanged, messageFor, pathSetFor, selectedCommit } from "./draft.js";
 import { baseRef, upstreamRef } from "./snapshot.js";
 
 export const OPERATIONS = [
   { id: "uncommit", label: "Uncommit paths", needsBase: true },
   { id: "edit_message", label: "Edit message", needsBase: true },
   { id: "exclude_submodule", label: "Exclude submodule", needsBase: false },
+  { id: "split_branch", label: "Split branch", needsBase: true },
   { id: "quick_switch", label: "Quick switch", needsBase: false },
   { id: "sync", label: "Sync with Base", needsBase: true },
   { id: "force_push", label: "Force push", needsBase: false },
@@ -15,6 +16,7 @@ export const operationLabel = (id) => OPERATIONS.find((operation) => operation.i
 const DISCOVERY = {
   uncommit: (bridge, base) => bridge.invoke("list_changed_paths", { request: { base } }),
   edit_message: (bridge, base) => bridge.invoke("list_editable_commits", { request: { base } }),
+  split_branch: (bridge, base) => bridge.invoke("list_changed_paths", { request: { base } }),
   quick_switch: (bridge) => bridge.invoke("list_local_branches"),
   exclude_submodule: (bridge) => bridge.invoke("list_submodules"),
 };
@@ -22,6 +24,7 @@ const DISCOVERY = {
 const RESULT_KEY = {
   uncommit: "paths",
   edit_message: "commits",
+  split_branch: "paths",
   quick_switch: "branches",
   exclude_submodule: "submodules",
 };
@@ -47,6 +50,15 @@ export function buildRequest(state) {
       path: draft.submodule,
       install_hook: draft.installHook,
       disable_recurse: draft.disableRecurse,
+    };
+  }
+  if (kind === "split_branch") {
+    return {
+      kind,
+      base,
+      new_branch: draft.newBranch.trim(),
+      paths: [...draft.splitPaths],
+      message: draft.splitMessage,
     };
   }
   if (kind === "quick_switch") return { kind, target_branch: draft.targetBranch };
@@ -83,6 +95,12 @@ const SPECIFIC_REASON = {
   exclude_submodule: (state) => {
     if (!state.submodules.length) return "This repository has no submodules.";
     if (!state.draft.submodule) return "Select a submodule.";
+    return "";
+  },
+  split_branch: (state) => {
+    if (!state.paths.length) return "Nothing on this branch differs from Base.";
+    if (!state.draft.newBranch.trim()) return "Name the new branch.";
+    if (!pathSetFor(state).size) return "Select at least one path to copy.";
     return "";
   },
   quick_switch: (state) => {

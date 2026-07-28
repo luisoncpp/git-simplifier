@@ -12,6 +12,7 @@ The UI is a single deep module. `ui/app/index.js` is the only public interface (
 | `Private/operations.js` | Operation catalog, request builders, and `submitState` |
 | `Private/snapshot.js` | Typed reads over the Rust snapshot, including human sync-phase labels |
 | `Private/dom.js` | HTML escaping and `renderInto`, which preserves caret and scroll across a re-render |
+| `Private/views/path-list.js` | The changed-path checklist, shared by Uncommit and Split branch |
 | `Private/views/*` | Pure functions from state to markup |
 
 ## State rules
@@ -20,17 +21,18 @@ The UI is a single deep module. `ui/app/index.js` is the only public interface (
 - **Every form control is state-backed.** Re-rendering therefore cannot lose a typed message, a filter query, or a path selection, and cancelling a review returns the user to the exact selection they had.
 - **A message draft is per commit** (`draft.messages` keyed by commit id). Changing the selected commit shows that commit's message; it never carries text from another commit into a rewrite.
 - **The Editable range is presented newest first.** Rust returns it oldest first for planning; the commit a user rewords is almost always the newest one.
+- **A path selection belongs to one operation.** Uncommit and Split branch read the same changed-path list but mean opposite things by a tick — remove this from history versus copy this elsewhere — so each keeps its own set and `pathSetFor` picks by operation. Sharing one set would let a selection made for one operation arrive pre-ticked in the other.
 - `state.outcome` is cleared when the operation changes, when a new review is prepared, and when another repository is opened, so a result banner can never describe stale work.
 
 ## Rendering
 
 `renderInto` replaces the shell markup, then restores the caret of the element carrying `data-focus` and the scroll offset of every `[data-scroll]` container. Keys are compared as dataset values, not interpolated into selectors, because they can contain repository paths.
 
-Two things are patched instead of re-rendered: the commit-message textarea keeps its native undo stack, so typing only refreshes `#message-tools` and `#submit-row`.
+Two things are patched instead of re-rendered: the commit-message textarea keeps its native undo stack, so typing only refreshes `#message-tools` and `#submit-row`. The optional Split branch message is simpler — nothing depends on it, so typing records the value and skips the render entirely.
 
 ## Disabled controls always say why
 
-`submitState` returns a reason, and the submit row renders it. A base-dependent operation with no Base, an unchanged message, an empty path selection, and a branch without an upstream each explain themselves instead of showing an inert primary button.
+`submitState` returns a reason, and the submit row renders it. The submit label comes from a per-operation word list whose fallback is the operation id, so a new operation that forgets its entry shows `Review split_branch` instead of `Review split`; a test asserts no label contains an underscore. A base-dependent operation with no Base, an unchanged message, an empty path selection, and a branch without an upstream each explain themselves instead of showing an inert primary button.
 
 ## Review surface
 

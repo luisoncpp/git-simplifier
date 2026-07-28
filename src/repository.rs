@@ -12,6 +12,7 @@ use crate::rewrite::{
     self, ApplyError, ApplyResult, EditMessageRequest, RefName, RewriteError, RewritePlan,
     UncommitRequest,
 };
+use crate::split::{self, SplitBranchPlan, SplitBranchRequest, SplitBranchResult, SplitError};
 use crate::switch::{
     self, DeleteSavedWorkResult, QuickSwitchPlan, QuickSwitchRequest, QuickSwitchResult,
     RestoreSavedWorkResult, SavedWork, SwitchError,
@@ -152,6 +153,21 @@ impl GitRepository {
     ) -> Result<QuickSwitchResult, SwitchError> {
         self.runner
             .with_write_lock(|| switch::apply_plan(&self.runner, plan))
+    }
+
+    pub fn plan_split_branch(
+        &self,
+        request: SplitBranchRequest,
+    ) -> Result<SplitBranchPlan, SplitError> {
+        split::create_plan(&self.runner, request)
+    }
+
+    pub fn apply_split_branch(
+        &self,
+        plan: &SplitBranchPlan,
+    ) -> Result<SplitBranchResult, SplitError> {
+        self.runner
+            .with_write_lock(|| split::apply_plan(&self.runner, plan))
     }
 
     pub fn list_saved_work(&self) -> Result<Vec<SavedWork>, SwitchError> {

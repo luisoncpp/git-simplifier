@@ -1,43 +1,19 @@
 import { esc } from "../dom.js";
-import { commitValue, messageChanged, messageFor, newestFirst, pathValue, selectedCommit, visiblePaths } from "../draft.js";
+import { commitValue, messageChanged, messageFor, newestFirst, selectedCommit } from "../draft.js";
 import { baseRef } from "../snapshot.js";
 import { emptyState, fieldNote, humanTime } from "./parts.js";
+import { pathChecklist } from "./path-list.js";
 
 export function uncommitForm(state) {
   if (!baseRef(state)) return emptyState("Set a Base ref", "Uncommit compares the branch against Base, so Base has to be chosen first.");
   if (!state.paths.length) {
     return emptyState("Nothing differs from Base", `No path on this branch differs from ${baseRef(state)}.`);
   }
-  const shown = visiblePaths(state);
-  const selected = state.draft.selectedPaths.size;
   return `<fieldset><legend>Paths to take out of the commits</legend>
     ${fieldNote(`Selected paths go back to their ${baseRef(state)} content in every rebuilt commit. Your files on disk are not touched.`)}
-    <div class="list-tools">
-      <input type="search" placeholder="Filter ${state.paths.length} path(s)" data-event="path-filter"
-        data-focus="path-filter" value="${esc(state.draft.pathFilter)}" aria-label="Filter changed paths" />
-      <button class="link" data-event="select-paths" data-value="all">Select all ${shown.length === state.paths.length ? "" : "shown"}</button>
-      <button class="link" data-event="select-paths" data-value="none" ${selected ? "" : "disabled"}>Clear</button>
-      <span class="count" aria-live="polite">${selected} of ${state.paths.length} selected</span>
-    </div>
-    <div class="check-list" data-scroll="paths">${shown.map((entry) => pathRow(state, entry)).join("") || noMatches(state)}</div>
+    ${pathChecklist(state)}
   </fieldset>`;
 }
-
-function pathRow(state, entry) {
-  const path = pathValue(entry);
-  const checked = state.draft.selectedPaths.has(path) ? " checked" : "";
-  const previous = entry.previous_path ? `<span class="was">was ${esc(entry.previous_path?.value ?? entry.previous_path)}</span>` : "";
-  return `<label class="check-row">
-    <input type="checkbox" data-event="toggle-path" data-focus="path:${esc(path)}" value="${esc(path)}"${checked} />
-    <span class="status-tag" title="${esc(statusTitle(entry.status))}">${esc(entry.status)}</span>
-    <code>${esc(path)}</code>${previous}
-  </label>`;
-}
-
-const noMatches = (state) => `<p class="hint pad">No path matches “${esc(state.draft.pathFilter)}”.</p>`;
-
-const STATUS_TITLES = { A: "added", M: "modified", D: "deleted", R: "renamed", C: "copied", T: "type changed" };
-const statusTitle = (status) => STATUS_TITLES[String(status).charAt(0)] ?? String(status);
 
 export function editMessageForm(state) {
   if (!baseRef(state)) return emptyState("Set a Base ref", "Editable commits are the ones on this branch and not yet on Base.");

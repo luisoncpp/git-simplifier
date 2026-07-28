@@ -36,6 +36,8 @@ const CHANGE = {
 const INPUT = {
   "path-filter": edit.setPathFilter,
   "commit-message": edit.setMessage,
+  "split-branch-name": edit.setNewBranch,
+  "split-message": edit.setSplitMessage,
 };
 
 const TAB_STEP = { ArrowRight: 1, ArrowLeft: -1 };
@@ -93,7 +95,11 @@ function handleEnter(controller, event) {
     settle(controller, controller.chooseBase(node.value));
     return;
   }
-  const submitting = action === "path-filter" || (action === "commit-message" && (event.ctrlKey || event.metaKey));
+  const withModifier = event.ctrlKey || event.metaKey;
+  const submitting =
+    action === "path-filter" ||
+    action === "split-branch-name" ||
+    ((action === "commit-message" || action === "split-message") && withModifier);
   if (!submitting) return;
   event.preventDefault();
   settle(controller, controller.submitOperation());

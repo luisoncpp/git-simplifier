@@ -1,4 +1,4 @@
-import { pathValue, visiblePaths } from "./draft.js";
+import { pathSetFor, pathValue, visiblePaths } from "./draft.js";
 import { OPERATIONS } from "./operations.js";
 import { messageTools } from "./views/form-history.js";
 import { submitRow } from "./views/actions.js";
@@ -9,14 +9,14 @@ export function setPathFilter(controller, node) {
 }
 
 export function togglePath(controller, node) {
-  const selected = controller.state.draft.selectedPaths;
+  const selected = pathSetFor(controller.state);
   if (node.checked) selected.add(node.value);
   else selected.delete(node.value);
   controller.render();
 }
 
 export function selectPaths(controller, mode) {
-  const selected = controller.state.draft.selectedPaths;
+  const selected = pathSetFor(controller.state);
   if (mode === "none") selected.clear();
   else for (const entry of visiblePaths(controller.state)) selected.add(pathValue(entry));
   controller.render();
@@ -47,6 +47,17 @@ export function resetMessage(controller) {
   const draft = controller.state.draft;
   draft.messages.delete(draft.commit);
   controller.render();
+}
+
+export function setNewBranch(controller, node) {
+  controller.state.draft.newBranch = node.value;
+  controller.render();
+}
+
+/// The message is optional and nothing else depends on it, so typing must not
+/// re-render the textarea out from under the caret.
+export function setSplitMessage(controller, node) {
+  controller.state.draft.splitMessage = node.value;
 }
 
 export function setSubmodule(controller, node) {
