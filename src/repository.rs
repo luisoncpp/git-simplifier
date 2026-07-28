@@ -6,12 +6,16 @@ use crate::inspection::{
     self, ChangedPath, EditableCommit, InspectionError, LocalBranchChoice, RemoteBaseChoice,
     RepositoryOverview, SubmoduleChoice,
 };
-use crate::push::{self, ForcePushError, ForcePushPlan, ForcePushResult};
+use crate::push::{
+    self, ForcePushError, ForcePushPlan, ForcePushResult, PublishBranchPlan, PublishBranchResult,
+    PublishError,
+};
 use crate::recording::{self, RecoveryEntry, RecoveryError};
 use crate::rewrite::{
     self, ApplyError, ApplyResult, EditMessageRequest, RefName, RewriteError, RewritePlan,
     UncommitRequest,
 };
+use crate::split::{self, SplitBranchPlan, SplitBranchRequest, SplitBranchResult, SplitError};
 use crate::switch::{
     self, DeleteSavedWorkResult, QuickSwitchPlan, QuickSwitchRequest, QuickSwitchResult,
     RestoreSavedWorkResult, SavedWork, SwitchError,
@@ -108,6 +112,18 @@ impl GitRepository {
             .with_write_lock(|| push::apply(&self.runner, plan))
     }
 
+    pub fn plan_publish_branch(&self, branch: String) -> Result<PublishBranchPlan, PublishError> {
+        push::create_publish(&self.runner, branch)
+    }
+
+    pub fn apply_publish_branch(
+        &self,
+        plan: &PublishBranchPlan,
+    ) -> Result<PublishBranchResult, PublishError> {
+        self.runner
+            .with_write_lock(|| push::apply_publish(&self.runner, plan))
+    }
+
     pub fn plan_uncommit(&self, request: UncommitRequest) -> Result<RewritePlan, RewriteError> {
         rewrite::plan(&self.runner, request)
     }
@@ -152,6 +168,21 @@ impl GitRepository {
     ) -> Result<QuickSwitchResult, SwitchError> {
         self.runner
             .with_write_lock(|| switch::apply_plan(&self.runner, plan))
+    }
+
+    pub fn plan_split_branch(
+        &self,
+        request: SplitBranchRequest,
+    ) -> Result<SplitBranchPlan, SplitError> {
+        split::create_plan(&self.runner, request)
+    }
+
+    pub fn apply_split_branch(
+        &self,
+        plan: &SplitBranchPlan,
+    ) -> Result<SplitBranchResult, SplitError> {
+        self.runner
+            .with_write_lock(|| split::apply_plan(&self.runner, plan))
     }
 
     pub fn list_saved_work(&self) -> Result<Vec<SavedWork>, SwitchError> {

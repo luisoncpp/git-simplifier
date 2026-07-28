@@ -40,6 +40,21 @@ pub struct ExcludeSubmoduleInput {
     pub disable_recurse: bool,
 }
 
+/// An empty `message` means the planner derives one; the review shows what it
+/// chose, so the caller never has to guess.
+#[derive(Clone, Debug, Deserialize)]
+pub struct SplitBranchInput {
+    pub base: String,
+    pub new_branch: String,
+    pub paths: Vec<String>,
+    pub message: String,
+}
+
+#[derive(Clone, Debug, Deserialize)]
+pub struct PublishBranchInput {
+    pub branch: String,
+}
+
 #[derive(Clone, Debug, Deserialize)]
 pub struct QuickSwitchInput {
     pub target_branch: String,
@@ -58,6 +73,8 @@ pub enum PrepareOperationRequest {
     Uncommit(UncommitInput),
     EditMessage(EditMessageInput),
     ExcludeSubmodule(ExcludeSubmoduleInput),
+    SplitBranch(SplitBranchInput),
+    PublishBranch(PublishBranchInput),
     QuickSwitch(QuickSwitchInput),
     Sync(BaseRequest),
     RestoreSavedWork,
@@ -84,6 +101,9 @@ pub struct OperationOutcome {
     pub headline: String,
     pub details: Vec<String>,
     pub offer_force_push: bool,
+    /// The branch a follow-up publish would push. A rewrite offers a force push;
+    /// a freshly created branch offers its first push, and needs to name it.
+    pub offer_publish_branch: Option<String>,
 }
 
 #[derive(Clone, Debug)]
@@ -99,6 +119,14 @@ pub enum PendingOperation {
     Exclude {
         id: String,
         plan: git_helper_core::ExcludeSubmodulePlan,
+    },
+    Split {
+        id: String,
+        plan: git_helper_core::SplitBranchPlan,
+    },
+    Publish {
+        id: String,
+        plan: git_helper_core::PublishBranchPlan,
     },
     QuickSwitch {
         id: String,
@@ -134,6 +162,8 @@ impl PendingOperation {
             Self::Uncommit { id, .. }
             | Self::EditMessage { id, .. }
             | Self::Exclude { id, .. }
+            | Self::Split { id, .. }
+            | Self::Publish { id, .. }
             | Self::QuickSwitch { id, .. }
             | Self::ForcePush { id, .. }
             | Self::Sync { id, .. }
@@ -156,6 +186,8 @@ mod tests {
             r#"{"kind":"uncommit","base":"refs/remotes/origin/main","paths":["a.txt"]}"#,
             r#"{"kind":"edit_message","base":"refs/remotes/origin/main","commit":"abcdef1","message":"new"}"#,
             r#"{"kind":"exclude_submodule","path":"vendor/sdk","install_hook":true,"disable_recurse":false}"#,
+            r#"{"kind":"split_branch","base":"refs/remotes/origin/main","new_branch":"carved","paths":["a.txt"],"message":""}"#,
+            r#"{"kind":"publish_branch","branch":"carved"}"#,
             r#"{"kind":"quick_switch","target_branch":"develop"}"#,
             r#"{"kind":"sync","base":"refs/remotes/origin/main"}"#,
             r#"{"kind":"restore_saved_work"}"#,

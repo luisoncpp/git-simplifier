@@ -2,6 +2,9 @@ export function createDraft() {
   return {
     pathFilter: "",
     selectedPaths: new Set(),
+    splitPaths: new Set(),
+    newBranch: "",
+    splitMessage: "",
     commit: "",
     messages: new Map(),
     submodule: "",
@@ -11,6 +14,11 @@ export function createDraft() {
   };
 }
 
+/// Uncommit and Split branch read the same path list but mean opposite things
+/// by a tick, so a selection never crosses from one operation to the other.
+export const pathSetFor = (state) =>
+  state.operation === "split_branch" ? state.draft.splitPaths : state.draft.selectedPaths;
+
 export const pathValue = (entry) => entry.path?.value ?? entry.path;
 export const commitValue = (commit) => commit.id?.value ?? commit.id;
 
@@ -18,8 +26,10 @@ export const commitValue = (commit) => commit.id?.value ?? commit.id;
 /// exist have to be dropped instead of being sent back to Rust.
 export function adoptPaths(draft, paths) {
   const available = new Set(paths.map(pathValue));
-  for (const selected of draft.selectedPaths) {
-    if (!available.has(selected)) draft.selectedPaths.delete(selected);
+  for (const set of [draft.selectedPaths, draft.splitPaths]) {
+    for (const selected of set) {
+      if (!available.has(selected)) set.delete(selected);
+    }
   }
 }
 

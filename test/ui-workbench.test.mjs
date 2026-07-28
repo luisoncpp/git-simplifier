@@ -1,7 +1,9 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 import { renderShell } from "../ui/app/index.js";
-import { setCommit, setMessage, setPathFilter, togglePath } from "../ui/app/Private/selection.js";
+import { setCommit, setMessage, setNewBranch, setPathFilter, setSplitMessage, togglePath } from "../ui/app/Private/selection.js";
+import { OPERATIONS } from "../ui/app/Private/operations.js";
+import { submitRow } from "../ui/app/Private/views/actions.js";
 import { controllerWith, snapshotWith } from "./support/controller.mjs";
 
 const COMMITS = [
@@ -160,3 +162,136 @@ test("force push states the missing upstream instead of failing after a click", 
   assert.match(markup, /No upstream/);
   assert.match(markup, /data-event="submit-operation" disabled/);
 });
+
+test("split branch keeps its own selection instead of inheriting the uncommit one", async () => {
+  const controller = withData({});
+  await controller.refresh();
+  togglePath(controller, { value: "src/keys.env", checked: true });
+
+  await controller.selectOperation("split_branch");
+
+  assert.equal(controller.state.draft.splitPaths.size, 0);
+  assert.match(renderShell(controller.state), /0 of 2 selected/);
+
+  togglePath(controller, { value: "src/app.js", checked: true });
+  assert.deepEqual([...controller.state.draft.selectedPaths], ["src/keys.env"]);
+  assert.deepEqual([...controller.state.draft.splitPaths], ["src/app.js"]);
+});
+
+test("split branch names the missing branch name before the missing selection", async () => {
+  const controller = withData({});
+  await controller.selectOperation("split_branch");
+
+  await controller.submitOperation();
+  assert.equal(controller.state.error, "Name the new branch.");
+
+  setNewBranch(controller, { value: "carved" });
+  await controller.submitOperation();
+  assert.equal(controller.state.error, "Select at least one path to copy.");
+});
+
+test("split branch sends the trimmed name, the picked paths, and the typed message", async () => {
+  const controller = withData({});
+  await controller.selectOperation("split_branch");
+  setNewBranch(controller, { value: "  carved  " });
+  togglePath(controller, { value: "src/app.js", checked: true });
+  setSplitMessage(controller, { value: "hero art only\n" });
+
+  let sent = null;
+  controller.bridge.invoke = async (command, args) => {
+    sent = args;
+    return { plan_id: "op-2", title: "t", impact: [], preserves: [], warnings: [], commands: [], apply_label: "Apply" };
+  };
+  await controller.submitOperation();
+
+  assert.deepEqual(sent.request, {
+    kind: "split_branch",
+    base: "refs/remotes/origin/main",
+    new_branch: "carved",
+    paths: ["src/app.js"],
+    message: "hero art only\n",
+  });
+});
+
+test("an empty split message is sent as empty so Rust derives and shows one", async () => {
+  const controller = withData({});
+  await controller.selectOperation("split_branch");
+  setNewBranch(controller, { value: "carved" });
+  togglePath(controller, { value: "src/app.js", checked: true });
+
+  let sent = null;
+  controller.bridge.invoke = async (command, args) => {
+    sent = args;
+    return { plan_id: "op-3", title: "t", impact: [], preserves: [], warnings: [], commands: [], apply_label: "Apply" };
+  };
+  await controller.submitOperation();
+
+  assert.equal(sent.request.message, "");
+  assert.match(renderShell(controller.state), /named after the branch/);
+});
+
+test("the split form warns that the asset and its meta file travel together", async () => {
+  const controller = controllerWith({
+    async invoke(command) {
+      if (command === "list_changed_paths") {
+        return [
+          { path: "Assets/hero.png", previous_path: null, status: "M" },
+          { path: "Assets/hero.png.meta", previous_path: null, status: "M" },
+        ];
+      }
+      return [];
+    },
+  });
+  await controller.selectOperation("split_branch");
+  togglePath(controller, { value: "Assets/hero.png", checked: true });
+
+  assert.match(renderShell(controller.state), /travel with their asset/);
+});
+
+/// The submit label falls back to the raw operation id, which reads as a leaked
+/// identifier rather than an action. Every operation must have a real word.
+test("no operation offers a submit button labelled with its identifier", () => {
+  const controller = controllerWith({});
+  for (const { id } of OPERATIONS) {
+    controller.state.operation = id;
+    const label = /<button class="primary"[^>]*>([^<]+)</.exec(submitRow(controller.state))?.[1] ?? "";
+    assert.doesNotMatch(label, /_/, `${id} shows its identifier in the submit button`);
+  }
+});
+
+test("a created branch offers its first push, not a force push", () => {
+  const controller = controllerWith({});
+  controller.state.outcome = {
+    kind: "split_branch",
+    headline: "Branch created",
+    details: ["refs/heads/carved points at abc1234"],
+    offer_force_push: false,
+    offer_publish_branch: "carved",
+  };
+
+  const banner = bannerOf(renderShell(controller.state));
+  assert.match(banner, /data-event="publish-branch"\s+data-value="carved"/);
+  assert.match(banner, /Review push of carved/);
+  assert.doesNotMatch(banner, /force push/i);
+});
+
+test("a rewrite still offers a force push and never the publish button", () => {
+  const controller = controllerWith({});
+  controller.state.outcome = {
+    kind: "rewrite",
+    headline: "History rewritten",
+    details: [],
+    offer_force_push: true,
+    offer_publish_branch: null,
+  };
+
+  const banner = bannerOf(renderShell(controller.state));
+  assert.match(banner, /Review force push/);
+  assert.doesNotMatch(banner, /data-event="publish-branch"/);
+});
+
+/// The operation strip always contains a Force push tab, so a follow-up
+/// assertion has to look at the result banner rather than the whole shell.
+function bannerOf(markup) {
+  return /<div class="banner good">[\s\S]*?<\/div>\s*<\/div>/.exec(markup)?.[0] ?? "";
+}

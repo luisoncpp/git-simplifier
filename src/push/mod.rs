@@ -2,9 +2,10 @@ mod apply;
 mod errors;
 mod model;
 mod plan;
+mod publish;
 
-pub use errors::ForcePushError;
-pub use model::{ForcePushPlan, ForcePushResult};
+pub use errors::{ForcePushError, PublishError};
+pub use model::{ForcePushPlan, ForcePushResult, PublishBranchPlan, PublishBranchResult};
 
 use crate::git::GitRunner;
 
@@ -17,4 +18,18 @@ pub(crate) fn apply(
     plan: &ForcePushPlan,
 ) -> Result<ForcePushResult, ForcePushError> {
     apply::apply(runner, plan)
+}
+
+pub(crate) fn create_publish(
+    runner: &GitRunner,
+    branch: String,
+) -> Result<PublishBranchPlan, PublishError> {
+    publish::create(runner, branch)
+}
+
+pub(crate) fn apply_publish(
+    runner: &GitRunner,
+    plan: &PublishBranchPlan,
+) -> Result<PublishBranchResult, PublishError> {
+    apply::publish(runner, plan)
 }

@@ -1,6 +1,6 @@
 use git_helper_core::{
-    ExcludeSubmodulePlan, ForcePushPlan, ObjectId, QuickSwitchPlan, RefName, RewritePlan,
-    SyncRequest,
+    ExcludeSubmodulePlan, ForcePushPlan, ObjectId, PublishBranchPlan, QuickSwitchPlan, RefName,
+    RewritePlan, SplitBranchPlan, SyncRequest,
 };
 
 use super::data::{OperationOutcome, PendingOperation};
@@ -16,6 +16,8 @@ pub(super) fn apply(
             rewrite(state, plan)
         }
         PendingOperation::Exclude { plan, .. } => exclude(state, plan),
+        PendingOperation::Split { plan, .. } => split_branch(state, plan),
+        PendingOperation::Publish { plan, .. } => publish_branch(state, plan),
         PendingOperation::QuickSwitch { plan, .. } => quick_switch(state, plan),
         PendingOperation::ForcePush { plan, .. } => force_push(state, plan),
         PendingOperation::Sync { base, head, .. } => sync(state, base, head),
@@ -41,6 +43,7 @@ fn rewrite(state: &AppState, plan: RewritePlan) -> Result<OperationOutcome, Stri
         headline: "History rewritten".to_string(),
         details,
         offer_force_push: true,
+        offer_publish_branch: None,
     })
 }
 
@@ -67,6 +70,43 @@ fn exclude(state: &AppState, plan: ExcludeSubmodulePlan) -> Result<OperationOutc
         headline: "Submodule excluded".to_string(),
         details,
         offer_force_push: false,
+        offer_publish_branch: None,
+    })
+}
+
+fn split_branch(state: &AppState, plan: SplitBranchPlan) -> Result<OperationOutcome, String> {
+    let result = with_repository(state, |repo| {
+        repo.apply_split_branch(&plan).map_err(|e| e.to_string())
+    })?;
+    Ok(OperationOutcome {
+        kind: "split_branch".to_string(),
+        headline: "Branch created".to_string(),
+        details: vec![
+            format!("{} points at {}", result.branch, result.commit),
+            format!(
+                "{} still carries the same {} file(s)",
+                plan.source_branch,
+                result.paths.len()
+            ),
+        ],
+        offer_force_push: false,
+        offer_publish_branch: Some(result.branch.clone()),
+    })
+}
+
+fn publish_branch(state: &AppState, plan: PublishBranchPlan) -> Result<OperationOutcome, String> {
+    let result = with_repository(state, |repo| {
+        repo.apply_publish_branch(&plan).map_err(|e| e.to_string())
+    })?;
+    Ok(OperationOutcome {
+        kind: "publish_branch".to_string(),
+        headline: "Branch published".to_string(),
+        details: vec![
+            format!("{} now exists on {}", plan.branch_name, result.remote),
+            format!("{} tracks {}", plan.branch_name, result.upstream),
+        ],
+        offer_force_push: false,
+        offer_publish_branch: None,
     })
 }
 
@@ -89,6 +129,7 @@ fn quick_switch(state: &AppState, plan: QuickSwitchPlan) -> Result<OperationOutc
         headline: "Branch switched".to_string(),
         details,
         offer_force_push: false,
+        offer_publish_branch: None,
     })
 }
 
@@ -104,6 +145,7 @@ fn force_push(state: &AppState, plan: ForcePushPlan) -> Result<OperationOutcome,
             result.branch, result.remote, result.new_head
         )],
         offer_force_push: false,
+        offer_publish_branch: None,
     })
 }
 
@@ -117,6 +159,7 @@ fn sync(state: &AppState, base: RefName, head: ObjectId) -> Result<OperationOutc
         headline: "Sync completed".to_string(),
         details: vec![format!("HEAD now points at {}", result.new_head)],
         offer_force_push: false,
+        offer_publish_branch: None,
     })
 }
 
@@ -137,6 +180,7 @@ fn restore(state: &AppState, head: ObjectId) -> Result<OperationOutcome, String>
         headline: "Saved work restored".to_string(),
         details,
         offer_force_push: false,
+        offer_publish_branch: None,
     })
 }
 
@@ -150,6 +194,7 @@ fn delete(state: &AppState, branch: String, head: ObjectId) -> Result<OperationO
         headline: "Saved work deleted".to_string(),
         details: vec![format!("Removed {}", result.reference)],
         offer_force_push: false,
+        offer_publish_branch: None,
     })
 }
 
@@ -164,6 +209,7 @@ fn resume(state: &AppState, operation_id: String) -> Result<OperationOutcome, St
         headline: "Sync finished".to_string(),
         details: vec![format!("HEAD now points at {}", result.new_head)],
         offer_force_push: false,
+        offer_publish_branch: None,
     })
 }
 

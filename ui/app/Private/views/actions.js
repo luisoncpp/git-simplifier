@@ -30,6 +30,7 @@ const ACTION_WORDS = {
   uncommit: "uncommit",
   edit_message: "message edit",
   exclude_submodule: "exclusion",
+  split_branch: "split",
   quick_switch: "switch",
   sync: "sync",
   force_push: "force push",

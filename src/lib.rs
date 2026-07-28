@@ -5,6 +5,7 @@ mod push;
 mod recording;
 mod repository;
 mod rewrite;
+mod split;
 mod switch;
 mod sync;
 
@@ -16,7 +17,10 @@ pub use inspection::{
     ChangedPath, EditableCommit, InspectionError, LocalBranchChoice, RemoteBaseChoice,
     RepositoryOverview, SubmoduleChoice, WorktreeSummary,
 };
-pub use push::{ForcePushError, ForcePushPlan, ForcePushResult};
+pub use push::{
+    ForcePushError, ForcePushPlan, ForcePushResult, PublishBranchPlan, PublishBranchResult,
+    PublishError,
+};
 pub use recording::{RecoveryEntry, RecoveryError};
 pub use repository::{GitRepository, RepositoryState};
 pub use rewrite::{
@@ -24,6 +28,7 @@ pub use rewrite::{
     RepoPath, RewriteAction, RewriteError, RewriteOperation, RewritePlan, Signature, TreeEntry,
     UncommitRequest,
 };
+pub use split::{SplitBranchPlan, SplitBranchRequest, SplitBranchResult, SplitError};
 pub use switch::{
     DeleteSavedWorkResult, QuickSwitchPlan, QuickSwitchRequest, QuickSwitchResult,
     RestoreSavedWorkResult, SavedWork, SwitchError,

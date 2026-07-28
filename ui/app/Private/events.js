@@ -12,6 +12,7 @@ const CLICK = {
   "cancel-base": (controller) => edit.setChangingBase(controller, "false"),
   "save-base": (controller) => controller.chooseBase(baseChoice()),
   "force-push": (controller) => controller.prepare({ kind: "force_push" }),
+  "publish-branch": (controller, value) => controller.prepare({ kind: "publish_branch", branch: value }),
   "resume-sync": (controller) => controller.prepare({ kind: "resume_sync" }),
   "restore-saved": (controller) => controller.prepare({ kind: "restore_saved_work" }),
   "delete-saved": (controller, value) => controller.prepare({ kind: "delete_saved_work", branch: value }),
@@ -36,6 +37,8 @@ const CHANGE = {
 const INPUT = {
   "path-filter": edit.setPathFilter,
   "commit-message": edit.setMessage,
+  "split-branch-name": edit.setNewBranch,
+  "split-message": edit.setSplitMessage,
 };
 
 const TAB_STEP = { ArrowRight: 1, ArrowLeft: -1 };
@@ -93,7 +96,11 @@ function handleEnter(controller, event) {
     settle(controller, controller.chooseBase(node.value));
     return;
   }
-  const submitting = action === "path-filter" || (action === "commit-message" && (event.ctrlKey || event.metaKey));
+  const withModifier = event.ctrlKey || event.metaKey;
+  const submitting =
+    action === "path-filter" ||
+    action === "split-branch-name" ||
+    ((action === "commit-message" || action === "split-message") && withModifier);
   if (!submitting) return;
   event.preventDefault();
   settle(controller, controller.submitOperation());

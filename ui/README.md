@@ -8,7 +8,7 @@ All writes go through `prepare_operation` → `OperationReview` → `apply_opera
 
 ## Layout
 
-A repository rail, a single-row repository bar (branch, Base with a Change affordance, upstream, working-tree chips), the operation tab strip, and the form. A pending review opens as a second column beside the form and stacks below 860 CSS pixels. There is no decorative page heading; the tab strip is the title.
+Uncommit and Split branch share the changed-path checklist but keep separate selections, because a tick means the opposite thing in each. A repository rail, a single-row repository bar (branch, Base with a Change affordance, upstream, working-tree chips), the operation tab strip, and the form. A pending review opens as a second column beside the form and stacks below 860 CSS pixels. There is no decorative page heading; the tab strip is the title.
 
 ## Keyboard
 

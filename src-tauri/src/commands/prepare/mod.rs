@@ -1,3 +1,4 @@
+mod branch;
 mod history;
 mod saved_work;
 mod worktree;
@@ -23,6 +24,8 @@ pub(super) fn prepare(
         PrepareOperationRequest::EditMessage(input) => history::edit_message(state, id, input),
         PrepareOperationRequest::ExcludeSubmodule(input) => history::exclude(state, id, input),
         PrepareOperationRequest::ForcePush => history::force_push(state, id),
+        PrepareOperationRequest::SplitBranch(input) => branch::split_branch(state, id, input),
+        PrepareOperationRequest::PublishBranch(input) => branch::publish_branch(state, id, input),
         PrepareOperationRequest::QuickSwitch(input) => worktree::quick_switch(state, id, input),
         PrepareOperationRequest::Sync(input) => worktree::sync(state, id, input),
         PrepareOperationRequest::ResumeSync => worktree::resume_sync(state, id),
@@ -42,7 +45,10 @@ pub(super) fn current_branch(state: &AppState) -> Result<String, String> {
 
 pub(super) fn head_of(state: &AppState) -> Result<ObjectId, String> {
     with_repository(state, |repository| {
-        Ok(repository.overview().map_err(|error| error.to_string())?.head)
+        Ok(repository
+            .overview()
+            .map_err(|error| error.to_string())?
+            .head)
     })
 }
 
