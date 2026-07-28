@@ -21,6 +21,8 @@ Avoid: "bug description + fix". Prefer: "what I learned that applies to future w
 
 | File | Topic | Date |
 |------|-------|------|
+| [git-log-format-separators-keep-line-terminators.md](./git-log-format-separators-keep-line-terminators.md) | Custom `git log` separators do not suppress Git's surrounding line terminators | 2026-07-27 |
+| [delegated-async-ui-events-need-error-boundaries.md](./delegated-async-ui-events-need-error-boundaries.md) | Delegated async UI events need local error handling or rejected discovery makes controls look inert | 2026-07-27 |
 | [operation-reviews-must-mirror-composite-writes.md](./operation-reviews-must-mirror-composite-writes.md) | Composite operation reviews must show their full ordered Git write sequence | 2026-07-27 |
 | [superproject-sync-must-disable-submodule-recursion.md](./superproject-sync-must-disable-submodule-recursion.md) | A superproject snapshot must ignore nested dirt while every worktree mutation explicitly disables submodule recursion | 2026-07-27 |
 | [write-lock-owners-must-not-relock.md](./write-lock-owners-must-not-relock.md) | A standalone write deadlocks if an outer transaction lock wraps `GitRunner::run` | 2026-07-27 |

@@ -18,6 +18,39 @@ test("operation boundary is explicit in the controller", async () => {
   assert.match(source, /cancel_operation/);
 });
 
+test("operation tabs still switch when their discovery request fails", async () => {
+  const controller = new AppController({
+    async invoke(command) {
+      assert.equal(command, "list_editable_commits");
+      throw new Error("unable to list editable commits");
+    },
+  });
+  controller.state.snapshot = {
+    overview: {
+      base: "refs/remotes/origin/main",
+      worktree: { staged: 0, unstaged: 0, untracked: 0, conflicts: 0 },
+    },
+    saved_work: [],
+    operations: [],
+  };
+  let renders = 0;
+  controller.render = () => { renders += 1; };
+  controller.announce = () => {};
+  const event = {
+    target: {
+      closest: () => ({ dataset: { operation: "edit_message" } }),
+    },
+  };
+
+  await assert.doesNotReject(controller.click(event));
+
+  assert.equal(controller.state.operation, "edit_message");
+  assert.equal(controller.state.error, "unable to list editable commits");
+  assert.ok(renders > 0);
+  assert.match(shell(controller.state), /aria-selected="true" data-operation="edit_message"/);
+  assert.match(shell(controller.state), /data-form="edit_message"/);
+});
+
 test("Git-backed Tauri commands run off the window thread", async () => {
   const source = await readFile(
     new URL("../src-tauri/src/commands/actions.rs", import.meta.url),

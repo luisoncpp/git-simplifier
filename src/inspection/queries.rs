@@ -269,7 +269,7 @@ fn parse_changed_paths(output: &[u8]) -> Result<Vec<ChangedPath>, InspectionErro
 fn parse_commits(output: &[u8]) -> Result<Vec<EditableCommit>, InspectionError> {
     output
         .split(|byte| *byte == 0x1e)
-        .filter(|record| !record.is_empty())
+        .filter(|record| !record.trim_ascii().is_empty())
         .map(|record| {
             let fields = record.split(|byte| *byte == 0).collect::<Vec<_>>();
             if fields.len() < 7 {

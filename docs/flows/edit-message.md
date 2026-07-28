@@ -2,7 +2,14 @@
 
 ## Trigger
 
-Backend caller submits a remote-tracking Base ref, an Editable-range commit, and replacement message bytes.
+The user opens Edit Message with a configured remote-tracking Base, then submits an Editable-range commit and replacement message bytes.
+
+## Discovery
+
+1. The UI selects the tab and requests `list_editable_commits` with the configured Base.
+2. Inspection runs `git log` over `Base..HEAD` in first-parent, oldest-first order with explicit field and record separators.
+3. The parser discards formatting-only record fragments and returns typed commit IDs, subjects, full messages, and author signatures.
+4. The UI renders the returned commits as selectable values; it never asks the user to type a SHA.
 
 ## Sequence
 
@@ -14,7 +21,8 @@ Backend caller submits a remote-tracking Base ref, an Editable-range commit, and
 
 ## Reads
 
-- Current symbolic branch, HEAD, Base, merge base, first-parent commit IDs, commit trees, parent IDs, and signatures.
+- Editable-commit discovery reads the first-parent `Base..HEAD` log.
+- Planning reads the current symbolic branch, HEAD, Base, merge base, first-parent commit IDs, commit trees, parent IDs, and signatures.
 - Git operation markers such as merge, rebase, cherry-pick, and bisect state.
 
 ## Writes and side effects
