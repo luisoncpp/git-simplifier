@@ -1,3 +1,3 @@
-import { AppController } from "./app/controller.js";
+import { AppController } from "./app/index.js";
 
 new AppController().start();

@@ -4,3 +4,4 @@
 /.cargo-target
 /src-tauri/target
 /target
+/dist

@@ -117,7 +117,7 @@ pub enum RewriteOperation {
 }
 
 impl RewriteOperation {
-    pub(crate) fn label(&self) -> &'static str {
+    pub fn label(&self) -> &'static str {
         match self {
             Self::Uncommit => "uncommit",
             Self::EditMessage => "edit-message",

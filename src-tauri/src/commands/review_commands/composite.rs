@@ -1,6 +1,6 @@
 use git_helper_core::{QuickSwitchPlan, RefName};
 
-pub(super) fn quick_switch(plan: &QuickSwitchPlan) -> Vec<String> {
+pub(crate) fn quick_switch(plan: &QuickSwitchPlan) -> Vec<String> {
     let switch = format!(
         "git switch --no-recurse-submodules --no-guess -- {}",
         plan.target_branch
@@ -19,7 +19,7 @@ pub(super) fn quick_switch(plan: &QuickSwitchPlan) -> Vec<String> {
     ]
 }
 
-pub(super) fn sync(base: &RefName) -> Result<Vec<String>, String> {
+pub(crate) fn sync(base: &RefName) -> Result<Vec<String>, String> {
     let (remote, branch) = base_parts(base)?;
     let saved_work = "refs/githelper/backup/sync-<id>-wip";
     Ok(vec![

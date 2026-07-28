@@ -7,8 +7,8 @@
     "dev": "vite",
     "build": "vite build",
     "preview": "vite preview",
-    "lint": "node --check ui/app.js && node --check ui/app/controller.js && node --check ui/app/views.js && node --check ui/app/bridge.js",
-    "test": "node --test",
+    "lint": "node scripts/lint.mjs",
+    "test": "node --test test/*.test.mjs",
     "tauri": "tauri"
   },
   "devDependencies": {

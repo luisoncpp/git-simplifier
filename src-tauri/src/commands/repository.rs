@@ -6,9 +6,6 @@ pub(super) fn snapshot(state: &AppState) -> Result<RepositorySnapshot, String> {
     with_repository(state, |repository| {
         let state = repository.load_state().map_err(|error| error.to_string())?;
         Ok(RepositorySnapshot {
-            saved_work_count: state.saved_work.len(),
-            operation_count: state.operations.len(),
-            sync_in_progress: state.overview.sync_status.is_some(),
             overview: state.overview,
             saved_work: state.saved_work,
             operations: state.operations,
