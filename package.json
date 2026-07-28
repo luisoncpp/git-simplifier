@@ -9,7 +9,8 @@
     "preview": "vite preview",
     "lint": "node scripts/lint.mjs",
     "test": "node --test test/*.test.mjs",
-    "tauri": "tauri"
+    "tauri": "tauri",
+    "installer": "tauri build"
   },
   "devDependencies": {
     "@tauri-apps/cli": "^2.5.0",

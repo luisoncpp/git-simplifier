@@ -8,3 +8,4 @@ Covers only what's already implemented. For architecture docs of not implemented
 |------|-----------|-------|
 | [git-core.md](./git-core.md) | Rust Git runner and rewrite engine | Backend-only first vertical slice |
 | [workbench-ui.md](./workbench-ui.md) | Vanilla-JS workbench deep module | State rules, rendering, and the review surface |
+| [packaging.md](./packaging.md) | Windows installer bundling | NSIS per-user setup; `npm run installer` |

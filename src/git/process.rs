@@ -9,6 +9,7 @@ use super::error::GitError;
 pub(crate) fn execute(git: &Path, repo: &Path, command: GitCommand) -> Result<GitOutput, GitError> {
     let mut process = Command::new(git);
     process.current_dir(repo).args(&command.args);
+    hide_console(&mut process);
     set_environment(&mut process, &command);
     let output = match command.stdin {
         Some(input) => run_with_input(&mut process, &input),
@@ -29,6 +30,20 @@ pub(crate) fn execute(git: &Path, repo: &Path, command: GitCommand) -> Result<Gi
     }
     Ok(result)
 }
+
+/// `CREATE_NO_WINDOW`: without it a windowless GUI build flashes a console for
+/// every Git invocation, which is dozens of flashes during a single rewrite.
+#[cfg(windows)]
+const CREATE_NO_WINDOW: u32 = 0x0800_0000;
+
+#[cfg(windows)]
+fn hide_console(process: &mut Command) {
+    use std::os::windows::process::CommandExt;
+    process.creation_flags(CREATE_NO_WINDOW);
+}
+
+#[cfg(not(windows))]
+fn hide_console(_process: &mut Command) {}
 
 fn set_environment(process: &mut Command, command: &GitCommand) {
     process.env("GIT_TERMINAL_PROMPT", "0");
