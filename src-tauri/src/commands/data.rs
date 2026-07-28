@@ -1,17 +1,16 @@
 use git_helper_core::{ObjectId, RefName};
 use serde::{Deserialize, Serialize};
 
+/// `overview` already carries the Saved work count, recovery count, and sync
+/// phase, so the snapshot does not repeat them under second names.
 #[derive(Clone, Debug, Serialize)]
 pub struct RepositorySnapshot {
     pub overview: git_helper_core::RepositoryOverview,
-    pub saved_work_count: usize,
-    pub operation_count: usize,
-    pub sync_in_progress: bool,
     pub saved_work: Vec<git_helper_core::SavedWork>,
     pub operations: Vec<git_helper_core::RecoveryEntry>,
 }
 
-#[derive(Debug, Deserialize)]
+#[derive(Clone, Debug, Deserialize)]
 pub struct BaseRequest {
     pub base: String,
 }
@@ -22,33 +21,47 @@ pub struct OpenRepositoryInput {
 }
 
 #[derive(Clone, Debug, Deserialize)]
+pub struct UncommitInput {
+    pub base: String,
+    pub paths: Vec<String>,
+}
+
+#[derive(Clone, Debug, Deserialize)]
+pub struct EditMessageInput {
+    pub base: String,
+    pub commit: String,
+    pub message: String,
+}
+
+#[derive(Clone, Debug, Deserialize)]
+pub struct ExcludeSubmoduleInput {
+    pub path: String,
+    pub install_hook: bool,
+    pub disable_recurse: bool,
+}
+
+#[derive(Clone, Debug, Deserialize)]
+pub struct QuickSwitchInput {
+    pub target_branch: String,
+}
+
+#[derive(Clone, Debug, Deserialize)]
+pub struct DeleteSavedWorkInput {
+    pub branch: String,
+}
+
+/// Newtype variants keep the JSON payload flat (`{"kind": "uncommit", …}`)
+/// while giving each prepare step a single typed input argument.
+#[derive(Clone, Debug, Deserialize)]
 #[serde(tag = "kind", rename_all = "snake_case")]
 pub enum PrepareOperationRequest {
-    Uncommit {
-        base: String,
-        paths: Vec<String>,
-    },
-    EditMessage {
-        base: String,
-        commit: String,
-        message: String,
-    },
-    ExcludeSubmodule {
-        path: String,
-        install_hook: bool,
-        disable_recurse: bool,
-    },
-    QuickSwitch {
-        target_branch: String,
-    },
-    Sync {
-        base: String,
-    },
+    Uncommit(UncommitInput),
+    EditMessage(EditMessageInput),
+    ExcludeSubmodule(ExcludeSubmoduleInput),
+    QuickSwitch(QuickSwitchInput),
+    Sync(BaseRequest),
     RestoreSavedWork,
-    DeleteSavedWork {
-        branch: String,
-        snapshot: Option<String>,
-    },
+    DeleteSavedWork(DeleteSavedWorkInput),
     ResumeSync,
     ForcePush,
 }
@@ -127,6 +140,33 @@ impl PendingOperation {
             | Self::Restore { id, .. }
             | Self::Delete { id, .. }
             | Self::Resume { id, .. } => id,
+        }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::PrepareOperationRequest;
+
+    /// The UI sends one flat object per operation. A tagged enum that stopped
+    /// accepting these payloads would break every button at runtime only.
+    #[test]
+    fn every_operation_payload_the_ui_sends_deserializes() {
+        let payloads = [
+            r#"{"kind":"uncommit","base":"refs/remotes/origin/main","paths":["a.txt"]}"#,
+            r#"{"kind":"edit_message","base":"refs/remotes/origin/main","commit":"abcdef1","message":"new"}"#,
+            r#"{"kind":"exclude_submodule","path":"vendor/sdk","install_hook":true,"disable_recurse":false}"#,
+            r#"{"kind":"quick_switch","target_branch":"develop"}"#,
+            r#"{"kind":"sync","base":"refs/remotes/origin/main"}"#,
+            r#"{"kind":"restore_saved_work"}"#,
+            r#"{"kind":"delete_saved_work","branch":"feature"}"#,
+            r#"{"kind":"resume_sync"}"#,
+            r#"{"kind":"force_push"}"#,
+        ];
+
+        for payload in payloads {
+            serde_json::from_str::<PrepareOperationRequest>(payload)
+                .unwrap_or_else(|error| panic!("{payload} failed to deserialize: {error}"));
         }
     }
 }

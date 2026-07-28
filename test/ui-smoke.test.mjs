@@ -1,61 +1,44 @@
 import assert from "node:assert/strict";
 import { readFile } from "node:fs/promises";
 import test from "node:test";
-import { AppController } from "../ui/app/controller.js";
-import { shell } from "../ui/app/views.js";
+import { AppController, renderShell } from "../ui/app/index.js";
+import { controllerWith, snapshotWith } from "./support/controller.mjs";
 
-test("workbench contains no prompt-driven Git identifiers or demo repository", async () => {
-  const source = await readFile(new URL("../ui/app/controller.js", import.meta.url), "utf8");
-  const views = await readFile(new URL("../ui/app/views.js", import.meta.url), "utf8");
-  assert.doesNotMatch(source, /window\.prompt|prompt\(/);
-  assert.doesNotMatch(views, /meridian-api|origin\/develop|feat\/latency-budget/);
+test("the workbench never invents repository data or prompts for Git identifiers", async () => {
+  const controller = await readFile(new URL("../ui/app/Private/controller.js", import.meta.url), "utf8");
+  assert.doesNotMatch(controller, /window\.prompt|prompt\(/);
+  const state = new AppController({}).state;
+  const markup = renderShell(state);
+  assert.match(markup, /No repository is open/);
+  assert.doesNotMatch(markup, /origin\/develop|meridian|feat\//);
 });
 
-test("operation boundary is explicit in the controller", async () => {
-  const source = await readFile(new URL("../ui/app/controller.js", import.meta.url), "utf8");
+test("the operation boundary stays prepare / apply / cancel", async () => {
+  const source = await readFile(new URL("../ui/app/Private/controller.js", import.meta.url), "utf8");
   assert.match(source, /prepare_operation/);
   assert.match(source, /apply_operation/);
   assert.match(source, /cancel_operation/);
 });
 
 test("operation tabs still switch when their discovery request fails", async () => {
-  const controller = new AppController({
+  const controller = controllerWith({
     async invoke(command) {
-      assert.equal(command, "list_editable_commits");
-      throw new Error("unable to list editable commits");
+      if (command === "list_editable_commits") throw new Error("unable to list editable commits");
+      return [];
     },
   });
-  controller.state.snapshot = {
-    overview: {
-      base: "refs/remotes/origin/main",
-      worktree: { staged: 0, unstaged: 0, untracked: 0, conflicts: 0 },
-    },
-    saved_work: [],
-    operations: [],
-  };
-  let renders = 0;
-  controller.render = () => { renders += 1; };
-  controller.announce = () => {};
-  const event = {
-    target: {
-      closest: () => ({ dataset: { operation: "edit_message" } }),
-    },
-  };
 
-  await assert.doesNotReject(controller.click(event));
+  await assert.doesNotReject(controller.selectOperation("edit_message"));
 
   assert.equal(controller.state.operation, "edit_message");
   assert.equal(controller.state.error, "unable to list editable commits");
-  assert.ok(renders > 0);
-  assert.match(shell(controller.state), /aria-selected="true" data-operation="edit_message"/);
-  assert.match(shell(controller.state), /data-form="edit_message"/);
+  const markup = renderShell(controller.state);
+  assert.match(markup, /aria-selected="true"[^>]*data-value="edit_message"/);
+  assert.match(markup, /unable to list editable commits/);
 });
 
 test("Git-backed Tauri commands run off the window thread", async () => {
-  const source = await readFile(
-    new URL("../src-tauri/src/commands/actions.rs", import.meta.url),
-    "utf8",
-  );
+  const source = await readFile(new URL("../src-tauri/src/commands/actions.rs", import.meta.url), "utf8");
   const commands = [...source.matchAll(/#\[tauri::command(?:\(async\))?\]\s+pub fn (\w+)/g)];
   const blocking = commands
     .filter((match) => match[1] !== "app_ready" && !match[0].includes("(async)"))
@@ -64,62 +47,32 @@ test("Git-backed Tauri commands run off the window thread", async () => {
 });
 
 test("saving Base reuses the snapshot returned by set_base", async () => {
-  const snapshot = {
-    overview: { base: "refs/remotes/origin/main" },
-    saved_work: [],
-    operations: [],
-  };
   const commands = [];
-  const bridge = {
+  const controller = controllerWith({
     async invoke(command) {
       commands.push(command);
-      if (command === "set_base" || command === "load_snapshot") return snapshot;
+      if (command === "set_base" || command === "load_snapshot") return snapshotWith({});
       return [];
     },
-  };
-  const controller = new AppController(bridge);
-  controller.render = () => {};
-  controller.announce = () => {};
-  const previousDocument = globalThis.document;
-  globalThis.document = {
-    querySelector: () => ({ value: "refs/remotes/origin/main" }),
-  };
-  try {
-    await controller.chooseBase();
-  } finally {
-    globalThis.document = previousDocument;
-  }
+  });
+
+  await controller.chooseBase("refs/remotes/origin/main");
+
   assert.equal(commands.filter((command) => command === "load_snapshot").length, 0);
+  assert.equal(controller.state.changingBase, false);
 });
 
-test("a failed sync apply reloads state and exposes the resume action", async () => {
-  const base = "refs/remotes/origin/main";
-  const pausedSnapshot = {
-    overview: {
-      base,
-      sync_status: "base-merge-conflict",
-      worktree: { staged: 0, unstaged: 0, untracked: 0, conflicts: 1 },
-    },
-    saved_work: [],
-    operations: [],
-  };
+test("a failed sync apply reloads state once and offers the resume action", async () => {
+  const paused = snapshotWith({ sync_status: "base-merge-conflict", worktree: { staged: 0, unstaged: 0, untracked: 0, conflicts: 1 } });
   const commands = [];
-  const bridge = {
+  const controller = controllerWith({
     async invoke(command) {
       commands.push(command);
       if (command === "apply_operation") throw new Error("merge needs resolution");
-      if (command === "load_snapshot") return pausedSnapshot;
+      if (command === "load_snapshot") return paused;
       return [];
     },
-  };
-  const controller = new AppController(bridge);
-  controller.render = () => {};
-  controller.announce = () => {};
-  controller.state.snapshot = {
-    overview: { base, sync_status: null },
-    saved_work: [],
-    operations: [],
-  };
+  });
   controller.state.review = { plan_id: "sync-review" };
 
   await controller.applyReview();
@@ -127,36 +80,26 @@ test("a failed sync apply reloads state and exposes the resume action", async ()
   assert.equal(controller.state.review, null);
   assert.equal(commands.filter((command) => command === "load_snapshot").length, 1);
   assert.equal(controller.state.error, "merge needs resolution");
-  assert.match(shell(controller.state), /data-event="prepare-resume"/);
+  assert.match(renderShell(controller.state), /data-event="resume-sync"/);
 
   controller.state.snapshot.overview.sync_status = "fetch";
-  assert.match(shell(controller.state), /Review retry/);
-  assert.doesNotMatch(shell(controller.state), /Review resume/);
+  assert.match(renderShell(controller.state), /Review retry/);
 
   controller.state.snapshot.overview.sync_status = "snapshot";
-  assert.match(shell(controller.state), /Inspect recovery/);
-  assert.doesNotMatch(shell(controller.state), /data-event="prepare-resume"/);
+  assert.doesNotMatch(renderShell(controller.state), /data-event="resume-sync"/);
+  assert.match(renderShell(controller.state), /Inspect recovery/);
 });
 
 test("repository snapshots do not repeat overview aggregation queries", async () => {
-  const source = await readFile(
-    new URL("../src-tauri/src/commands/repository.rs", import.meta.url),
-    "utf8",
-  );
+  const source = await readFile(new URL("../src-tauri/src/commands/repository.rs", import.meta.url), "utf8");
   assert.doesNotMatch(source, /repository\.list_saved_work/);
   assert.doesNotMatch(source, /repository\.list_operations/);
   assert.doesNotMatch(source, /repository\.sync_status/);
 });
 
 test("repository identity is reused instead of queried on every refresh", async () => {
-  const runner = await readFile(
-    new URL("../src/git/mod.rs", import.meta.url),
-    "utf8",
-  );
-  const inspection = await readFile(
-    new URL("../src/inspection/queries.rs", import.meta.url),
-    "utf8",
-  );
+  const runner = await readFile(new URL("../src/git/mod.rs", import.meta.url), "utf8");
+  const inspection = await readFile(new URL("../src/inspection/queries.rs", import.meta.url), "utf8");
   assert.match(runner, /git_version: String/);
   assert.match(runner, /git_dir: OnceLock<PathBuf>/);
   assert.match(inspection, /runner\.git_version\(\)/);
