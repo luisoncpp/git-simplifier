@@ -1,0 +1,18 @@
+{
+  "name": "git-helper",
+  "private": true,
+  "version": "0.1.0",
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "preview": "vite preview",
+    "lint": "node --check ui/app.js && node --check ui/app/controller.js && node --check ui/app/views.js && node --check ui/app/bridge.js",
+    "test": "node --test",
+    "tauri": "tauri"
+  },
+  "devDependencies": {
+    "@tauri-apps/cli": "^2.5.0",
+    "vite": "^6.1.0"
+  }
+}
