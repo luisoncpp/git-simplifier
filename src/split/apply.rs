@@ -47,6 +47,7 @@ fn read_patch(runner: &GitRunner, split_plan: &SplitBranchPlan) -> Result<Vec<u8
     let mut values = args(&[
         "diff",
         "--binary",
+        "--no-relative",
         "--no-renames",
         "--no-ext-diff",
         "--no-color",

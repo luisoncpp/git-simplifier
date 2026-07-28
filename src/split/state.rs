@@ -66,8 +66,11 @@ pub(super) fn branch_ref(branch: &str) -> String {
     format!("refs/heads/{branch}")
 }
 
+/// `top` anchors the pathspec at the repository root: plain `:(literal)` is
+/// resolved against the current prefix, so a repository opened below the Git
+/// root would match nothing while every listed path stays root-relative.
 pub(super) fn literal(path: &str) -> String {
-    format!(":(literal){path}")
+    format!(":(top,literal){path}")
 }
 
 pub(super) fn text(bytes: &[u8]) -> Result<String, SplitError> {

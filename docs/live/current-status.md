@@ -10,6 +10,7 @@
 - Sync with Base core operation: remote-tracking fetch, tracked Saved work backup, merge/reapply conflict classification, oplog phases, and explicit resume.
 - Split branch in Copy mode: selected paths copied onto a new branch rooted at the merge base, built in a temporary detached worktree, with Unity `.meta` companions resolved by the planner and the source branch left untouched.
 - Explicit force-push handoff for rewritten branches, using the observed remote SHA in `--force-with-lease` and stale-plan checks.
+- First publish of a newly created branch, offered after a Split branch: remote derived from configuration with no `origin` guess, an absent-ref lease so it can only create, and `--set-upstream`.
 - Operation recording under `.git/githelper/oplog.json`.
 - Read-only recovery history API with ref-only recovery commands for reversible operations.
 - Integration fixtures covering straight histories, merge parents, teammate merges, dropped commits, repeated paths, gitlinks, stale plans, literal special-character paths, worktree preservation, staged-change preservation, and resulting tree contents.
@@ -21,3 +22,4 @@
 
 - Submodule cleanup chaining, backup-ref garbage collection, and desktop smoke/accessibility automation remain follow-up hardening.
 - Split branch Move mode and hunk-level splitting are deliberately out of scope.
+- Publishing is offered only as a Split branch follow-up; there is no picker for publishing an arbitrary local branch.

@@ -1,6 +1,6 @@
-use git_helper_core::{RefName, RepoPath, SplitBranchPlan, SplitBranchRequest};
+use git_helper_core::{PublishBranchPlan, RefName, RepoPath, SplitBranchPlan, SplitBranchRequest};
 
-use super::super::data::{OperationReview, PendingOperation, SplitBranchInput};
+use super::super::data::{OperationReview, PendingOperation, PublishBranchInput, SplitBranchInput};
 use super::super::repository::with_repository;
 use super::Prepared;
 use crate::commands::state::AppState;
@@ -33,6 +33,43 @@ pub(super) fn split_branch(
         review: review(id.clone(), &plan),
         pending: PendingOperation::Split { id, plan },
     })
+}
+
+pub(super) fn publish_branch(
+    state: &AppState,
+    id: String,
+    input: PublishBranchInput,
+) -> Result<Prepared, String> {
+    let plan = with_repository(state, |repo| {
+        repo.plan_publish_branch(input.branch)
+            .map_err(|e| e.to_string())
+    })?;
+    Ok(Prepared {
+        review: publish_review(id.clone(), &plan),
+        pending: PendingOperation::Publish { id, plan },
+    })
+}
+
+/// A first push is not a force push: nothing on the remote is replaced, so the
+/// review carries the lease that guarantees it and none of the rewrite warnings.
+fn publish_review(id: String, plan: &PublishBranchPlan) -> OperationReview {
+    OperationReview {
+        plan_id: id,
+        kind: "publish_branch".to_string(),
+        title: format!("Publish {} to {}", plan.branch_name, plan.remote),
+        impact: vec![
+            format!("Create {} on {}", plan.remote_branch, plan.remote),
+            format!("Set {} to track {}", plan.branch_name, plan.upstream),
+        ],
+        preserves: vec![
+            format!("Every other branch on {}", plan.remote),
+            "Nothing is replaced: the push is refused unless the remote branch is still absent"
+                .to_string(),
+        ],
+        warnings: Vec::new(),
+        commands: vec![plan.command.clone()],
+        apply_label: "Publish the branch".to_string(),
+    }
 }
 
 fn review(id: String, plan: &SplitBranchPlan) -> OperationReview {

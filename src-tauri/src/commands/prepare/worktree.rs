@@ -56,7 +56,10 @@ pub(super) fn sync(state: &AppState, id: String, input: BaseRequest) -> Result<P
     let base = RefName::new(input.base)?;
     let (head, branch) = with_repository(state, |repo| {
         let overview = repo.overview().map_err(|e| e.to_string())?;
-        Ok((overview.head, overview.branch.unwrap_or_else(|| "HEAD".into())))
+        Ok((
+            overview.head,
+            overview.branch.unwrap_or_else(|| "HEAD".into()),
+        ))
     })?;
     let review = OperationReview {
         plan_id: id.clone(),

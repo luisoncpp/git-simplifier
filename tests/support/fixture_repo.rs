@@ -40,11 +40,40 @@ impl FixtureRepo {
         run(&self.repo, &["commit", "-m", message]);
     }
 
+    pub fn set_config(&self, key: &str, value: &str) {
+        run(&self.repo, &["config", "--local", key, value]);
+    }
+
+    pub fn reopen_at(&self, relative: &str) -> GitRepository {
+        GitRepository::open(RepositoryConfig {
+            path: self.root.path().join(relative),
+            git_executable: "git".into(),
+        })
+        .unwrap()
+    }
+
+    pub fn rename_file(&self, from: &str, to: &str, message: &str) {
+        run(&self.repo, &["mv", "--", from, to]);
+        run(&self.repo, &["commit", "-m", message]);
+    }
+
     pub fn set_base_ref(&self) {
         run(
             &self.repo,
             &["update-ref", "refs/remotes/origin/base", "base"],
         );
+    }
+
+    /// A real bare remote, unlike `configure_origin_to_self`: publishing needs a
+    /// remote where a branch can be genuinely absent or genuinely already taken.
+    pub fn add_bare_origin(&self) -> TempDir {
+        let remote = tempfile::tempdir().unwrap();
+        let path = remote.path().to_str().unwrap().to_string();
+        run_owned(&self.repo, vec!["init", "--bare", "-b", "base", &path]);
+        run_owned(&self.repo, vec!["remote", "add", "origin", &path]);
+        run(&self.repo, &["push", "origin", "base:refs/heads/base"]);
+        run(&self.repo, &["fetch", "origin"]);
+        remote
     }
 
     pub fn configure_origin_to_self(&self) {

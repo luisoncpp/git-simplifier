@@ -65,7 +65,11 @@ fn reset_paths(plan: &RewritePlan) -> String {
 pub(crate) fn exclude_submodule(plan: &ExcludeSubmodulePlan) -> Vec<String> {
     let mut commands = plan.config_lines.clone();
     if plan.hook_will_change {
-        let verb = if plan.hook_exists { "append to" } else { "create" };
+        let verb = if plan.hook_exists {
+            "append to"
+        } else {
+            "create"
+        };
         commands.push(format!("# {verb} {}", plan.hook_path.display()));
         commands.extend(plan.hook_preview.lines().map(|line| format!("  {line}")));
     }

@@ -34,6 +34,10 @@ Two things are patched instead of re-rendered: the commit-message textarea keeps
 
 `submitState` returns a reason, and the submit row renders it. The submit label comes from a per-operation word list whose fallback is the operation id, so a new operation that forgets its entry shows `Review split_branch` instead of `Review split`; a test asserts no label contains an underscore. A base-dependent operation with no Base, an unchanged message, an empty path selection, and a branch without an upstream each explain themselves instead of showing an inert primary button.
 
+## Follow-up offers
+
+A result banner may offer exactly one follow-up. `offer_force_push` is a flag because it always means the current branch; `offer_publish_branch` carries the branch name, because a newly created branch is not checked out and a boolean could not say which one to push. The two are different operations with different risk, so the banner never shows force-push wording for a first push.
+
 ## Review surface
 
 A pending review renders as a second column beside the form (stacked below 860 CSS pixels) rather than replacing it. Focus moves to the review title when it opens; Escape cancels it, which also releases the plan held in `AppState`. Switching operation or section cancels a pending review instead of abandoning it.

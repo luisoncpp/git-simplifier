@@ -13,7 +13,7 @@ pub(super) fn commands(plan: &SplitBranchPlan) -> Vec<String> {
             plan.merge_base
         ),
         format!(
-            "git diff --binary --no-renames {} {} -- {pathspecs} | git -C <worktree> apply --index --binary",
+            "git diff --binary --no-relative --no-renames {} {} -- {pathspecs} | git -C <worktree> apply --index --binary",
             plan.merge_base, plan.source_head
         ),
         "git -C <worktree> write-tree".to_string(),

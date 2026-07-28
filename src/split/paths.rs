@@ -68,6 +68,7 @@ fn changed_between(
         "diff",
         "--name-only",
         "-z",
+        "--no-relative",
         "--no-renames",
         "--no-ext-diff",
         from.as_str(),

@@ -80,6 +80,9 @@ pub(crate) fn changed_paths(
             "diff",
             "--name-status",
             "-z",
+            // Root-relative names are typed identifiers the planners match on,
+            // so `diff.relative` or a subdirectory must not reshape them.
+            "--no-relative",
             &format!("{base}...HEAD"),
             "--",
         ],

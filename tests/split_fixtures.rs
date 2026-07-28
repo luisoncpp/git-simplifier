@@ -198,6 +198,116 @@ fn split_removes_its_temporary_worktree_and_records_a_reversible_operation() {
     assert_eq!(entry.commands, plan.commands);
 }
 
+/// The UI ticks entries from `list_changed_paths` and sends those exact strings,
+/// so whatever that list reports must be splittable.
+#[test]
+fn every_path_the_picker_lists_can_be_split() {
+    let fixture = FixtureRepo::new();
+    fixture.commit_file("Assets/hero.png", "art\n", "art");
+    fixture.commit_file("src/app.js", "code\n", "code");
+
+    let listed = fixture.repo.list_changed_paths(base_ref()).unwrap();
+    let picked: Vec<RepoPath> = listed.iter().map(|entry| entry.path.clone()).collect();
+    println!("picker listed: {picked:?}");
+
+    let plan = fixture.repo.plan_split_branch(SplitBranchRequest {
+        base: base_ref(),
+        new_branch: "carved".to_string(),
+        paths: picked,
+        message: None,
+    });
+    assert!(
+        plan.is_ok(),
+        "planner rejected the picker's own list: {:?}",
+        plan.err()
+    );
+}
+
+#[test]
+fn a_renamed_path_from_the_picker_can_be_split() {
+    let fixture = FixtureRepo::new();
+    fixture.commit_file("old-name.txt", "content\n", "add");
+    fixture.rename_file("old-name.txt", "new-name.txt", "rename");
+
+    let listed = fixture.repo.list_changed_paths(base_ref()).unwrap();
+    let picked: Vec<RepoPath> = listed.iter().map(|entry| entry.path.clone()).collect();
+    println!("picker listed after rename: {picked:?}");
+
+    let plan = fixture.repo.plan_split_branch(SplitBranchRequest {
+        base: base_ref(),
+        new_branch: "carved".to_string(),
+        paths: picked,
+        message: None,
+    });
+    assert!(
+        plan.is_ok(),
+        "planner rejected a renamed path: {:?}",
+        plan.err()
+    );
+}
+
+/// The repository dialog can point at any folder, including one below the Git
+/// root. Paths then still list root-relative, so a prefix-relative pathspec
+/// silently matches nothing.
+#[test]
+fn a_repository_opened_below_the_git_root_can_still_split() {
+    let fixture = FixtureRepo::new();
+    fixture.commit_file("Assets/hero.png", "art\n", "art");
+    fixture.commit_file("src/app.js", "code\n", "code");
+    let nested = fixture.reopen_at("src");
+
+    let listed = nested.list_changed_paths(base_ref()).unwrap();
+    let picked: Vec<RepoPath> = listed.iter().map(|entry| entry.path.clone()).collect();
+    println!("picker listed from a subdirectory: {picked:?}");
+
+    let plan = nested
+        .plan_split_branch(SplitBranchRequest {
+            base: base_ref(),
+            new_branch: "carved".to_string(),
+            paths: picked,
+            message: None,
+        })
+        .expect("planning from a subdirectory");
+    let result = nested.apply_split_branch(&plan);
+
+    assert!(
+        result.is_ok(),
+        "applying from a subdirectory: {:?}",
+        result.err()
+    );
+}
+
+/// `diff.relative` makes Git print paths relative to the current prefix. The
+/// picker and the planner must agree on root-relative names regardless.
+#[test]
+fn a_repository_configured_with_diff_relative_can_still_split() {
+    let fixture = FixtureRepo::new();
+    fixture.commit_file("Assets/hero.png", "art\n", "art");
+    fixture.commit_file("src/app.js", "code\n", "code");
+    fixture.set_config("diff.relative", "true");
+    let nested = fixture.reopen_at("src");
+
+    let listed = nested.list_changed_paths(base_ref()).unwrap();
+    let picked: Vec<RepoPath> = listed.iter().map(|entry| entry.path.clone()).collect();
+    println!("picker listed with diff.relative: {picked:?}");
+
+    let plan = nested
+        .plan_split_branch(SplitBranchRequest {
+            base: base_ref(),
+            new_branch: "carved".to_string(),
+            paths: picked,
+            message: None,
+        })
+        .expect("planning with diff.relative");
+    let result = nested.apply_split_branch(&plan);
+
+    assert!(
+        result.is_ok(),
+        "applying with diff.relative: {:?}",
+        result.err()
+    );
+}
+
 fn fixture_with_two_changes() -> FixtureRepo {
     let fixture = FixtureRepo::new();
     fixture.commit_file("Assets/kept.txt", "kept change\n", "kept");
@@ -205,9 +315,13 @@ fn fixture_with_two_changes() -> FixtureRepo {
     fixture
 }
 
+fn base_ref() -> RefName {
+    RefName::new("refs/remotes/origin/base".to_string()).unwrap()
+}
+
 fn request(branch: &str, paths: &[&str]) -> SplitBranchRequest {
     SplitBranchRequest {
-        base: RefName::new("refs/remotes/origin/base".to_string()).unwrap(),
+        base: base_ref(),
         new_branch: branch.to_string(),
         paths: paths
             .iter()

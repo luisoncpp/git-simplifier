@@ -17,7 +17,10 @@ pub use inspection::{
     ChangedPath, EditableCommit, InspectionError, LocalBranchChoice, RemoteBaseChoice,
     RepositoryOverview, SubmoduleChoice, WorktreeSummary,
 };
-pub use push::{ForcePushError, ForcePushPlan, ForcePushResult};
+pub use push::{
+    ForcePushError, ForcePushPlan, ForcePushResult, PublishBranchPlan, PublishBranchResult,
+    PublishError,
+};
 pub use recording::{RecoveryEntry, RecoveryError};
 pub use repository::{GitRepository, RepositoryState};
 pub use rewrite::{

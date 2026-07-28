@@ -12,6 +12,7 @@ const CLICK = {
   "cancel-base": (controller) => edit.setChangingBase(controller, "false"),
   "save-base": (controller) => controller.chooseBase(baseChoice()),
   "force-push": (controller) => controller.prepare({ kind: "force_push" }),
+  "publish-branch": (controller, value) => controller.prepare({ kind: "publish_branch", branch: value }),
   "resume-sync": (controller) => controller.prepare({ kind: "resume_sync" }),
   "restore-saved": (controller) => controller.prepare({ kind: "restore_saved_work" }),
   "delete-saved": (controller, value) => controller.prepare({ kind: "delete_saved_work", branch: value }),

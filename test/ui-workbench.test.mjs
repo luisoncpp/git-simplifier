@@ -258,3 +258,40 @@ test("no operation offers a submit button labelled with its identifier", () => {
     assert.doesNotMatch(label, /_/, `${id} shows its identifier in the submit button`);
   }
 });
+
+test("a created branch offers its first push, not a force push", () => {
+  const controller = controllerWith({});
+  controller.state.outcome = {
+    kind: "split_branch",
+    headline: "Branch created",
+    details: ["refs/heads/carved points at abc1234"],
+    offer_force_push: false,
+    offer_publish_branch: "carved",
+  };
+
+  const banner = bannerOf(renderShell(controller.state));
+  assert.match(banner, /data-event="publish-branch"\s+data-value="carved"/);
+  assert.match(banner, /Review push of carved/);
+  assert.doesNotMatch(banner, /force push/i);
+});
+
+test("a rewrite still offers a force push and never the publish button", () => {
+  const controller = controllerWith({});
+  controller.state.outcome = {
+    kind: "rewrite",
+    headline: "History rewritten",
+    details: [],
+    offer_force_push: true,
+    offer_publish_branch: null,
+  };
+
+  const banner = bannerOf(renderShell(controller.state));
+  assert.match(banner, /Review force push/);
+  assert.doesNotMatch(banner, /data-event="publish-branch"/);
+});
+
+/// The operation strip always contains a Force push tab, so a follow-up
+/// assertion has to look at the result banner rather than the whole shell.
+function bannerOf(markup) {
+  return /<div class="banner good">[\s\S]*?<\/div>\s*<\/div>/.exec(markup)?.[0] ?? "";
+}

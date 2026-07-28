@@ -75,7 +75,11 @@ pub(super) fn edit_message(
         kind: "edit_message".to_string(),
         title: "Edit commit message".to_string(),
         impact: vec![
-            format!("Rebuild {} commit(s) on {}", plan.commits.len(), plan.branch),
+            format!(
+                "Rebuild {} commit(s) on {}",
+                plan.commits.len(),
+                plan.branch
+            ),
             "Replace the message of the selected commit".to_string(),
         ],
         preserves: vec![

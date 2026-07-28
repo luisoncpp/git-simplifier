@@ -6,7 +6,10 @@ use crate::inspection::{
     self, ChangedPath, EditableCommit, InspectionError, LocalBranchChoice, RemoteBaseChoice,
     RepositoryOverview, SubmoduleChoice,
 };
-use crate::push::{self, ForcePushError, ForcePushPlan, ForcePushResult};
+use crate::push::{
+    self, ForcePushError, ForcePushPlan, ForcePushResult, PublishBranchPlan, PublishBranchResult,
+    PublishError,
+};
 use crate::recording::{self, RecoveryEntry, RecoveryError};
 use crate::rewrite::{
     self, ApplyError, ApplyResult, EditMessageRequest, RefName, RewriteError, RewritePlan,
@@ -107,6 +110,18 @@ impl GitRepository {
     ) -> Result<ForcePushResult, ForcePushError> {
         self.runner
             .with_write_lock(|| push::apply(&self.runner, plan))
+    }
+
+    pub fn plan_publish_branch(&self, branch: String) -> Result<PublishBranchPlan, PublishError> {
+        push::create_publish(&self.runner, branch)
+    }
+
+    pub fn apply_publish_branch(
+        &self,
+        plan: &PublishBranchPlan,
+    ) -> Result<PublishBranchResult, PublishError> {
+        self.runner
+            .with_write_lock(|| push::apply_publish(&self.runner, plan))
     }
 
     pub fn plan_uncommit(&self, request: UncommitRequest) -> Result<RewritePlan, RewriteError> {
