@@ -44,3 +44,4 @@ Avoid: "bug description + fix". Prefer: "what I learned that applies to future w
 | [close-to-tray-prevent-close-blocks-quit.md](./close-to-tray-prevent-close-blocks-quit.md) | `prevent_close` on hide-to-tray also blocks Quit unless exit is armed first | 2026-07-28 |
 | [async-menu-actions-should-dismiss-before-await.md](./async-menu-actions-should-dismiss-before-await.md) | Async menu choices should close before awaiting and project their target onto the stable parent control | 2026-07-28 |
 | [failed-stash-apply-can-mutate-before-error.md](./failed-stash-apply-can-mutate-before-error.md) | A failed indexed stash apply may already have created conflicts, so a fallback must not run blindly | 2026-07-28 |
+| [absolutely-positioned-live-regions-need-an-inset.md](./absolutely-positioned-live-regions-need-an-inset.md) | A clipped live region can still extend the document from its static position unless it has an explicit inset | 2026-07-28 |

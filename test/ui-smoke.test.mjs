@@ -13,6 +13,14 @@ test("the workbench never invents repository data or prompts for Git identifiers
   assert.doesNotMatch(markup, /origin\/develop|meridian|feat\//);
 });
 
+test("the live announcer cannot extend the document below the viewport shell", async () => {
+  const css = await readFile(new URL("../ui/styles/workbench.css", import.meta.url), "utf8");
+  const srOnlyRule = /\.sr-only\s*\{([^}]*)\}/.exec(css)?.[1] ?? "";
+
+  assert.match(srOnlyRule, /top:\s*0/);
+  assert.match(srOnlyRule, /left:\s*0/);
+});
+
 test("the operation boundary stays prepare / apply / cancel", async () => {
   const source = await readFile(new URL("../ui/app/Private/controller.js", import.meta.url), "utf8");
   assert.match(source, /prepare_operation/);
