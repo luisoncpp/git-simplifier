@@ -58,6 +58,8 @@ pub struct PublishBranchInput {
 #[derive(Clone, Debug, Deserialize)]
 pub struct QuickSwitchInput {
     pub target_branch: String,
+    #[serde(default)]
+    pub carry_changes: bool,
 }
 
 #[derive(Clone, Debug, Deserialize)]

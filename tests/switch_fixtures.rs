@@ -36,6 +36,64 @@ fn switch_saves_tracked_work_and_restores_staged_state_explicitly() {
 }
 
 #[test]
+fn switch_carries_tracked_changes_onto_the_target_branch() {
+    let fixture = fixture_with_target("other");
+    fixture.write_worktree_file("README.md", "staged\n");
+    fixture.stage_file("README.md");
+    fixture.write_worktree_file("README.md", "unstaged\n");
+
+    let plan = fixture.repo.plan_quick_switch(carry_request("other")).unwrap();
+    let result = fixture.repo.apply_quick_switch(&plan).unwrap();
+
+    assert_eq!(result.source_branch, "feature");
+    assert_eq!(current_branch(&fixture), "other");
+    assert_eq!(read_worktree(&fixture, "README.md"), "unstaged\n");
+    assert!(result.carried_index.is_some());
+    assert!(result.saved_work.is_none());
+    assert!(fixture.repo.list_saved_work().unwrap().is_empty());
+}
+
+#[test]
+fn carry_allows_switch_when_source_already_has_saved_work() {
+    let fixture = fixture_with_target("other");
+    fixture.write_worktree_file("README.md", "first\n");
+    fixture
+        .repo
+        .apply_quick_switch(&fixture.repo.plan_quick_switch(request("other")).unwrap())
+        .unwrap();
+    fixture.checkout("feature");
+    assert!(fixture.repo.list_saved_work().unwrap().len() == 1);
+    fixture.write_worktree_file("README.md", "carried\n");
+
+    assert!(matches!(
+        fixture.repo.plan_quick_switch(request("other")),
+        Err(SwitchError::ExistingSavedWork(branch)) if branch == "feature"
+    ));
+
+    let plan = fixture.repo.plan_quick_switch(carry_request("other")).unwrap();
+    fixture.repo.apply_quick_switch(&plan).unwrap();
+
+    assert_eq!(current_branch(&fixture), "other");
+    assert_eq!(read_worktree(&fixture, "README.md"), "carried\n");
+    assert_eq!(fixture.repo.list_saved_work().unwrap().len(), 1);
+}
+
+#[test]
+fn carry_warns_when_pop_conflicts_on_divergent_files() {
+    let fixture = fixture_with_target("other");
+    fixture.checkout("other");
+    fixture.commit_file("README.md", "target version\n", "target readme");
+    fixture.checkout("feature");
+    fixture.write_worktree_file("README.md", "my edit\n");
+
+    let plan = fixture.repo.plan_quick_switch(carry_request("other")).unwrap();
+    let result = fixture.repo.apply_quick_switch(&plan).unwrap();
+
+    assert_eq!(current_branch(&fixture), "other");
+    assert!(result.carry_warning.is_some());
+}
+
+#[test]
 fn switch_rejects_an_untracked_file_that_target_would_overwrite() {
     let fixture = fixture_with_target("other");
     fixture.checkout("other");
@@ -157,6 +215,14 @@ fn fixture_with_target(target: &str) -> FixtureRepo {
 fn request(target_branch: &str) -> QuickSwitchRequest {
     QuickSwitchRequest {
         target_branch: target_branch.to_string(),
+        carry_changes: false,
+    }
+}
+
+fn carry_request(target_branch: &str) -> QuickSwitchRequest {
+    QuickSwitchRequest {
+        target_branch: target_branch.to_string(),
+        carry_changes: true,
     }
 }
 

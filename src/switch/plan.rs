@@ -20,7 +20,9 @@ pub(crate) fn create(
     let source_head = state::read_id(runner, "HEAD")?;
     let target_head = state::read_id(runner, &state::branch_ref(&request.target_branch))?;
     let saved_work_reference = state::wip_ref(&source_branch);
-    if state::optional_id(runner, &saved_work_reference)?.is_some() {
+    if !request.carry_changes
+        && state::optional_id(runner, &saved_work_reference)?.is_some()
+    {
         return Err(SwitchError::ExistingSavedWork(source_branch));
     }
     let untracked = preflight::read_untracked(runner)?;
@@ -33,6 +35,7 @@ pub(crate) fn create(
         target_head,
         saved_work_reference,
         has_tracked_changes: state::read_tracked_changes(runner)?,
+        carry_changes: request.carry_changes,
         target_saved_work,
     })
 }
@@ -51,14 +54,17 @@ pub(crate) fn verify_current(
     if state::read_id(runner, &state::branch_ref(&plan.target_branch))? != plan.target_head {
         return Err(SwitchError::StalePlan);
     }
-    if state::optional_id(runner, &plan.saved_work_reference)?.is_some() {
+    if !plan.carry_changes
+        && state::optional_id(runner, &plan.saved_work_reference)?.is_some()
+    {
         return Err(SwitchError::ExistingSavedWork(plan.source_branch.clone()));
     }
     if state::read_tracked_changes(runner)? != plan.has_tracked_changes {
         return Err(SwitchError::StalePlan);
     }
     let untracked = preflight::read_untracked(runner)?;
-    preflight::ensure_untracked_safe(runner, &plan.target_branch, &untracked)
+    preflight::ensure_untracked_safe(runner, &plan.target_branch, &untracked)?;
+    Ok(())
 }
 
 pub(crate) fn list_saved_work(runner: &GitRunner) -> Result<Vec<SavedWork>, SwitchError> {

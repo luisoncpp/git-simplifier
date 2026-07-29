@@ -61,7 +61,9 @@ export function buildRequest(state) {
       message: draft.splitMessage,
     };
   }
-  if (kind === "quick_switch") return { kind, target_branch: draft.targetBranch };
+  if (kind === "quick_switch") {
+    return { kind, target_branch: draft.targetBranch, carry_changes: draft.carryChanges };
+  }
   if (kind === "sync") return { kind, base };
   return { kind: "force_push" };
 }

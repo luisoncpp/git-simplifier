@@ -8,6 +8,14 @@ pub(crate) fn quick_switch(plan: &QuickSwitchPlan) -> Vec<String> {
     if !plan.has_tracked_changes {
         return vec![switch];
     }
+    if plan.carry_changes {
+        return vec![
+            "git -c submodule.recurse=false stash push -m \"git-helper carry\"".to_string(),
+            switch,
+            "git -c submodule.recurse=false stash pop --index".to_string(),
+            "git -c submodule.recurse=false stash pop  # fallback".to_string(),
+        ];
+    }
     vec![
         "git -c submodule.recurse=false stash create".to_string(),
         format!(
@@ -51,8 +59,23 @@ mod tests {
     use super::{quick_switch, sync};
 
     #[test]
+    fn quick_switch_carry_lists_snapshot_reset_switch_and_reapply() {
+        let plan = switch_plan(/*has_tracked_changes=*/ true, /*carry_changes=*/ true);
+
+        assert_eq!(
+            quick_switch(&plan),
+            vec![
+                "git -c submodule.recurse=false stash push -m \"git-helper carry\"",
+                "git switch --no-recurse-submodules --no-guess -- other",
+                "git -c submodule.recurse=false stash pop --index",
+                "git -c submodule.recurse=false stash pop  # fallback",
+            ]
+        );
+    }
+
+    #[test]
     fn quick_switch_lists_the_saved_work_sequence() {
-        let plan = switch_plan(/*has_tracked_changes=*/ true);
+        let plan = switch_plan(/*has_tracked_changes=*/ true, /*carry_changes=*/ false);
 
         assert_eq!(
             quick_switch(&plan),
@@ -67,7 +90,7 @@ mod tests {
 
     #[test]
     fn clean_quick_switch_only_lists_the_switch() {
-        let plan = switch_plan(/*has_tracked_changes=*/ false);
+        let plan = switch_plan(/*has_tracked_changes=*/ false, /*carry_changes=*/ false);
 
         assert_eq!(
             quick_switch(&plan),
@@ -93,7 +116,7 @@ mod tests {
         );
     }
 
-    fn switch_plan(has_tracked_changes: bool) -> QuickSwitchPlan {
+    fn switch_plan(has_tracked_changes: bool, carry_changes: bool) -> QuickSwitchPlan {
         QuickSwitchPlan {
             source_branch: "feature".to_string(),
             source_head: object_id(),
@@ -101,6 +124,7 @@ mod tests {
             target_head: object_id(),
             saved_work_reference: "refs/githelper/wip/feature".to_string(),
             has_tracked_changes,
+            carry_changes,
             target_saved_work: None,
         }
     }

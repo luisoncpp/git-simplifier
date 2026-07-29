@@ -11,6 +11,7 @@ export function createDraft() {
     installHook: true,
     disableRecurse: false,
     targetBranch: "",
+    carryChanges: false,
   };
 }
 

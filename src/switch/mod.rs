@@ -5,6 +5,7 @@ mod plan;
 mod preflight;
 mod record;
 mod state;
+mod stash;
 
 pub use errors::SwitchError;
 pub use model::{

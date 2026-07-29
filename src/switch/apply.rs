@@ -9,7 +9,12 @@ use super::errors::SwitchError;
 use super::model::{
     DeleteSavedWorkResult, QuickSwitchPlan, QuickSwitchResult, RestoreSavedWorkResult, SavedWork,
 };
-use super::{plan, record, state};
+use super::{plan, record, state, stash};
+
+struct TrackedPrep {
+    saved_work: Option<SavedWork>,
+    carry_pushed: bool,
+}
 
 pub(crate) fn switch(
     runner: &crate::git::GitRunner,
@@ -19,11 +24,12 @@ pub(crate) fn switch(
     let oplog = Oplog::open(&runner.git_dir()?)
         .map_err(|error| SwitchError::Recording(error.to_string()))?;
     let operation_id = record::begin_switch(&oplog, switch_plan)?;
-    let saved_work = save_tracked_changes(runner, switch_plan)?;
+    let tracked = prepare_tracked_changes(runner, switch_plan)?;
     switch_branch(runner, &switch_plan.target_branch)?;
+    let (carried_index, carry_warning) = pop_carried_changes(runner, tracked.carry_pushed)?;
     let mut after = BTreeMap::new();
     after.insert("HEAD".to_string(), switch_plan.target_head.to_string());
-    if let Some(saved) = &saved_work {
+    if let Some(saved) = &tracked.saved_work {
         after.insert(saved.reference.clone(), saved.snapshot.to_string());
     }
     oplog
@@ -32,48 +38,67 @@ pub(crate) fn switch(
     Ok(QuickSwitchResult {
         source_branch: switch_plan.source_branch.clone(),
         target_branch: switch_plan.target_branch.clone(),
-        saved_work,
+        saved_work: tracked.saved_work,
+        carried_index,
+        carry_warning,
         target_saved_work: switch_plan.target_saved_work.clone(),
     })
 }
 
-fn save_tracked_changes(
+fn prepare_tracked_changes(
     runner: &crate::git::GitRunner,
     switch_plan: &QuickSwitchPlan,
-) -> Result<Option<SavedWork>, SwitchError> {
+) -> Result<TrackedPrep, SwitchError> {
     if !switch_plan.has_tracked_changes {
-        return Ok(None);
+        return Ok(TrackedPrep {
+            saved_work: None,
+            carry_pushed: false,
+        });
     }
-    let output = runner.run_unlocked(GitCommand::write(stash_args(&["create"])))?;
-    let value = text(&output.stdout)?.trim().to_string();
-    if value.is_empty() {
-        return Err(SwitchError::InvalidState(
-            "Git did not create Saved work for tracked changes".to_string(),
-        ));
+    if switch_plan.carry_changes {
+        stash::push_tracked(runner)?;
+        return Ok(TrackedPrep {
+            saved_work: None,
+            carry_pushed: true,
+        });
     }
-    let snapshot = ObjectId::new(value).map_err(SwitchError::InvalidState)?;
-    update_ref(runner, &switch_plan.saved_work_reference, &snapshot, "")?;
-    runner.run_unlocked(GitCommand::write(args(&[
-        "reset",
-        "--hard",
-        "--no-recurse-submodules",
-        "HEAD",
-    ])))?;
-    Ok(Some(SavedWork {
-        branch: switch_plan.source_branch.clone(),
-        reference: switch_plan.saved_work_reference.clone(),
-        snapshot,
-    }))
+    let snapshot = stash::snapshot(runner)?;
+    stash::reset_tracked(runner)?;
+    update_ref(
+        runner,
+        &switch_plan.saved_work_reference,
+        &snapshot,
+        "",
+    )?;
+    Ok(TrackedPrep {
+        saved_work: Some(SavedWork {
+            branch: switch_plan.source_branch.clone(),
+            reference: switch_plan.saved_work_reference.clone(),
+            snapshot,
+        }),
+        carry_pushed: false,
+    })
+}
+
+fn pop_carried_changes(
+    runner: &crate::git::GitRunner,
+    carry_pushed: bool,
+) -> Result<(Option<bool>, Option<String>), SwitchError> {
+    if !carry_pushed {
+        return Ok((None, None));
+    }
+    let outcome = stash::pop_carry(runner)?;
+    Ok((Some(outcome.applied_index), outcome.warning))
 }
 
 fn switch_branch(runner: &crate::git::GitRunner, target_branch: &str) -> Result<(), SwitchError> {
-    runner.run_unlocked(GitCommand::write(args(&[
-        "switch",
-        "--no-recurse-submodules",
-        "--no-guess",
-        "--",
-        target_branch,
-    ])))?;
+    runner.run_unlocked(GitCommand::write(vec![
+        OsString::from("switch"),
+        OsString::from("--no-recurse-submodules"),
+        OsString::from("--no-guess"),
+        OsString::from("--"),
+        OsString::from(target_branch),
+    ]))?;
     Ok(())
 }
 
@@ -88,7 +113,7 @@ pub(crate) fn restore(
     let oplog = Oplog::open(&runner.git_dir()?)
         .map_err(|error| SwitchError::Recording(error.to_string()))?;
     let operation_id = record::begin_restore(&oplog, &saved)?;
-    let applied_index = apply_stash(runner, &saved.reference)?;
+    let applied_index = stash::apply(runner, &saved.reference)?;
     delete_ref(runner, &saved.reference, &saved.snapshot)?;
     let mut after = BTreeMap::new();
     after.insert(
@@ -103,19 +128,6 @@ pub(crate) fn restore(
         reference: saved.reference,
         applied_index,
     })
-}
-
-fn apply_stash(runner: &crate::git::GitRunner, reference: &str) -> Result<bool, SwitchError> {
-    let indexed = runner
-        .run_unlocked(GitCommand::write(stash_args(&[
-            "apply", "--index", reference,
-        ])))
-        .is_ok();
-    if indexed {
-        return Ok(true);
-    }
-    runner.run_unlocked(GitCommand::write(stash_args(&["apply", reference])))?;
-    Ok(false)
 }
 
 pub(crate) fn delete(
@@ -173,19 +185,4 @@ fn delete_ref(
     ];
     runner.run_unlocked(GitCommand::write(values))?;
     Ok(())
-}
-
-fn text(bytes: &[u8]) -> Result<String, SwitchError> {
-    String::from_utf8(bytes.to_vec())
-        .map_err(|_| SwitchError::InvalidState("Git output is not UTF-8".to_string()))
-}
-
-fn args(values: &[&str]) -> Vec<OsString> {
-    values.iter().map(|value| OsString::from(*value)).collect()
-}
-
-fn stash_args(values: &[&str]) -> Vec<OsString> {
-    let mut command = args(&["-c", "submodule.recurse=false", "stash"]);
-    command.extend(args(values));
-    command
 }
