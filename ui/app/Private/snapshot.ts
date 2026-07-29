@@ -54,3 +54,7 @@ export function syncPause(state: AppState): SyncPause | null {
     retry: phase === "fetch",
   };
 }
+
+export function quickSwitchPause(state: AppState): boolean {
+  return overviewOf(state)?.quick_switch_status === "pull-ff-failed";
+}

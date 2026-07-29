@@ -19,6 +19,9 @@ pub(super) fn apply(
         PendingOperation::Split { plan, .. } => split_branch(state, plan),
         PendingOperation::Publish { plan, .. } => publish_branch(state, plan),
         PendingOperation::QuickSwitch { plan, .. } => quick_switch(state, plan),
+        PendingOperation::ResolveQuickSwitchPull { resolution, .. } => {
+            resolve_pull(state, resolution)
+        }
         PendingOperation::ForcePush { plan, .. } => force_push(state, plan),
         PendingOperation::Sync { base, head, .. } => sync(state, base, head),
         PendingOperation::Restore { head, .. } => restore(state, head),
@@ -44,6 +47,7 @@ fn rewrite(state: &AppState, plan: RewritePlan) -> Result<OperationOutcome, Stri
         details,
         offer_force_push: true,
         offer_publish_branch: None,
+        offer_resolve_pull: false,
     })
 }
 
@@ -71,6 +75,7 @@ fn exclude(state: &AppState, plan: ExcludeSubmodulePlan) -> Result<OperationOutc
         details,
         offer_force_push: false,
         offer_publish_branch: None,
+        offer_resolve_pull: false,
     })
 }
 
@@ -91,6 +96,7 @@ fn split_branch(state: &AppState, plan: SplitBranchPlan) -> Result<OperationOutc
         ],
         offer_force_push: false,
         offer_publish_branch: Some(result.branch.clone()),
+        offer_resolve_pull: false,
     })
 }
 
@@ -107,6 +113,7 @@ fn publish_branch(state: &AppState, plan: PublishBranchPlan) -> Result<Operation
         ],
         offer_force_push: false,
         offer_publish_branch: None,
+        offer_resolve_pull: false,
     })
 }
 
@@ -118,6 +125,9 @@ fn quick_switch(state: &AppState, plan: QuickSwitchPlan) -> Result<OperationOutc
     if let Some(saved) = &result.saved_work {
         details.push(format!("Tracked changes saved for {}", saved.branch));
     }
+    if result.pulled {
+        details.push("Fast-forwarded from the remote-tracking branch".to_string());
+    }
     if result.carried_index.is_some() && result.carry_warning.is_none() {
         details.push(format!(
             "Tracked changes carried onto {}",
@@ -127,18 +137,58 @@ fn quick_switch(state: &AppState, plan: QuickSwitchPlan) -> Result<OperationOutc
     if let Some(warning) = &result.carry_warning {
         details.push(warning.clone());
     }
+    if let Some(warning) = &result.pull_warning {
+        details.push(warning.clone());
+    }
     if result.target_saved_work.is_some() {
         details.push(format!(
             "Saved work for {} is ready to restore",
             result.target_branch
         ));
     }
+    let headline = if result.pull_decision_needed {
+        "Pull needs a decision"
+    } else {
+        "Branch switched"
+    };
     Ok(OperationOutcome {
         kind: "quick_switch".to_string(),
-        headline: "Branch switched".to_string(),
+        headline: headline.to_string(),
         details,
         offer_force_push: false,
         offer_publish_branch: None,
+        offer_resolve_pull: result.pull_decision_needed,
+    })
+}
+
+fn resolve_pull(
+    state: &AppState,
+    resolution: git_helper_core::PullResolution,
+) -> Result<OperationOutcome, String> {
+    let result = with_repository(state, |repo| {
+        repo.resolve_quick_switch_pull(resolution)
+            .map_err(|e| e.to_string())
+    })?;
+    let mut details = vec![format!("Still on {}", result.target_branch)];
+    if result.pulled {
+        details.push("Local branch now matches the chosen remote update".to_string());
+    }
+    if let Some(warning) = &result.pull_warning {
+        details.push(warning.clone());
+    }
+    if result.carried_index.is_some() && result.carry_warning.is_none() {
+        details.push("Carried changes were reapplied".to_string());
+    }
+    if let Some(warning) = &result.carry_warning {
+        details.push(warning.clone());
+    }
+    Ok(OperationOutcome {
+        kind: "resolve_quick_switch_pull".to_string(),
+        headline: "Pull decision applied".to_string(),
+        details,
+        offer_force_push: false,
+        offer_publish_branch: None,
+        offer_resolve_pull: false,
     })
 }
 
@@ -155,6 +205,7 @@ fn force_push(state: &AppState, plan: ForcePushPlan) -> Result<OperationOutcome,
         )],
         offer_force_push: false,
         offer_publish_branch: None,
+        offer_resolve_pull: false,
     })
 }
 
@@ -169,6 +220,7 @@ fn sync(state: &AppState, base: RefName, head: ObjectId) -> Result<OperationOutc
         details: vec![format!("HEAD now points at {}", result.new_head)],
         offer_force_push: false,
         offer_publish_branch: None,
+        offer_resolve_pull: false,
     })
 }
 
@@ -190,6 +242,7 @@ fn restore(state: &AppState, head: ObjectId) -> Result<OperationOutcome, String>
         details,
         offer_force_push: false,
         offer_publish_branch: None,
+        offer_resolve_pull: false,
     })
 }
 
@@ -204,6 +257,7 @@ fn delete(state: &AppState, branch: String, head: ObjectId) -> Result<OperationO
         details: vec![format!("Removed {}", result.reference)],
         offer_force_push: false,
         offer_publish_branch: None,
+        offer_resolve_pull: false,
     })
 }
 
@@ -219,6 +273,7 @@ fn resume(state: &AppState, operation_id: String) -> Result<OperationOutcome, St
         details: vec![format!("HEAD now points at {}", result.new_head)],
         offer_force_push: false,
         offer_publish_branch: None,
+        offer_resolve_pull: false,
     })
 }
 

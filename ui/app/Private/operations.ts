@@ -90,7 +90,13 @@ export function buildRequest(state: AppState): OperationRequest {
     };
   }
   if (kind === "quick_switch") {
-    return { kind, target_branch: draft.targetBranch, carry_changes: draft.carryChanges };
+    return {
+      kind,
+      target_branch: draft.targetBranch,
+      carry_changes: draft.carryChanges,
+      pull_after_switch: draft.pullAfterSwitch,
+      create_from_remote: draft.createFromRemote || null,
+    };
   }
   if (kind === "sync") return { kind, base };
   return { kind: "force_push" };
@@ -140,7 +146,7 @@ const SPECIFIC_REASON: Partial<Record<OperationId, (state: AppState) => string>>
   },
   quick_switch: (state) => {
     if (state.branches.filter((branch) => !branch.current).length === 0) {
-      return "There is no other local branch to switch to.";
+      return "There is no other branch to switch to.";
     }
     if (!state.draft.targetBranch) return "Select a branch.";
     return "";

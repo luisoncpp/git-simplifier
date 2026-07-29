@@ -1,7 +1,8 @@
 import { esc } from "../dom.ts";
 import { pathValue } from "../draft.ts";
 import { baseRef, currentBranch, savedWorkFor, upstreamRef, worktreeCounts } from "../snapshot.ts";
-import type { AppState, LocalBranch, SubmoduleChoice } from "../types.ts";
+import type { AppState, SubmoduleChoice } from "../types.ts";
+import { branchPicker, selectedSwitchTarget, switchTargets } from "./branch-picker.ts";
 import { emptyState, fieldNote } from "./parts.ts";
 
 export function excludeForm(state: AppState): string {
@@ -33,35 +34,35 @@ function submoduleOption(state: AppState, entry: SubmoduleChoice): string {
 }
 
 export function quickSwitchForm(state: AppState): string {
-  const targets = state.branches.filter((branch) => !branch.current);
+  const targets = switchTargets(state);
   if (!targets.length) {
-    return emptyState("No other local branch", "Quick switch moves between local branches; this repository only has one.");
+    return emptyState(
+      "No other branch",
+      "Quick switch moves between local branches and can create a local branch from a remote-tracking one.",
+    );
   }
   const dirty = worktreeCounts(state).some(([label]) => label === "staged" || label === "unstaged");
-  const target = targets.find((branch) => branch.name === state.draft.targetBranch);
+  const target = selectedSwitchTarget(state);
   const carryNote = dirty && state.draft.carryChanges
     ? `<p class="hint">Tracked changes on ${esc(currentBranch(state))} will be stashed, the branch will switch, then popped onto ${esc(target?.name ?? "the target branch")}. Conflicts are reported afterwards.</p>`
     : dirty
       ? `<p class="hint">Tracked changes on ${esc(currentBranch(state))} will be saved before the switch.</p>`
       : "";
+  const remoteNote = target?.remote
+    ? `<p class="hint">Creates local <code>${esc(target.name)}</code> tracking <code>${esc(target.remote)}</code>.</p>`
+    : "";
   return `<fieldset><legend>Branch to check out</legend>
     ${fieldNote("By default, tracked changes stay with the branch you leave. Untracked files stay where they are.")}
-    <label class="field">Local branch
-      <select data-event="select-branch" data-focus="branch" aria-label="Branch to switch to">
-        ${targets.map((branch) => branchOption(state, branch)).join("")}
-      </select>
-    </label>
+    ${branchPicker(state)}
+    <label class="check-row inline"><input type="checkbox" data-event="toggle-pull-after-switch"
+      ${state.draft.pullAfterSwitch ? "checked" : ""} /> Pull from the same-named remote after switching</label>
     ${dirty ? `<label class="check-row inline"><input type="checkbox" data-event="toggle-carry-changes"
       ${state.draft.carryChanges ? "checked" : ""} /> Carry tracked changes to the target branch</label>` : ""}
-    ${carryNote}
-    ${target?.saved_work ? `<p class="hint">${esc(target.name)} has Saved work waiting. Restore it from the Saved work section after you arrive.</p>` : ""}
+    ${carryNote}${remoteNote}
+    ${target && !target.remote && target.saved_work
+      ? `<p class="hint">${esc(target.name)} has Saved work waiting. Restore it from the Saved work section after you arrive.</p>`
+      : ""}
   </fieldset>`;
-}
-
-function branchOption(state: AppState, branch: LocalBranch): string {
-  const selected = branch.name === state.draft.targetBranch ? " selected" : "";
-  const mark = branch.saved_work ? " · has Saved work" : "";
-  return `<option value="${esc(branch.name)}"${selected}>${esc(branch.name)}${esc(mark)}</option>`;
 }
 
 export function syncForm(state: AppState): string {

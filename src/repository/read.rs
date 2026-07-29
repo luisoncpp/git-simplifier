@@ -23,6 +23,10 @@ impl GitRepository {
             .sync_status()
             .map_err(|error| InspectionError::Parse(error.to_string()))?
             .map(|status| status.phase.as_str().to_string());
+        overview.quick_switch_status = self
+            .quick_switch_status()
+            .map_err(|error| InspectionError::Parse(error.to_string()))?
+            .map(|status| status.phase.as_str().to_string());
         overview.saved_work_count = saved_work.len();
         overview.recovery_count = operations.len();
         Ok(RepositoryState {

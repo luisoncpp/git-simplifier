@@ -223,6 +223,124 @@ fn saved_work_can_be_deleted_explicitly_without_switching() {
     assert!(fixture.repo.list_saved_work().unwrap().is_empty());
 }
 
+#[test]
+fn switch_creates_a_local_branch_from_a_remote_tracking_ref() {
+    let fixture = FixtureRepo::new();
+    fixture.configure_origin_to_self();
+    let head = fixture.head();
+    run(
+        &fixture.repo,
+        &["update-ref", "refs/remotes/origin/from-remote", &head],
+    );
+
+    let plan = fixture
+        .repo
+        .plan_quick_switch(QuickSwitchRequest {
+            target_branch: "from-remote".to_string(),
+            carry_changes: false,
+            pull_after_switch: false,
+            create_from_remote: Some("refs/remotes/origin/from-remote".to_string()),
+        })
+        .unwrap();
+    fixture.repo.apply_quick_switch(&plan).unwrap();
+
+    assert_eq!(current_branch(&fixture), "from-remote");
+    let remote = String::from_utf8(
+        fixture
+            .repo
+            .run(GitCommand::read(vec![
+                OsString::from("config"),
+                OsString::from("--get"),
+                OsString::from("branch.from-remote.remote"),
+            ]))
+            .unwrap()
+            .stdout,
+    )
+    .unwrap();
+    let merge = String::from_utf8(
+        fixture
+            .repo
+            .run(GitCommand::read(vec![
+                OsString::from("config"),
+                OsString::from("--get"),
+                OsString::from("branch.from-remote.merge"),
+            ]))
+            .unwrap()
+            .stdout,
+    )
+    .unwrap();
+    assert_eq!(remote.trim(), "origin");
+    assert_eq!(merge.trim(), "refs/heads/from-remote");
+}
+
+#[test]
+fn switch_pulls_same_named_remote_with_ff_only() {
+    let fixture = fixture_with_target("other");
+    let _remote = fixture.add_bare_origin();
+    run(&fixture.repo, &["push", "-u", "origin", "other:other"]);
+    fixture.checkout("other");
+    fixture.commit_file("README.md", "remote ahead\n", "ahead on other");
+    run(&fixture.repo, &["push", "origin", "other"]);
+    run(&fixture.repo, &["reset", "--hard", "HEAD~1"]);
+    fixture.checkout("feature");
+
+    let plan = fixture
+        .repo
+        .plan_quick_switch(QuickSwitchRequest {
+            target_branch: "other".to_string(),
+            carry_changes: false,
+            pull_after_switch: true,
+            create_from_remote: None,
+        })
+        .unwrap();
+    assert_eq!(
+        plan.pull_remote_ref.as_deref(),
+        Some("refs/remotes/origin/other")
+    );
+    let result = fixture.repo.apply_quick_switch(&plan).unwrap();
+
+    assert!(result.pulled);
+    assert!(!result.pull_decision_needed);
+    assert_eq!(current_branch(&fixture), "other");
+    assert_eq!(read_worktree(&fixture, "README.md"), "remote ahead\n");
+}
+
+#[test]
+fn diverged_pull_pauses_for_a_user_decision() {
+    let fixture = fixture_with_target("other");
+    let _remote = fixture.add_bare_origin();
+    run(&fixture.repo, &["push", "-u", "origin", "other:other"]);
+    fixture.checkout("other");
+    fixture.commit_file("README.md", "remote edit\n", "remote change");
+    run(&fixture.repo, &["push", "origin", "other"]);
+    run(&fixture.repo, &["reset", "--hard", "HEAD~1"]);
+    fixture.commit_file("README.md", "local edit\n", "local change");
+    fixture.checkout("feature");
+
+    let plan = fixture
+        .repo
+        .plan_quick_switch(QuickSwitchRequest {
+            target_branch: "other".to_string(),
+            carry_changes: false,
+            pull_after_switch: true,
+            create_from_remote: None,
+        })
+        .unwrap();
+    let result = fixture.repo.apply_quick_switch(&plan).unwrap();
+
+    assert!(result.pull_decision_needed);
+    assert_eq!(current_branch(&fixture), "other");
+    assert!(fixture.repo.quick_switch_status().unwrap().is_some());
+
+    let resolved = fixture
+        .repo
+        .resolve_quick_switch_pull(git_helper_core::PullResolution::ReplaceWithRemote)
+        .unwrap();
+    assert!(resolved.pulled);
+    assert_eq!(read_worktree(&fixture, "README.md"), "remote edit\n");
+    assert!(fixture.repo.quick_switch_status().unwrap().is_none());
+}
+
 fn fixture_with_target(target: &str) -> FixtureRepo {
     let fixture = FixtureRepo::new();
     fixture.branch(target);
@@ -234,6 +352,8 @@ fn request(target_branch: &str) -> QuickSwitchRequest {
     QuickSwitchRequest {
         target_branch: target_branch.to_string(),
         carry_changes: false,
+        pull_after_switch: false,
+        create_from_remote: None,
     }
 }
 
@@ -241,6 +361,8 @@ fn carry_request(target_branch: &str) -> QuickSwitchRequest {
     QuickSwitchRequest {
         target_branch: target_branch.to_string(),
         carry_changes: true,
+        pull_after_switch: false,
+        create_from_remote: None,
     }
 }
 

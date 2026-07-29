@@ -1,0 +1,121 @@
+/* ---------- quick-switch branch picker ---------- */
+
+.branch-picker {
+  position: relative;
+  z-index: 15;
+  margin: 0 0 10px;
+}
+
+.branch-trigger {
+  display: grid;
+  gap: 3px;
+  width: 100%;
+  padding: 8px 10px;
+  text-align: left;
+  color: var(--text);
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  transition: border-color 160ms cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.branch-trigger:hover:not(:disabled),
+.branch-trigger[aria-expanded="true"] {
+  border-color: var(--accent);
+}
+
+.branch-trigger strong {
+  font-size: 13px;
+  overflow-wrap: anywhere;
+}
+
+.branch-menu {
+  position: absolute;
+  top: calc(100% + 6px);
+  left: 0;
+  z-index: 30;
+  display: grid;
+  grid-template-rows: auto minmax(0, 1fr);
+  width: min(100%, 420px);
+  max-height: min(320px, 50vh);
+  padding: 8px;
+  background: var(--elevated);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  box-shadow: 0 4px 8px rgb(0 0 0 / 0.4);
+  animation: branch-menu-in 160ms cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.branch-filter input {
+  width: 100%;
+  min-height: 36px;
+  padding: 6px 10px;
+  color: var(--text);
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+}
+
+.branch-menu-list {
+  display: grid;
+  gap: 2px;
+  margin: 8px 0 0;
+  overflow: auto;
+  min-height: 0;
+}
+
+.branch-empty {
+  margin: 10px 6px;
+  color: var(--muted);
+  font-size: 13px;
+}
+
+.branch-row {
+  display: block;
+  width: 100%;
+  min-height: 36px;
+  padding: 6px 10px;
+  text-align: left;
+  color: var(--text);
+  background: transparent;
+  border: 0;
+  border-radius: var(--radius);
+  font-size: 13px;
+  overflow-wrap: anywhere;
+}
+
+.branch-row.current {
+  background: color-mix(in srgb, var(--accent) 14%, transparent);
+}
+
+.branch-row.active {
+  background: var(--surface);
+}
+
+.branch-row.current.active {
+  background: color-mix(in srgb, var(--accent) 22%, var(--surface));
+}
+
+.branch-row:hover:not(:disabled),
+.branch-row:active:not(:disabled) {
+  background: color-mix(in srgb, var(--accent) 22%, var(--surface));
+}
+
+@keyframes branch-menu-in {
+  from {
+    opacity: 0;
+    transform: translateY(-4px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .branch-trigger,
+  .branch-menu {
+    transition: none;
+    animation: none;
+  }
+}

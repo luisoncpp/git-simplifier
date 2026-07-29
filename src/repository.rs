@@ -13,8 +13,8 @@ use crate::rewrite::{
 };
 use crate::split::{self, SplitBranchPlan, SplitBranchRequest, SplitBranchResult, SplitError};
 use crate::switch::{
-    self, DeleteSavedWorkResult, QuickSwitchPlan, QuickSwitchRequest, QuickSwitchResult,
-    RestoreSavedWorkResult, SavedWork, SwitchError,
+    self, DeleteSavedWorkResult, PullResolution, QuickSwitchPlan, QuickSwitchRequest,
+    QuickSwitchResult, QuickSwitchStatus, RestoreSavedWorkResult, SavedWork, SwitchError,
 };
 use crate::sync::{self, SyncError, SyncRequest, SyncResult, SyncStatus};
 
@@ -114,6 +114,18 @@ impl GitRepository {
     ) -> Result<QuickSwitchResult, SwitchError> {
         self.runner
             .with_write_lock(|| switch::apply_plan(&self.runner, plan))
+    }
+
+    pub fn resolve_quick_switch_pull(
+        &self,
+        resolution: PullResolution,
+    ) -> Result<QuickSwitchResult, SwitchError> {
+        self.runner
+            .with_write_lock(|| switch::resolve_pull(&self.runner, resolution))
+    }
+
+    pub fn quick_switch_status(&self) -> Result<Option<QuickSwitchStatus>, SwitchError> {
+        switch::status(&self.runner)
     }
 
     pub fn plan_split_branch(

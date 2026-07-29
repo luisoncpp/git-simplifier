@@ -162,6 +162,7 @@ export class AppController {
   async switchTo(branch: string): Promise<void> {
     this.state.operation = "quick_switch";
     this.state.draft.targetBranch = branch;
+    this.state.draft.createFromRemote = "";
     this.state.view = "actions";
     await this.prepare({ kind: "quick_switch", target_branch: branch });
   }

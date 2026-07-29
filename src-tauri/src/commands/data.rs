@@ -60,6 +60,19 @@ pub struct QuickSwitchInput {
     pub target_branch: String,
     #[serde(default)]
     pub carry_changes: bool,
+    #[serde(default = "default_true")]
+    pub pull_after_switch: bool,
+    #[serde(default)]
+    pub create_from_remote: Option<String>,
+}
+
+fn default_true() -> bool {
+    true
+}
+
+#[derive(Clone, Debug, Deserialize)]
+pub struct ResolvePullInput {
+    pub resolution: git_helper_core::PullResolution,
 }
 
 #[derive(Clone, Debug, Deserialize)]
@@ -78,6 +91,7 @@ pub enum PrepareOperationRequest {
     SplitBranch(SplitBranchInput),
     PublishBranch(PublishBranchInput),
     QuickSwitch(QuickSwitchInput),
+    ResolveQuickSwitchPull(ResolvePullInput),
     Sync(BaseRequest),
     RestoreSavedWork,
     DeleteSavedWork(DeleteSavedWorkInput),
@@ -106,6 +120,8 @@ pub struct OperationOutcome {
     /// The branch a follow-up publish would push. A rewrite offers a force push;
     /// a freshly created branch offers its first push, and needs to name it.
     pub offer_publish_branch: Option<String>,
+    /// When set, the quick-switch pull could not fast-forward and the user must choose.
+    pub offer_resolve_pull: bool,
 }
 
 #[derive(Clone, Debug)]
@@ -133,6 +149,10 @@ pub enum PendingOperation {
     QuickSwitch {
         id: String,
         plan: git_helper_core::QuickSwitchPlan,
+    },
+    ResolveQuickSwitchPull {
+        id: String,
+        resolution: git_helper_core::PullResolution,
     },
     ForcePush {
         id: String,
@@ -167,6 +187,7 @@ impl PendingOperation {
             | Self::Split { id, .. }
             | Self::Publish { id, .. }
             | Self::QuickSwitch { id, .. }
+            | Self::ResolveQuickSwitchPull { id, .. }
             | Self::ForcePush { id, .. }
             | Self::Sync { id, .. }
             | Self::Restore { id, .. }
@@ -191,6 +212,7 @@ mod tests {
             r#"{"kind":"split_branch","base":"refs/remotes/origin/main","new_branch":"carved","paths":["a.txt"],"message":""}"#,
             r#"{"kind":"publish_branch","branch":"carved"}"#,
             r#"{"kind":"quick_switch","target_branch":"develop"}"#,
+            r#"{"kind":"resolve_quick_switch_pull","resolution":"cancel"}"#,
             r#"{"kind":"sync","base":"refs/remotes/origin/main"}"#,
             r#"{"kind":"restore_saved_work"}"#,
             r#"{"kind":"delete_saved_work","branch":"feature"}"#,

@@ -1,30 +1,44 @@
 use git_helper_core::{QuickSwitchPlan, RefName};
 
 pub(crate) fn quick_switch(plan: &QuickSwitchPlan) -> Vec<String> {
-    let switch = format!(
-        "git switch --no-recurse-submodules --no-guess -- {}",
-        plan.target_branch
-    );
-    if !plan.has_tracked_changes {
-        return vec![switch];
-    }
-    if plan.carry_changes {
-        return vec![
+    let switch = match &plan.create_from_remote {
+        Some(remote) => format!(
+            "git switch --no-recurse-submodules -c {} {remote}; git config branch.{}.remote/merge",
+            plan.target_branch, plan.target_branch
+        ),
+        None => format!(
+            "git switch --no-recurse-submodules --no-guess -- {}",
+            plan.target_branch
+        ),
+    };
+    let mut commands = Vec::new();
+    if plan.has_tracked_changes && plan.carry_changes {
+        commands.push(
             "git -c submodule.recurse=false stash push -m \"git-helper carry\"".to_string(),
-            switch,
-            "git -c submodule.recurse=false stash pop --index".to_string(),
-            "git -c submodule.recurse=false stash pop  # fallback".to_string(),
-        ];
-    }
-    vec![
-        "git -c submodule.recurse=false stash create".to_string(),
-        format!(
+        );
+    } else if plan.has_tracked_changes {
+        commands.push("git -c submodule.recurse=false stash create".to_string());
+        commands.push(format!(
             "git update-ref {} <snapshot> \"\"",
             plan.saved_work_reference
-        ),
-        "git reset --hard --no-recurse-submodules HEAD".to_string(),
-        switch,
-    ]
+        ));
+        commands.push("git reset --hard --no-recurse-submodules HEAD".to_string());
+    }
+    commands.push(switch);
+    if let Some(remote) = &plan.pull_remote_ref {
+        let short = remote
+            .strip_prefix("refs/remotes/")
+            .unwrap_or(remote.as_str());
+        let (remote_name, branch) = short.split_once('/').unwrap_or(("origin", short));
+        commands.push(format!(
+            "git pull --ff-only --no-recurse-submodules --no-tags {remote_name} {branch}"
+        ));
+    }
+    if plan.has_tracked_changes && plan.carry_changes {
+        commands.push("git -c submodule.recurse=false stash pop --index".to_string());
+        commands.push("git -c submodule.recurse=false stash pop  # fallback".to_string());
+    }
+    commands
 }
 
 pub(crate) fn sync(base: &RefName) -> Result<Vec<String>, String> {
@@ -99,6 +113,24 @@ mod tests {
     }
 
     #[test]
+    fn quick_switch_with_pull_lists_ff_only_before_carry_pop() {
+        let mut plan = switch_plan(/*has_tracked_changes=*/ true, /*carry_changes=*/ true);
+        plan.pull_after_switch = true;
+        plan.pull_remote_ref = Some("refs/remotes/origin/other".to_string());
+
+        assert_eq!(
+            quick_switch(&plan),
+            vec![
+                "git -c submodule.recurse=false stash push -m \"git-helper carry\"",
+                "git switch --no-recurse-submodules --no-guess -- other",
+                "git pull --ff-only --no-recurse-submodules --no-tags origin other",
+                "git -c submodule.recurse=false stash pop --index",
+                "git -c submodule.recurse=false stash pop  # fallback",
+            ]
+        );
+    }
+
+    #[test]
     fn sync_lists_fetch_save_merge_and_reapply() {
         let base = RefName::new("refs/remotes/origin/base".to_string()).unwrap();
 
@@ -125,6 +157,9 @@ mod tests {
             saved_work_reference: "refs/githelper/wip/feature".to_string(),
             has_tracked_changes,
             carry_changes,
+            pull_after_switch: false,
+            create_from_remote: None,
+            pull_remote_ref: None,
             target_saved_work: None,
         }
     }

@@ -1,10 +1,10 @@
 import { esc } from "../dom.ts";
-import { syncPause } from "../snapshot.ts";
+import { quickSwitchPause, syncPause } from "../snapshot.ts";
 import type { SyncPause } from "../snapshot.ts";
 import type { AppState, OperationOutcome } from "../types.ts";
 
 export function banners(state: AppState): string {
-  return `${syncBanner(state)}${errorBanner(state)}${outcomeBanner(state)}`;
+  return `${syncBanner(state)}${quickSwitchBanner(state)}${errorBanner(state)}${outcomeBanner(state)}`;
 }
 
 function syncBanner(state: AppState): string {
@@ -19,6 +19,21 @@ function syncBanner(state: AppState): string {
   </div>`;
 }
 
+function quickSwitchBanner(state: AppState): string {
+  if (!quickSwitchPause(state)) return "";
+  if (state.outcome?.offer_resolve_pull) return "";
+  const disabled = state.busy ? "disabled" : "";
+  return `<div class="banner warn" role="alert">
+    <div><strong>Pull could not fast-forward</strong>
+      <p>Choose how to update the branch you just switched onto.</p></div>
+    <div class="banner-actions">
+      <button class="primary small" data-event="resolve-pull-replace" ${disabled}>Replace with remote</button>
+      <button class="ghost small" data-event="resolve-pull-merge" ${disabled}>Pull with merge</button>
+      <button class="ghost small" data-event="resolve-pull-cancel" ${disabled}>Cancel pull</button>
+    </div>
+  </div>`;
+}
+
 function resumeHint(pause: SyncPause): string {
   if (pause.retry) return "Nothing was written yet. Reconnect to the remote and retry the fetch.";
   return "Resolve the conflicted files in your editor, then resume. Your Saved work stays anchored until then.";
@@ -28,6 +43,13 @@ function resumeHint(pause: SyncPause): string {
 /// first push instead, which is a different operation with different risks.
 function followUp(state: AppState, outcome: OperationOutcome): string {
   const disabled = state.busy ? "disabled" : "";
+  if (outcome.offer_resolve_pull) {
+    return `<div class="banner-actions">
+      <button class="primary small" data-event="resolve-pull-replace" ${disabled}>Replace with remote</button>
+      <button class="ghost small" data-event="resolve-pull-merge" ${disabled}>Pull with merge</button>
+      <button class="ghost small" data-event="resolve-pull-cancel" ${disabled}>Cancel pull</button>
+    </div>`;
+  }
   if (outcome.offer_force_push) {
     return `<button class="primary small" data-event="force-push" ${disabled}>Review force push</button>`;
   }
@@ -52,7 +74,8 @@ function outcomeBanner(state: AppState): string {
   const outcome = state.outcome;
   if (!outcome) return "";
   const details = outcome.details.map((detail) => `<li>${esc(detail)}</li>`).join("");
-  return `<div class="banner good">
+  const tone = outcome.offer_resolve_pull ? "warn" : "good";
+  return `<div class="banner ${tone}">
     <div><strong>${esc(outcome.headline)}</strong><ul>${details}</ul></div>
     ${followUp(state, outcome)}
     <button class="ghost small" data-event="dismiss-outcome" aria-label="Dismiss result">Dismiss</button>

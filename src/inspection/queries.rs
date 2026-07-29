@@ -43,6 +43,7 @@ pub(crate) fn overview(runner: &GitRunner) -> Result<RepositoryOverview, Inspect
         saved_work_count: 0,
         recovery_count: 0,
         sync_status: None,
+        quick_switch_status: None,
     })
 }
 
@@ -121,6 +122,21 @@ pub(crate) fn local_branches(
             "refs/heads",
         ],
     )?;
+    let saved = saved_work_branches(runner)?;
+    let mut branches = output
+        .split(|byte| *byte == b'\n')
+        .filter(|line| !line.is_empty())
+        .map(|line| parse_branch(line, current.as_deref(), &saved))
+        .collect::<Result<Vec<_>, _>>()?;
+    let local_names = branches
+        .iter()
+        .map(|branch| branch.name.clone())
+        .collect::<std::collections::BTreeSet<_>>();
+    branches.extend(remote_only_branches(runner, &local_names, &saved)?);
+    Ok(branches)
+}
+
+fn saved_work_branches(runner: &GitRunner) -> Result<Vec<String>, InspectionError> {
     let saved = run(
         runner,
         &[
@@ -129,17 +145,58 @@ pub(crate) fn local_branches(
             "refs/githelper/wip",
         ],
     )?;
-    let saved = saved
+    saved
         .split(|byte| *byte == b'\n')
         .filter(|line| !line.is_empty())
         .map(|line| String::from_utf8(line.to_vec()))
         .collect::<Result<Vec<_>, _>>()
-        .map_err(|_| InspectionError::Parse("Saved work branch was not UTF-8".to_string()))?;
-    output
-        .split(|byte| *byte == b'\n')
-        .filter(|line| !line.is_empty())
-        .map(|line| parse_branch(line, current.as_deref(), &saved))
-        .collect()
+        .map_err(|_| InspectionError::Parse("Saved work branch was not UTF-8".to_string()))
+}
+
+fn remote_only_branches(
+    runner: &GitRunner,
+    local_names: &std::collections::BTreeSet<String>,
+    saved: &[String],
+) -> Result<Vec<LocalBranchChoice>, InspectionError> {
+    let output = run(
+        runner,
+        &[
+            "for-each-ref",
+            "--format=%(refname)%00%(objectname)",
+            "refs/remotes",
+        ],
+    )?;
+    let mut choices = Vec::new();
+    for line in output.split(|byte| *byte == b'\n').filter(|line| !line.is_empty()) {
+        let fields = line.split(|byte| *byte == 0).collect::<Vec<_>>();
+        if fields.len() != 2 {
+            return Err(InspectionError::Parse(
+                "remote branch output was malformed".to_string(),
+            ));
+        }
+        let reference = String::from_utf8(fields[0].to_vec())
+            .map_err(|_| InspectionError::Parse("remote branch was not UTF-8".to_string()))?;
+        let Some(short) = reference.strip_prefix("refs/remotes/") else {
+            continue;
+        };
+        if short.ends_with("/HEAD") {
+            continue;
+        }
+        let Some((_, local_name)) = short.split_once('/') else {
+            continue;
+        };
+        if local_name.is_empty() || local_names.contains(local_name) {
+            continue;
+        }
+        choices.push(LocalBranchChoice {
+            name: local_name.to_string(),
+            head: object_id_bytes(fields[1])?,
+            current: false,
+            saved_work: saved.iter().any(|branch| branch == local_name),
+            remote: Some(short.to_string()),
+        });
+    }
+    Ok(choices)
 }
 
 pub(crate) fn submodules(runner: &GitRunner) -> Result<Vec<SubmoduleChoice>, InspectionError> {
@@ -321,6 +378,7 @@ fn parse_branch(
         saved_work: saved.iter().any(|branch| branch == &name),
         name,
         head: object_id_bytes(fields[1])?,
+        remote: None,
     })
 }
 

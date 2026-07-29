@@ -1,72 +1,10 @@
-use git_helper_core::{QuickSwitchRequest, RefName, SyncPhase};
+use git_helper_core::{RefName, SyncPhase};
 
-use super::super::data::{BaseRequest, OperationReview, PendingOperation, QuickSwitchInput};
+use super::super::data::{BaseRequest, OperationReview, PendingOperation};
 use super::super::repository::with_repository;
 use super::super::review_commands;
 use super::Prepared;
 use crate::commands::state::AppState;
-
-pub(super) fn quick_switch(
-    state: &AppState,
-    id: String,
-    input: QuickSwitchInput,
-) -> Result<Prepared, String> {
-    let request = QuickSwitchRequest {
-        target_branch: input.target_branch,
-        carry_changes: input.carry_changes,
-    };
-    let plan = with_repository(state, |repo| {
-        repo.plan_quick_switch(request).map_err(|e| e.to_string())
-    })?;
-    let mut impact = vec![format!(
-        "Check out {} instead of {}",
-        plan.target_branch, plan.source_branch
-    )];
-    if plan.has_tracked_changes {
-        if plan.carry_changes {
-            impact.push(format!(
-                "Carry tracked changes onto {}",
-                plan.target_branch
-            ));
-        } else {
-            impact.push(format!(
-                "Store tracked changes as Saved work under {}",
-                plan.saved_work_reference
-            ));
-        }
-    }
-    if plan.target_saved_work.is_some() {
-        impact.push(format!(
-            "Saved work for {} is waiting and stays untouched until you restore it",
-            plan.target_branch
-        ));
-    }
-    let mut warnings = Vec::new();
-    if plan.carry_changes && plan.has_tracked_changes {
-        warnings.push(
-            "Carry uses git stash push and stash pop. Conflicts are reported after the switch \
-             instead of blocking the review."
-                .to_string(),
-        );
-    }
-    let review = OperationReview {
-        plan_id: id.clone(),
-        kind: "quick_switch".to_string(),
-        title: format!("Switch to {}", plan.target_branch),
-        impact,
-        preserves: vec![
-            "Untracked files and submodule checkouts".to_string(),
-            format!("The commits on {}", plan.source_branch),
-        ],
-        warnings,
-        commands: review_commands::quick_switch(&plan),
-        apply_label: "Switch branch".to_string(),
-    };
-    Ok(Prepared {
-        review,
-        pending: PendingOperation::QuickSwitch { id, plan },
-    })
-}
 
 pub(super) fn sync(state: &AppState, id: String, input: BaseRequest) -> Result<Prepared, String> {
     let base = RefName::new(input.base)?;

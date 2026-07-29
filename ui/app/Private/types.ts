@@ -24,6 +24,7 @@ export interface RepositoryOverview {
   saved_work_count: number;
   recovery_count: number;
   sync_status: string | null;
+  quick_switch_status?: string | null;
 }
 
 export interface RepositorySnapshot {
@@ -67,6 +68,7 @@ export interface LocalBranch {
   head: string;
   current: boolean;
   saved_work: boolean;
+  remote?: string | null;
 }
 
 export interface SubmoduleChoice { path: string; object: string; excluded: boolean }
@@ -90,6 +92,7 @@ export interface OperationOutcome {
   details: string[];
   offer_force_push: boolean;
   offer_publish_branch: string | null;
+  offer_resolve_pull?: boolean;
 }
 
 /// Flat payloads matching PrepareOperationRequest's tagged enum on the Rust
@@ -100,7 +103,8 @@ export type OperationRequest =
   | { kind: "exclude_submodule"; path: string; install_hook: boolean; disable_recurse: boolean }
   | { kind: "split_branch"; base: string; new_branch: string; paths: string[]; message: string }
   | { kind: "publish_branch"; branch: string }
-  | { kind: "quick_switch"; target_branch: string; carry_changes?: boolean }
+  | { kind: "quick_switch"; target_branch: string; carry_changes?: boolean; pull_after_switch?: boolean; create_from_remote?: string | null }
+  | { kind: "resolve_quick_switch_pull"; resolution: "replace_with_remote" | "merge_pull" | "cancel" }
   | { kind: "sync"; base: string }
   | { kind: "restore_saved_work" }
   | { kind: "delete_saved_work"; branch: string }
@@ -130,7 +134,12 @@ export interface Draft {
   installHook: boolean;
   disableRecurse: boolean;
   targetBranch: string;
+  createFromRemote: string;
+  pullAfterSwitch: boolean;
   carryChanges: boolean;
+  branchFilter: string;
+  branchMenuOpen: boolean;
+  branchHighlight: number;
 }
 
 export interface AppState {

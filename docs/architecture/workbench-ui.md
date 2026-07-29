@@ -16,13 +16,15 @@ The UI is a single deep module written in strict TypeScript (`tsc --noEmit` is t
 | `Private/snapshot.ts` | Typed reads over the Rust snapshot, including human sync-phase labels |
 | `Private/dom.ts` | HTML escaping and `renderInto`, which preserves caret and scroll across a re-render |
 | `Private/views/repo-menu.ts` | Rail repository picker and filterable recent list |
+| `Private/views/branch-picker.ts` | Searchable Quick switch branch menu (local + remote-only) |
+| `Private/branch-switcher.ts` | Branch menu open/filter/pick keyboard handlers |
 | `Private/views/inspection.ts` | Branch diff presentation and clipboard action |
 | `Private/views/path-list.ts` | The changed-path checklist, shared by Uncommit and Split branch |
 | `Private/views/*` | Pure functions from state to markup |
 
 ## State rules
 
-- **Discovery data is never mixed with user intent.** `state.paths`, `state.commits`, `state.branches`, and `state.submodules` come from Rust; `state.draft` holds what the user picked. A refresh replaces the former and reconciles the latter, so a selection that disappeared from the repository cannot be sent back.
+- **Discovery data is never mixed with user intent.** `state.paths`, `state.commits`, `state.branches`, and `state.submodules` come from Rust; `state.draft` holds what the user picked. A refresh replaces the former and reconciles the latter, so a selection that disappeared from the repository cannot be sent back. Quick switch draft fields include `pullAfterSwitch` (default on) and `createFromRemote` when the chosen row is remote-only.
 - **Recent repositories are app preference, not Git state.** `state.recentRepositories` is a list of paths loaded from the desktop app data file; it is never written into `.git`. Opening a repository promotes its path; remove only drops the preference entry.
 - **An in-flight repository choice is visible intent.** `state.repoOpeningPath` temporarily supplies the repository picker's name and path after the menu closes and before the new snapshot arrives. It is cleared after success or failure, so a successful snapshot takes over and a failed open visibly returns to the previous repository.
 - **Every form control is state-backed.** Re-rendering therefore cannot lose a typed message, a filter query, or a path selection, and cancelling a review returns the user to the exact selection they had.

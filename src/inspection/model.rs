@@ -23,6 +23,8 @@ pub struct RepositoryOverview {
     pub saved_work_count: usize,
     pub recovery_count: usize,
     pub sync_status: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub quick_switch_status: Option<String>,
 }
 
 #[derive(Clone, Debug, Eq, PartialEq, Serialize, Deserialize)]
@@ -54,6 +56,10 @@ pub struct LocalBranchChoice {
     pub head: ObjectId,
     pub current: bool,
     pub saved_work: bool,
+    /// When set, this is a remote-tracking branch with no same-named local;
+    /// `name` is the local name created on switch.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub remote: Option<String>,
 }
 
 #[derive(Clone, Debug, Eq, PartialEq, Serialize, Deserialize)]

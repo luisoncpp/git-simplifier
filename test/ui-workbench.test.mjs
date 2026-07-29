@@ -142,9 +142,25 @@ test("quick switch never offers the branch that is already checked out", async (
   await controller.selectOperation("quick_switch");
 
   const markup = renderShell(controller.state);
-  assert.doesNotMatch(markup, /<option value="feature"/);
-  assert.match(markup, /<option value="main"[^>]*>main · has Saved work<\/option>/);
+  assert.match(markup, /branch-trigger[\s\S]*<strong>main<\/strong>/);
+  assert.match(markup, /main has Saved work waiting/);
+  assert.match(markup, /Pull from the same-named remote after switching/);
   assert.equal(controller.state.draft.targetBranch, "main");
+  assert.equal(controller.state.draft.pullAfterSwitch, true);
+});
+
+test("quick switch lists remote-only branches for local creation", async () => {
+  const branches = [
+    { name: "feature", head: "a".repeat(40), current: true, saved_work: false },
+    { name: "only-remote", head: "c".repeat(40), current: false, saved_work: false, remote: "origin/only-remote" },
+  ];
+  const controller = withData({ branches });
+  await controller.selectOperation("quick_switch");
+
+  const markup = renderShell(controller.state);
+  assert.match(markup, /origin\/only-remote → only-remote/);
+  assert.equal(controller.state.draft.targetBranch, "only-remote");
+  assert.equal(controller.state.draft.createFromRemote, "origin/only-remote");
 });
 
 test("an already excluded submodule is labelled instead of looking untouched", async () => {

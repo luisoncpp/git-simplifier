@@ -3,7 +3,7 @@ use std::collections::BTreeSet;
 use crate::git::{GitCommand, GitRunner};
 
 use super::errors::SwitchError;
-use super::state::{args, branch_ref, text};
+use super::state::{args, text};
 
 pub(super) fn read_untracked(runner: &GitRunner) -> Result<Vec<String>, SwitchError> {
     let output = runner.run(GitCommand::read(args(&[
@@ -23,13 +23,13 @@ pub(super) fn read_untracked(runner: &GitRunner) -> Result<Vec<String>, SwitchEr
 
 pub(super) fn ensure_untracked_safe(
     runner: &GitRunner,
-    target_branch: &str,
+    target_commitish: &str,
     untracked: &[String],
 ) -> Result<(), SwitchError> {
     if untracked.is_empty() {
         return Ok(());
     }
-    let target_paths = read_target_paths(runner, target_branch)?;
+    let target_paths = read_target_paths(runner, target_commitish)?;
     let conflicts = untracked
         .iter()
         .filter(|untracked_path| {
@@ -47,16 +47,15 @@ pub(super) fn ensure_untracked_safe(
 
 fn read_target_paths(
     runner: &GitRunner,
-    target_branch: &str,
+    target_commitish: &str,
 ) -> Result<BTreeSet<String>, SwitchError> {
-    let target = branch_ref(target_branch);
     let output = runner.run(GitCommand::read(args(&[
         "ls-tree",
         "-r",
         "--name-only",
         "-z",
         "--full-tree",
-        &target,
+        target_commitish,
     ])))?;
     output
         .stdout

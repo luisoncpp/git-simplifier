@@ -103,6 +103,53 @@ pub(super) fn wip_ref(branch: &str) -> String {
     format!("{WIP_PREFIX}{branch}")
 }
 
+pub(super) fn carry_ref(operation_id: &str) -> String {
+    format!("refs/githelper/carry/{operation_id}")
+}
+
+/// Accepts `origin/feature` or `refs/remotes/origin/feature`.
+pub(super) fn remote_tracking_ref(remote: &str) -> Result<String, SwitchError> {
+    if remote.starts_with("refs/remotes/") {
+        return Ok(remote.to_string());
+    }
+    if remote.is_empty() || remote.starts_with('-') || !remote.contains('/') {
+        return Err(SwitchError::InvalidState(format!(
+            "invalid remote-tracking name: {remote}"
+        )));
+    }
+    Ok(format!("refs/remotes/{remote}"))
+}
+
+/// Prefer `origin/<branch>`, otherwise the first `refs/remotes/*/<branch>`.
+pub(super) fn same_named_remote(
+    runner: &GitRunner,
+    branch: &str,
+) -> Result<Option<String>, SwitchError> {
+    let preferred = format!("refs/remotes/origin/{branch}");
+    if optional_id(runner, &preferred)?.is_some() {
+        return Ok(Some(preferred));
+    }
+    let output = runner.run(GitCommand::read(args(&[
+        "for-each-ref",
+        "--format=%(refname)",
+        "refs/remotes",
+    ])))?;
+    let suffix = format!("/{branch}");
+    for line in output.stdout.split(|byte| *byte == b'\n') {
+        if line.is_empty() {
+            continue;
+        }
+        let reference = text(line)?;
+        if reference.ends_with("/HEAD") {
+            continue;
+        }
+        if reference.ends_with(&suffix) {
+            return Ok(Some(reference));
+        }
+    }
+    Ok(None)
+}
+
 pub(super) fn text(bytes: &[u8]) -> Result<String, SwitchError> {
     String::from_utf8(bytes.to_vec())
         .map_err(|_| SwitchError::InvalidState("Git output is not UTF-8".to_string()))

@@ -313,6 +313,12 @@ h4 {
   padding-left: 18px;
 }
 
+.banner-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
 .banner.warn {
   background: #35231d;
   border-color: #8a4c36;

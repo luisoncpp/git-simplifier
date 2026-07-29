@@ -30,7 +30,7 @@ pub use rewrite::{
 };
 pub use split::{SplitBranchPlan, SplitBranchRequest, SplitBranchResult, SplitError};
 pub use switch::{
-    DeleteSavedWorkResult, QuickSwitchPlan, QuickSwitchRequest, QuickSwitchResult,
-    RestoreSavedWorkResult, SavedWork, SwitchError,
+    DeleteSavedWorkResult, PullResolution, QuickSwitchPhase, QuickSwitchPlan, QuickSwitchRequest,
+    QuickSwitchResult, QuickSwitchStatus, RestoreSavedWorkResult, SavedWork, SwitchError,
 };
 pub use sync::{SyncError, SyncPhase, SyncRequest, SyncResult, SyncSnapshot, SyncStatus};

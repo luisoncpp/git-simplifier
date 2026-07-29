@@ -1,6 +1,7 @@
 mod branch;
 mod history;
 mod saved_work;
+mod switch;
 mod worktree;
 
 use git_helper_core::{ObjectId, SavedWork};
@@ -26,7 +27,10 @@ pub(super) fn prepare(
         PrepareOperationRequest::ForcePush => history::force_push(state, id),
         PrepareOperationRequest::SplitBranch(input) => branch::split_branch(state, id, input),
         PrepareOperationRequest::PublishBranch(input) => branch::publish_branch(state, id, input),
-        PrepareOperationRequest::QuickSwitch(input) => worktree::quick_switch(state, id, input),
+        PrepareOperationRequest::QuickSwitch(input) => switch::quick_switch(state, id, input),
+        PrepareOperationRequest::ResolveQuickSwitchPull(input) => {
+            switch::resolve_pull(state, id, input)
+        }
         PrepareOperationRequest::Sync(input) => worktree::sync(state, id, input),
         PrepareOperationRequest::ResumeSync => worktree::resume_sync(state, id),
         PrepareOperationRequest::RestoreSavedWork => saved_work::restore(state, id),

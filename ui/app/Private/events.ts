@@ -1,9 +1,10 @@
 import * as edit from "./selection.ts";
 import * as repos from "./repository-switcher.ts";
+import * as branches from "./branch-switcher.ts";
 import type { AppController } from "./controller.ts";
 import type { FieldNode, OperationId, ViewId } from "./types.ts";
 
-type ClickHandler = (controller: AppController, value: string) => unknown;
+type ClickHandler = (controller: AppController, value: string, node?: HTMLElement) => unknown;
 type FieldHandler = (controller: AppController, node: FieldNode) => void;
 type ActionElement = HTMLElement & { disabled?: boolean };
 
@@ -12,6 +13,9 @@ const CLICK: Record<string, ClickHandler> = {
   "pick-repository": (controller) => repos.openPickedRepository(controller),
   "open-recent": (controller, value) => repos.openRecentRepository(controller, value),
   "remove-recent": (controller, value) => repos.removeRecentRepository(controller, value),
+  "toggle-branch-menu": (controller) => branches.toggleBranchMenu(controller),
+  "pick-branch": (controller, value, node) =>
+    branches.pickBranch(controller, value, node?.dataset.remote ?? ""),
   refresh: (controller) => controller.refresh(),
   "set-view": (controller, value) => controller.setView(value as ViewId),
   "set-operation": (controller, value) => controller.selectOperation(value as OperationId),
@@ -23,6 +27,12 @@ const CLICK: Record<string, ClickHandler> = {
   "save-base": (controller) => controller.chooseBase(baseChoice()),
   "force-push": (controller) => controller.prepare({ kind: "force_push" }),
   "publish-branch": (controller, value) => controller.prepare({ kind: "publish_branch", branch: value }),
+  "resolve-pull-replace": (controller) =>
+    controller.prepare({ kind: "resolve_quick_switch_pull", resolution: "replace_with_remote" }),
+  "resolve-pull-merge": (controller) =>
+    controller.prepare({ kind: "resolve_quick_switch_pull", resolution: "merge_pull" }),
+  "resolve-pull-cancel": (controller) =>
+    controller.prepare({ kind: "resolve_quick_switch_pull", resolution: "cancel" }),
   "resume-sync": (controller) => controller.prepare({ kind: "resume_sync" }),
   "restore-saved": (controller) => controller.prepare({ kind: "restore_saved_work" }),
   "delete-saved": (controller, value) => controller.prepare({ kind: "delete_saved_work", branch: value }),
@@ -44,11 +54,13 @@ const CHANGE: Record<string, FieldHandler> = {
   "toggle-install-hook": edit.setInstallHook,
   "toggle-disable-recurse": edit.setDisableRecurse,
   "toggle-carry-changes": edit.setCarryChanges,
+  "toggle-pull-after-switch": branches.setPullAfterSwitch,
 };
 
 const INPUT: Record<string, FieldHandler> = {
   "path-filter": edit.setPathFilter,
   "repo-filter": repos.setRepoFilter,
+  "branch-filter": branches.setBranchFilter,
   "commit-message": edit.setMessage,
   "split-branch-name": edit.setNewBranch,
   "split-message": edit.setSplitMessage,
@@ -70,12 +82,15 @@ function handleClick(controller: AppController, event: MouseEvent): void {
   if (controller.state.repoMenuOpen && !target?.closest?.(".repo-switcher")) {
     repos.closeRepoMenu(controller);
   }
+  if (controller.state.draft.branchMenuOpen && !target?.closest?.(".branch-picker")) {
+    branches.closeBranchMenu(controller);
+  }
   const node = target?.closest?.("[data-event]") as ActionElement | null;
   if (!node || node.disabled) return;
   const action = CLICK[node.dataset.event ?? ""];
   if (!action) return;
   event.preventDefault();
-  settle(controller, action(controller, node.dataset.value ?? ""));
+  settle(controller, action(controller, node.dataset.value ?? "", node));
 }
 
 function handleInput(controller: AppController, event: Event): void {
@@ -92,6 +107,7 @@ function dispatchNode(controller: AppController, event: Event, table: Record<str
 
 function handleKeys(controller: AppController, event: KeyboardEvent): void {
   if (handleRepoKeys(controller, event)) return;
+  if (handleBranchKeys(controller, event)) return;
   if (event.key === "Escape" && controller.state.review) {
     settle(controller, controller.cancelReview());
     return;
@@ -123,6 +139,27 @@ function handleRepoKeys(controller: AppController, event: KeyboardEvent): boolea
   if (event.key === "Enter" && target?.dataset?.event === "repo-filter") {
     event.preventDefault();
     settle(controller, repos.activateHighlightedRepository(controller));
+    return true;
+  }
+  return false;
+}
+
+function handleBranchKeys(controller: AppController, event: KeyboardEvent): boolean {
+  if (!controller.state.draft.branchMenuOpen) return false;
+  if (event.key === "Escape") {
+    event.preventDefault();
+    branches.closeBranchMenu(controller);
+    return true;
+  }
+  if (event.key === "ArrowDown" || event.key === "ArrowUp") {
+    event.preventDefault();
+    branches.moveBranchHighlight(controller, event.key === "ArrowDown" ? 1 : -1);
+    return true;
+  }
+  const target = event.target as HTMLElement | null;
+  if (event.key === "Enter" && target?.dataset?.event === "branch-filter") {
+    event.preventDefault();
+    branches.activateHighlightedBranch(controller);
     return true;
   }
   return false;

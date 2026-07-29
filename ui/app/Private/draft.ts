@@ -21,7 +21,12 @@ export function createDraft(): Draft {
     installHook: true,
     disableRecurse: false,
     targetBranch: "",
+    createFromRemote: "",
+    pullAfterSwitch: true,
     carryChanges: false,
+    branchFilter: "",
+    branchMenuOpen: false,
+    branchHighlight: 0,
   };
 }
 
@@ -72,9 +77,17 @@ export function adoptSubmodule(draft: Draft, submodules: SubmoduleChoice[]): voi
 }
 
 export function adoptBranch(draft: Draft, branches: LocalBranch[]): void {
-  const available = branches.filter((branch) => !branch.current).map((branch) => branch.name);
-  if (available.includes(draft.targetBranch)) return;
-  draft.targetBranch = available[0] ?? "";
+  const available = branches.filter((branch) => !branch.current);
+  const stillValid = available.some(
+    (branch) =>
+      branch.name === draft.targetBranch &&
+      (branch.remote ?? "") === (draft.createFromRemote || ""),
+  );
+  if (stillValid) return;
+  const first = available[0];
+  draft.targetBranch = first?.name ?? "";
+  draft.createFromRemote = first?.remote ?? "";
+  draft.branchHighlight = 0;
 }
 
 export function visiblePaths(state: AppState): ChangedPath[] {

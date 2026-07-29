@@ -18,7 +18,8 @@ pub(crate) fn create(
         ));
     }
     let source_head = state::read_id(runner, "HEAD")?;
-    let target_head = state::read_id(runner, &state::branch_ref(&request.target_branch))?;
+    let (target_head, create_from_remote) =
+        resolve_target(runner, &request.target_branch, request.create_from_remote.as_deref())?;
     let saved_work_reference = state::wip_ref(&source_branch);
     if !request.carry_changes
         && state::optional_id(runner, &saved_work_reference)?.is_some()
@@ -26,7 +27,15 @@ pub(crate) fn create(
         return Err(SwitchError::ExistingSavedWork(source_branch));
     }
     let untracked = preflight::read_untracked(runner)?;
-    preflight::ensure_untracked_safe(runner, &request.target_branch, &untracked)?;
+    let tree_ref = create_from_remote
+        .clone()
+        .unwrap_or_else(|| state::branch_ref(&request.target_branch));
+    preflight::ensure_untracked_safe(runner, &tree_ref, &untracked)?;
+    let pull_remote_ref = if request.pull_after_switch {
+        resolve_pull_remote(runner, &request.target_branch, create_from_remote.as_deref())?
+    } else {
+        None
+    };
     let target_saved_work = read_saved_work(runner, &request.target_branch)?;
     Ok(QuickSwitchPlan {
         source_branch,
@@ -36,6 +45,9 @@ pub(crate) fn create(
         saved_work_reference,
         has_tracked_changes: state::read_tracked_changes(runner)?,
         carry_changes: request.carry_changes,
+        pull_after_switch: request.pull_after_switch,
+        create_from_remote,
+        pull_remote_ref,
         target_saved_work,
     })
 }
@@ -51,7 +63,11 @@ pub(crate) fn verify_current(
     if state::read_id(runner, "HEAD")? != plan.source_head {
         return Err(SwitchError::StalePlan);
     }
-    if state::read_id(runner, &state::branch_ref(&plan.target_branch))? != plan.target_head {
+    let expected = match &plan.create_from_remote {
+        Some(remote) => state::optional_id(runner, remote)?,
+        None => Some(state::read_id(runner, &state::branch_ref(&plan.target_branch))?),
+    };
+    if expected != Some(plan.target_head.clone()) {
         return Err(SwitchError::StalePlan);
     }
     if !plan.carry_changes
@@ -63,7 +79,11 @@ pub(crate) fn verify_current(
         return Err(SwitchError::StalePlan);
     }
     let untracked = preflight::read_untracked(runner)?;
-    preflight::ensure_untracked_safe(runner, &plan.target_branch, &untracked)?;
+    let tree_ref = plan
+        .create_from_remote
+        .clone()
+        .unwrap_or_else(|| state::branch_ref(&plan.target_branch));
+    preflight::ensure_untracked_safe(runner, &tree_ref, &untracked)?;
     Ok(())
 }
 
@@ -95,6 +115,36 @@ pub(crate) fn read_saved_work(
         reference,
         snapshot,
     }))
+}
+
+fn resolve_target(
+    runner: &GitRunner,
+    target_branch: &str,
+    create_from_remote: Option<&str>,
+) -> Result<(ObjectId, Option<String>), SwitchError> {
+    let Some(remote) = create_from_remote else {
+        let head = state::read_id(runner, &state::branch_ref(target_branch))?;
+        return Ok((head, None));
+    };
+    if state::optional_id(runner, &state::branch_ref(target_branch))?.is_some() {
+        return Err(SwitchError::InvalidState(format!(
+            "local branch {target_branch} already exists"
+        )));
+    }
+    let remote_ref = state::remote_tracking_ref(remote)?;
+    let head = state::read_id(runner, &remote_ref)?;
+    Ok((head, Some(remote_ref)))
+}
+
+fn resolve_pull_remote(
+    runner: &GitRunner,
+    target_branch: &str,
+    create_from_remote: Option<&str>,
+) -> Result<Option<String>, SwitchError> {
+    if let Some(remote) = create_from_remote {
+        return Ok(Some(remote.to_string()));
+    }
+    state::same_named_remote(runner, target_branch)
 }
 
 fn parse_saved_work(line: &[u8]) -> Result<SavedWork, SwitchError> {
