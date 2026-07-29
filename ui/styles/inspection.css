@@ -1,0 +1,81 @@
+.nav-group {
+  display: grid;
+  gap: 2px;
+  margin-top: 12px;
+  padding-top: 12px;
+  border-top: 1px solid var(--border);
+}
+
+.nav-heading {
+  margin: 0 10px 4px;
+  color: var(--muted);
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+}
+
+.inspection-pane {
+  display: grid;
+  gap: 14px;
+  align-content: start;
+}
+
+.inspection-head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 24px;
+}
+
+.inspection-head h1,
+.inspection-pane > h1 {
+  margin-top: 4px;
+  font-size: 22px;
+}
+
+.inspection-head .note {
+  margin-top: 6px;
+}
+
+.inspection-base {
+  justify-self: start;
+}
+
+.inspection-head .primary.is-copied {
+  color: #0c0e11;
+  background: var(--good);
+  border-color: var(--good);
+}
+
+.diff-output {
+  min-height: 260px;
+  max-height: calc(100vh - 220px);
+  margin: 0;
+  padding: 14px 16px;
+  overflow: auto;
+  color: #dfdfd8;
+  background: #090b0d;
+  border: 1px solid var(--border);
+  border-top: 2px solid var(--accent);
+  border-radius: var(--radius);
+  line-height: 1.55;
+  tab-size: 4;
+  white-space: pre;
+}
+
+@media (max-width: 760px) {
+  .inspection-head {
+    align-items: stretch;
+    flex-direction: column;
+    gap: 12px;
+  }
+
+  .inspection-head .primary {
+    align-self: flex-start;
+  }
+
+  .diff-output {
+    max-height: 70vh;
+  }
+}

@@ -2,18 +2,14 @@ use crate::exclusion::{
     self, ExcludeSubmodulePlan, ExcludeSubmoduleRequest, ExcludeSubmoduleResult, ExclusionError,
 };
 use crate::git::{GitCommand, GitError, GitOutput, GitRunner, RepositoryConfig};
-use crate::inspection::{
-    self, ChangedPath, EditableCommit, InspectionError, LocalBranchChoice, RemoteBaseChoice,
-    RepositoryOverview, SubmoduleChoice,
-};
+use crate::inspection::RepositoryOverview;
 use crate::push::{
     self, ForcePushError, ForcePushPlan, ForcePushResult, PublishBranchPlan, PublishBranchResult,
     PublishError,
 };
 use crate::recording::{self, RecoveryEntry, RecoveryError};
 use crate::rewrite::{
-    self, ApplyError, ApplyResult, EditMessageRequest, RefName, RewriteError, RewritePlan,
-    UncommitRequest,
+    self, ApplyError, ApplyResult, EditMessageRequest, RewriteError, RewritePlan, UncommitRequest,
 };
 use crate::split::{self, SplitBranchPlan, SplitBranchRequest, SplitBranchResult, SplitError};
 use crate::switch::{
@@ -21,6 +17,8 @@ use crate::switch::{
     RestoreSavedWorkResult, SavedWork, SwitchError,
 };
 use crate::sync::{self, SyncError, SyncRequest, SyncResult, SyncStatus};
+
+mod read;
 
 pub struct GitRepository {
     runner: GitRunner,
@@ -46,58 +44,6 @@ impl GitRepository {
     pub fn list_operations(&self) -> Result<Vec<RecoveryEntry>, RecoveryError> {
         self.runner
             .with_write_lock(|| recording::list(&self.runner))
-    }
-
-    pub fn overview(&self) -> Result<RepositoryOverview, InspectionError> {
-        Ok(self.load_state()?.overview)
-    }
-
-    pub fn load_state(&self) -> Result<RepositoryState, InspectionError> {
-        let mut overview = inspection::overview(&self.runner)?;
-        let saved_work = self
-            .list_saved_work()
-            .map_err(|error| InspectionError::Parse(error.to_string()))?;
-        let operations = self
-            .list_operations()
-            .map_err(|error| InspectionError::Parse(error.to_string()))?;
-        overview.sync_status = self
-            .sync_status()
-            .map_err(|error| InspectionError::Parse(error.to_string()))?
-            .map(|status| status.phase.as_str().to_string());
-        overview.saved_work_count = saved_work.len();
-        overview.recovery_count = operations.len();
-        Ok(RepositoryState {
-            overview,
-            saved_work,
-            operations,
-        })
-    }
-
-    pub fn list_base_choices(&self) -> Result<Vec<RemoteBaseChoice>, InspectionError> {
-        inspection::base_choices(&self.runner)
-    }
-
-    pub fn list_changed_paths(&self, base: RefName) -> Result<Vec<ChangedPath>, InspectionError> {
-        inspection::changed_paths(&self.runner, &base)
-    }
-
-    pub fn list_editable_commits(
-        &self,
-        base: RefName,
-    ) -> Result<Vec<EditableCommit>, InspectionError> {
-        inspection::editable_commits(&self.runner, &base)
-    }
-
-    pub fn list_local_branches(&self) -> Result<Vec<LocalBranchChoice>, InspectionError> {
-        inspection::local_branches(&self.runner)
-    }
-
-    pub fn list_submodules(&self) -> Result<Vec<SubmoduleChoice>, InspectionError> {
-        inspection::submodules(&self.runner)
-    }
-
-    pub fn set_base(&self, base: RefName) -> Result<(), InspectionError> {
-        inspection::set_base(&self.runner, base)
     }
 
     pub fn plan_force_push(&self) -> Result<ForcePushPlan, ForcePushError> {

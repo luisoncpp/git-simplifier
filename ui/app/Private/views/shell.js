@@ -2,6 +2,7 @@ import { esc } from "../dom.js";
 import { baseRef, currentBranch, overviewOf, upstreamRef, worktreeCounts } from "../snapshot.js";
 import { actionsView } from "./actions.js";
 import { banners } from "./banners.js";
+import { inspectionView } from "./inspection.js";
 import { recoveryView, savedView } from "./panels.js";
 import { repoSwitcher } from "./repo-menu.js";
 import { reviewPane } from "./review.js";
@@ -11,6 +12,7 @@ const VIEWS = [
   ["saved", "Saved work", (state) => state.saved.length],
   ["recovery", "Recovery", (state) => state.operations.length],
 ];
+const INSPECTION_VIEWS = [["inspection", "Branch diff", () => 0]];
 
 export function renderShell(state) {
   return `<div class="shell">${rail(state)}${main(state)}</div>`;
@@ -20,7 +22,13 @@ function rail(state) {
   return `<aside class="rail">
     <div class="brand"><span class="mark" aria-hidden="true">gh</span><strong>Git Helper</strong></div>
     ${repoSwitcher(state)}
-    <nav aria-label="Sections">${VIEWS.map((entry) => navItem(state, entry)).join("")}</nav>
+    <nav aria-label="Sections">
+      ${VIEWS.map((entry) => navItem(state, entry)).join("")}
+      <div class="nav-group">
+        <p class="nav-heading">Inspection</p>
+        ${INSPECTION_VIEWS.map((entry) => navItem(state, entry)).join("")}
+      </div>
+    </nav>
     <p class="rail-foot">${railFoot(state)}</p>
   </aside>`;
 }
@@ -52,6 +60,7 @@ function pane(state) {
   if (!state.snapshot) return emptyPane(state);
   if (state.view === "saved") return savedView(state);
   if (state.view === "recovery") return recoveryView(state);
+  if (state.view === "inspection") return inspectionView(state);
   return actionsView(state);
 }
 

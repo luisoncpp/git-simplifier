@@ -45,3 +45,4 @@ Avoid: "bug description + fix". Prefer: "what I learned that applies to future w
 | [async-menu-actions-should-dismiss-before-await.md](./async-menu-actions-should-dismiss-before-await.md) | Async menu choices should close before awaiting and project their target onto the stable parent control | 2026-07-28 |
 | [failed-stash-apply-can-mutate-before-error.md](./failed-stash-apply-can-mutate-before-error.md) | A failed indexed stash apply may already have created conflicts, so a fallback must not run blindly | 2026-07-28 |
 | [absolutely-positioned-live-regions-need-an-inset.md](./absolutely-positioned-live-regions-need-an-inset.md) | A clipped live region can still extend the document from its static position unless it has an explicit inset | 2026-07-28 |
+| [explicit-diff-prefixes-do-not-disable-noprefix.md](./explicit-diff-prefixes-do-not-disable-noprefix.md) | Explicit patch prefixes still need `diff.noprefix=false` to defeat repository config | 2026-07-28 |

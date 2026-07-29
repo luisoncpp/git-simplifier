@@ -27,6 +27,7 @@ const CLICK = {
   "dismiss-outcome": (controller) => edit.dismissOutcome(controller),
   "toggle-entry": (controller, value) => edit.toggleEntry(controller, value),
   copy: (controller, value) => controller.copy(value),
+  "copy-diff": (controller) => controller.copyDiff(),
 };
 
 const CHANGE = {

@@ -14,6 +14,7 @@ The UI is a single deep module. `ui/app/index.js` is the only public interface (
 | `Private/snapshot.js` | Typed reads over the Rust snapshot, including human sync-phase labels |
 | `Private/dom.js` | HTML escaping and `renderInto`, which preserves caret and scroll across a re-render |
 | `Private/views/repo-menu.js` | Rail repository picker and filterable recent list |
+| `Private/views/inspection.js` | Branch diff presentation and clipboard action |
 | `Private/views/path-list.js` | The changed-path checklist, shared by Uncommit and Split branch |
 | `Private/views/*` | Pure functions from state to markup |
 
@@ -27,12 +28,15 @@ The UI is a single deep module. `ui/app/index.js` is the only public interface (
 - **The Editable range is presented newest first.** Rust returns it oldest first for planning; the commit a user rewords is almost always the newest one.
 - **A path selection belongs to one operation.** Uncommit and Split branch read the same changed-path list but mean opposite things by a tick — remove this from history versus copy this elsewhere — so each keeps its own set and `pathSetFor` picks by operation. Sharing one set would let a selection made for one operation arrive pre-ticked in the other.
 - `state.outcome` is cleared when the operation changes, when a new review is prepared, and when another repository is opened, so a result banner can never describe stale work.
+- `state.branchDiff` is read-only discovery data. Entering Inspection, refreshing, changing Base, or opening another repository regenerates it from Rust; the UI never reconstructs a Git command.
 
 ## Rendering
 
 `renderInto` replaces the shell markup, then restores the caret of the element carrying `data-focus` and the scroll offset of every `[data-scroll]` container. Keys are compared as dataset values, not interpolated into selectors, because they can contain repository paths.
 
 Two things are patched instead of re-rendered: the commit-message textarea keeps its native undo stack, so typing only refreshes `#message-tools` and `#submit-row`. The optional Split branch message is simpler — nothing depends on it, so typing records the value and skips the render entirely.
+
+The rail reserves an **Inspection** group for read-only tools. Branch diff is its first item: it renders the generated `Base...HEAD` patch in a scroll-preserving code surface and copies the state value through the platform clipboard in one action.
 
 ## Disabled controls always say why
 

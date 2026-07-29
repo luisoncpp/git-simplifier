@@ -10,7 +10,7 @@ export async function reloadState(controller, snapshot = null, preservedError = 
   state.saved = state.snapshot.saved_work ?? [];
   state.operations = state.snapshot.operations ?? [];
   state.error = preservedError;
-  await loadOperationData(controller);
+  await Promise.all([loadOperationData(controller), loadViewData(controller)]);
 }
 
 async function readSnapshot(controller, snapshot) {
@@ -30,6 +30,16 @@ export async function loadOperationData(controller) {
   if (!discovery || (discovery.needsBase && !base)) return;
   state[discovery.key] = await discovery.load(controller.bridge, base);
   adoptSelections(state);
+}
+
+export async function loadViewData(controller) {
+  const state = controller.state;
+  if (state.view !== "inspection") return;
+  state.diffCopied = false;
+  state.branchDiff = null;
+  const base = baseRef(state);
+  if (!base) return;
+  state.branchDiff = await controller.bridge.invoke("generate_branch_diff", { request: { base } });
 }
 
 function adoptSelections(state) {

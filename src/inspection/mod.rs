@@ -1,3 +1,4 @@
+mod diff;
 mod errors;
 mod model;
 mod queries;
@@ -22,6 +23,9 @@ pub(crate) fn changed_paths(
     base: &RefName,
 ) -> Result<Vec<ChangedPath>, InspectionError> {
     queries::changed_paths(runner, base)
+}
+pub(crate) fn branch_diff(runner: &GitRunner, base: &RefName) -> Result<String, InspectionError> {
+    diff::branch_diff(runner, base)
 }
 pub(crate) fn editable_commits(
     runner: &GitRunner,

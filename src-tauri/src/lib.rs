@@ -24,6 +24,7 @@ pub fn run() {
             commands::actions::list_base_choices,
             commands::actions::set_base,
             commands::actions::list_changed_paths,
+            commands::actions::generate_branch_diff,
             commands::actions::list_editable_commits,
             commands::actions::list_local_branches,
             commands::actions::list_submodules,

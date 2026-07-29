@@ -1,5 +1,5 @@
 import { TauriBridge } from "./bridge.js";
-import { loadOperationData, reloadState } from "./discovery.js";
+import { loadOperationData, loadViewData, reloadState } from "./discovery.js";
 import { focusNode, renderInto } from "./dom.js";
 import { createDraft } from "./draft.js";
 import { bindEvents } from "./events.js";
@@ -21,6 +21,8 @@ export class AppController {
       submodules: [],
       saved: [],
       operations: [],
+      branchDiff: null,
+      diffCopied: false,
       recentRepositories: [],
       repoMenuOpen: false,
       repoFilter: "",
@@ -91,6 +93,13 @@ export class AppController {
     if (this.state.view === view) return;
     await this.cancelReview();
     this.state.view = view;
+    this.state.error = "";
+    if (view === "inspection") {
+      this.state.branchDiff = null;
+      this.state.diffCopied = false;
+      await this.run(() => loadViewData(this));
+      return;
+    }
     this.render();
   }
 
@@ -163,9 +172,23 @@ export class AppController {
     await this.prepare({ kind: "quick_switch", target_branch: branch });
   }
 
-  async copy(value) {
-    await globalThis.navigator?.clipboard?.writeText(value);
-    this.announce("Command copied to the clipboard");
+  async copyDiff() {
+    await this.copy(this.state.branchDiff, "Diff copied to the clipboard");
+    this.state.diffCopied = true;
+    this.render();
+    clearTimeout(this._diffCopiedTimer);
+    this._diffCopiedTimer = setTimeout(/*clearDiffCopied=*/ () => {
+      if (!this.state.diffCopied) return;
+      this.state.diffCopied = false;
+      this.render();
+    }, /*delayInMs=*/ 2000);
+  }
+
+  async copy(value, message = "Command copied to the clipboard") {
+    const clipboard = globalThis.navigator?.clipboard;
+    if (!clipboard?.writeText) throw new Error("Clipboard access is unavailable.");
+    await clipboard.writeText(value);
+    this.announce(message);
     this.render();
   }
 }

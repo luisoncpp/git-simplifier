@@ -117,6 +117,19 @@ pub fn list_changed_paths(
 }
 
 #[tauri::command(async)]
+pub fn generate_branch_diff(
+    state: State<'_, AppState>,
+    request: BaseRequest,
+) -> Result<String, String> {
+    let base = RefName::new(request.base).map_err(|error| error.to_string())?;
+    with_repository(state.inner(), |repository| {
+        repository
+            .branch_diff(base)
+            .map_err(|error| error.to_string())
+    })
+}
+
+#[tauri::command(async)]
 pub fn list_editable_commits(
     state: State<'_, AppState>,
     request: BaseRequest,

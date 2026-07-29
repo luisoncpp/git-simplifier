@@ -33,3 +33,21 @@ fn setting_base_completes_without_relocking_the_repository() {
         .expect("set_base deadlocked while acquiring the repository write lock");
     result.unwrap();
 }
+
+#[test]
+fn branch_diff_is_a_stable_patch_of_committed_changes_since_base() {
+    let fixture = FixtureRepo::new();
+    fixture.commit_file("README.md", "base\ncommitted\n", "extend readme");
+    fixture.write_worktree_file("README.md", "working tree only\n");
+    fixture.set_config("color.ui", "always");
+    fixture.set_config("diff.noprefix", "true");
+    let base = RefName::new("refs/remotes/origin/base".to_string()).unwrap();
+
+    let diff = fixture.repo.branch_diff(base).unwrap();
+
+    assert!(diff.contains("--- a/README.md"), "{diff}");
+    assert!(diff.contains("+++ b/README.md"), "{diff}");
+    assert!(diff.contains("+committed"));
+    assert!(!diff.contains("working tree only"));
+    assert!(!diff.contains("\u{1b}["));
+}

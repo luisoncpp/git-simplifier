@@ -16,6 +16,7 @@
 - Integration fixtures covering straight histories, merge parents, teammate merges, dropped commits, repeated paths, gitlinks, stale plans, literal special-character paths, worktree preservation, staged-change preservation, and resulting tree contents.
 - Vite + Tauri desktop workbench in `src-tauri/` loading a modular vanilla UI, with native dialog permissions and an honest browser-unavailable state.
 - Typed inspection APIs for overview, remote Base choices, changed paths, editable commits, local branches, and gitlinks; Base is persisted as `githelper.base` with no guessed fallback.
+- Inspection rail with a stable, binary-capable `Base...HEAD` branch diff and one-click clipboard copy.
 - Transactional repository opening and a review-safe Tauri adapter covering uncommit, edit message, exclusion, split branch, quick switch, sync/resume, Saved work restore/delete, and explicit force push.
 
 ## Not implemented

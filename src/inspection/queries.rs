@@ -353,7 +353,7 @@ fn parse_submodule(runner: &GitRunner, record: &[u8]) -> Result<SubmoduleChoice,
     })
 }
 
-fn ensure_remote_base(base: &RefName) -> Result<(), InspectionError> {
+pub(super) fn ensure_remote_base(base: &RefName) -> Result<(), InspectionError> {
     if base.as_str().starts_with("refs/remotes/") {
         return Ok(());
     }
