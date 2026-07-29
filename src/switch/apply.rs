@@ -57,6 +57,7 @@ fn prepare_tracked_changes(
     let snapshot = stash::snapshot(runner)?;
     stash::reset_tracked(runner)?;
     if switch_plan.carry_changes {
+        update_ref(runner, state::CARRY_REF, &snapshot, "")?;
         return Ok(TrackedPrep {
             saved_work: None,
             carry_snapshot: Some(snapshot),
@@ -85,7 +86,9 @@ fn reapply_carried_changes(
     let Some(snapshot) = carry_snapshot else {
         return Ok(None);
     };
-    Ok(Some(stash::apply(runner, snapshot.as_str())?))
+    let applied_index = stash::apply(runner, state::CARRY_REF)?;
+    delete_ref(runner, state::CARRY_REF, snapshot)?;
+    Ok(Some(applied_index))
 }
 
 fn switch_branch(runner: &crate::git::GitRunner, target_branch: &str) -> Result<(), SwitchError> {

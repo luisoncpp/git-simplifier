@@ -5,6 +5,7 @@ use crate::rewrite::ObjectId;
 
 use super::errors::SwitchError;
 use super::model::{QuickSwitchPlan, SavedWork};
+use super::state;
 
 pub(super) fn begin_switch(
     oplog: &Oplog,
@@ -19,13 +20,16 @@ pub(super) fn begin_switch(
             switch_plan.saved_work_reference
         ));
     }
+    if switch_plan.has_tracked_changes && switch_plan.carry_changes {
+        commands.push(format!("git update-ref {} <snapshot>", state::CARRY_REF));
+    }
     commands.push("git reset --hard HEAD".to_string());
     commands.push(format!(
         "git switch --no-guess -- {}",
         switch_plan.target_branch
     ));
     if switch_plan.has_tracked_changes && switch_plan.carry_changes {
-        commands.push("git stash apply --index <snapshot>".to_string());
+        commands.push(format!("git stash apply --index {}", state::CARRY_REF));
     }
     let record = OperationRecord {
         id: id.clone(),

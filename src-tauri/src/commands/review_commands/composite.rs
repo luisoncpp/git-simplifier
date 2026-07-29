@@ -17,12 +17,19 @@ pub(crate) fn quick_switch(plan: &QuickSwitchPlan) -> Vec<String> {
             plan.saved_work_reference
         ));
     }
+    if plan.carry_changes {
+        commands.push("git update-ref refs/githelper/carry/pending <snapshot> \"\"".to_string());
+    }
     commands.push("git reset --hard --no-recurse-submodules HEAD".to_string());
     commands.push(switch);
     if plan.carry_changes {
-        commands.push("git -c submodule.recurse=false stash apply --index <snapshot>".to_string());
         commands.push(
-            "git -c submodule.recurse=false stash apply <snapshot>  # fallback".to_string(),
+            "git -c submodule.recurse=false stash apply --index refs/githelper/carry/pending"
+                .to_string(),
+        );
+        commands.push(
+            "git -c submodule.recurse=false stash apply refs/githelper/carry/pending  # fallback"
+                .to_string(),
         );
     }
     commands
@@ -67,10 +74,11 @@ mod tests {
             quick_switch(&plan),
             vec![
                 "git -c submodule.recurse=false stash create",
+                "git update-ref refs/githelper/carry/pending <snapshot> \"\"",
                 "git reset --hard --no-recurse-submodules HEAD",
                 "git switch --no-recurse-submodules --no-guess -- other",
-                "git -c submodule.recurse=false stash apply --index <snapshot>",
-                "git -c submodule.recurse=false stash apply <snapshot>  # fallback",
+                "git -c submodule.recurse=false stash apply --index refs/githelper/carry/pending",
+                "git -c submodule.recurse=false stash apply refs/githelper/carry/pending  # fallback",
             ]
         );
     }
