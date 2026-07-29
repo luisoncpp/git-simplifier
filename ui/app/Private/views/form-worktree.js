@@ -38,14 +38,21 @@ export function quickSwitchForm(state) {
   }
   const dirty = worktreeCounts(state).some(([label]) => label === "staged" || label === "unstaged");
   const target = targets.find((branch) => branch.name === state.draft.targetBranch);
+  const carryNote = dirty && state.draft.carryChanges
+    ? `<p class="hint">Tracked changes on ${esc(currentBranch(state))} will be applied on ${esc(target?.name ?? "the target branch")} after the switch.</p>`
+    : dirty
+      ? `<p class="hint">Tracked changes on ${esc(currentBranch(state))} will be saved before the switch.</p>`
+      : "";
   return `<fieldset><legend>Branch to check out</legend>
-    ${fieldNote("Tracked changes are stored as Saved work for the branch you are leaving. Untracked files stay where they are.")}
+    ${fieldNote("By default, tracked changes stay with the branch you leave. Untracked files stay where they are.")}
     <label class="field">Local branch
       <select data-event="select-branch" data-focus="branch" aria-label="Branch to switch to">
         ${targets.map((branch) => branchOption(state, branch)).join("")}
       </select>
     </label>
-    ${dirty ? `<p class="hint">Tracked changes on ${esc(currentBranch(state))} will be saved before the switch.</p>` : ""}
+    ${dirty ? `<label class="check-row inline"><input type="checkbox" data-event="toggle-carry-changes"
+      ${state.draft.carryChanges ? "checked" : ""} /> Carry tracked changes to the target branch</label>` : ""}
+    ${carryNote}
     ${target?.saved_work ? `<p class="hint">${esc(target.name)} has Saved work waiting. Restore it from the Saved work section after you arrive.</p>` : ""}
   </fieldset>`;
 }

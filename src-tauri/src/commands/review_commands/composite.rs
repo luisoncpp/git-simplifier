@@ -8,15 +8,24 @@ pub(crate) fn quick_switch(plan: &QuickSwitchPlan) -> Vec<String> {
     if !plan.has_tracked_changes {
         return vec![switch];
     }
-    vec![
+    let mut commands = vec![
         "git -c submodule.recurse=false stash create".to_string(),
-        format!(
+    ];
+    if !plan.carry_changes {
+        commands.push(format!(
             "git update-ref {} <snapshot> \"\"",
             plan.saved_work_reference
-        ),
-        "git reset --hard --no-recurse-submodules HEAD".to_string(),
-        switch,
-    ]
+        ));
+    }
+    commands.push("git reset --hard --no-recurse-submodules HEAD".to_string());
+    commands.push(switch);
+    if plan.carry_changes {
+        commands.push("git -c submodule.recurse=false stash apply --index <snapshot>".to_string());
+        commands.push(
+            "git -c submodule.recurse=false stash apply <snapshot>  # fallback".to_string(),
+        );
+    }
+    commands
 }
 
 pub(crate) fn sync(base: &RefName) -> Result<Vec<String>, String> {
@@ -51,8 +60,24 @@ mod tests {
     use super::{quick_switch, sync};
 
     #[test]
+    fn quick_switch_carry_lists_snapshot_reset_switch_and_reapply() {
+        let plan = switch_plan(/*has_tracked_changes=*/ true, /*carry_changes=*/ true);
+
+        assert_eq!(
+            quick_switch(&plan),
+            vec![
+                "git -c submodule.recurse=false stash create",
+                "git reset --hard --no-recurse-submodules HEAD",
+                "git switch --no-recurse-submodules --no-guess -- other",
+                "git -c submodule.recurse=false stash apply --index <snapshot>",
+                "git -c submodule.recurse=false stash apply <snapshot>  # fallback",
+            ]
+        );
+    }
+
+    #[test]
     fn quick_switch_lists_the_saved_work_sequence() {
-        let plan = switch_plan(/*has_tracked_changes=*/ true);
+        let plan = switch_plan(/*has_tracked_changes=*/ true, /*carry_changes=*/ false);
 
         assert_eq!(
             quick_switch(&plan),
@@ -67,7 +92,7 @@ mod tests {
 
     #[test]
     fn clean_quick_switch_only_lists_the_switch() {
-        let plan = switch_plan(/*has_tracked_changes=*/ false);
+        let plan = switch_plan(/*has_tracked_changes=*/ false, /*carry_changes=*/ false);
 
         assert_eq!(
             quick_switch(&plan),
@@ -93,7 +118,7 @@ mod tests {
         );
     }
 
-    fn switch_plan(has_tracked_changes: bool) -> QuickSwitchPlan {
+    fn switch_plan(has_tracked_changes: bool, carry_changes: bool) -> QuickSwitchPlan {
         QuickSwitchPlan {
             source_branch: "feature".to_string(),
             source_head: object_id(),
@@ -101,6 +126,7 @@ mod tests {
             target_head: object_id(),
             saved_work_reference: "refs/githelper/wip/feature".to_string(),
             has_tracked_changes,
+            carry_changes,
             target_saved_work: None,
         }
     }

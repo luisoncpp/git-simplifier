@@ -32,6 +32,7 @@ const CHANGE = {
   "toggle-path": edit.togglePath,
   "toggle-install-hook": edit.setInstallHook,
   "toggle-disable-recurse": edit.setDisableRecurse,
+  "toggle-carry-changes": edit.setCarryChanges,
 };
 
 const INPUT = {

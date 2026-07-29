@@ -12,6 +12,21 @@ pub(super) fn begin_switch(
 ) -> Result<String, SwitchError> {
     let started = timestamp();
     let id = format!("quick-switch-{started}-{}", std::process::id());
+    let mut commands = vec!["git stash create".to_string()];
+    if switch_plan.has_tracked_changes && !switch_plan.carry_changes {
+        commands.push(format!(
+            "git update-ref {} <snapshot>",
+            switch_plan.saved_work_reference
+        ));
+    }
+    commands.push("git reset --hard HEAD".to_string());
+    commands.push(format!(
+        "git switch --no-guess -- {}",
+        switch_plan.target_branch
+    ));
+    if switch_plan.has_tracked_changes && switch_plan.carry_changes {
+        commands.push("git stash apply --index <snapshot>".to_string());
+    }
     let record = OperationRecord {
         id: id.clone(),
         operation: "quick-switch".to_string(),
@@ -22,15 +37,7 @@ pub(super) fn begin_switch(
         snapshots: BTreeMap::new(),
         details: BTreeMap::new(),
         phase: None,
-        commands: vec![
-            "git stash create".to_string(),
-            format!(
-                "git update-ref {} <snapshot>",
-                switch_plan.saved_work_reference
-            ),
-            "git reset --hard HEAD".to_string(),
-            format!("git switch --no-guess -- {}", switch_plan.target_branch),
-        ],
+        commands,
         reversible: true,
     };
     begin(oplog, record, id)

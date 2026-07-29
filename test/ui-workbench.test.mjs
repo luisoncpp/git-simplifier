@@ -114,6 +114,24 @@ test("a stale result banner does not follow the user to another operation", asyn
   assert.doesNotMatch(renderShell(controller.state), /History rewritten/);
 });
 
+test("quick switch offers carry changes when the worktree is dirty", async () => {
+  const branches = [
+    { name: "feature", head: "a".repeat(40), current: true, saved_work: false },
+    { name: "main", head: "b".repeat(40), current: false, saved_work: false },
+  ];
+  const controller = controllerWith({}, { worktree: { staged: 0, unstaged: 2, untracked: 0, conflicts: 0 } });
+  controller.state.branches = branches;
+  controller.state.operation = "quick_switch";
+  controller.state.draft.targetBranch = "main";
+
+  const markup = renderShell(controller.state);
+  assert.match(markup, /Carry tracked changes to the target branch/);
+  assert.match(markup, /will be saved before the switch/);
+
+  controller.state.draft.carryChanges = true;
+  assert.match(renderShell(controller.state), /will be applied on main after the switch/);
+});
+
 test("quick switch never offers the branch that is already checked out", async () => {
   const branches = [
     { name: "feature", head: "a".repeat(40), current: true, saved_work: false },

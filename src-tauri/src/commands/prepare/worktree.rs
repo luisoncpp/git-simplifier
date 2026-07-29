@@ -13,6 +13,7 @@ pub(super) fn quick_switch(
 ) -> Result<Prepared, String> {
     let request = QuickSwitchRequest {
         target_branch: input.target_branch,
+        carry_changes: input.carry_changes,
     };
     let plan = with_repository(state, |repo| {
         repo.plan_quick_switch(request).map_err(|e| e.to_string())
@@ -22,10 +23,17 @@ pub(super) fn quick_switch(
         plan.target_branch, plan.source_branch
     )];
     if plan.has_tracked_changes {
-        impact.push(format!(
-            "Store tracked changes as Saved work under {}",
-            plan.saved_work_reference
-        ));
+        if plan.carry_changes {
+            impact.push(format!(
+                "Carry tracked changes onto {}",
+                plan.target_branch
+            ));
+        } else {
+            impact.push(format!(
+                "Store tracked changes as Saved work under {}",
+                plan.saved_work_reference
+            ));
+        }
     }
     if plan.target_saved_work.is_some() {
         impact.push(format!(

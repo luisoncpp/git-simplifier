@@ -118,6 +118,12 @@ fn quick_switch(state: &AppState, plan: QuickSwitchPlan) -> Result<OperationOutc
     if let Some(saved) = &result.saved_work {
         details.push(format!("Tracked changes saved for {}", saved.branch));
     }
+    if result.carried_index.is_some() {
+        details.push(format!(
+            "Tracked changes carried onto {}",
+            result.target_branch
+        ));
+    }
     if result.target_saved_work.is_some() {
         details.push(format!(
             "Saved work for {} is ready to restore",

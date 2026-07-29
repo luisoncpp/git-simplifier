@@ -80,6 +80,11 @@ export function setDisableRecurse(controller, node) {
   controller.render();
 }
 
+export function setCarryChanges(controller, node) {
+  controller.state.draft.carryChanges = node.checked;
+  controller.render();
+}
+
 export function setChangingBase(controller, value) {
   controller.state.changingBase = value === "true";
   controller.render();
