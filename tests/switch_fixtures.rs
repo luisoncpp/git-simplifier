@@ -36,6 +36,24 @@ fn switch_saves_tracked_work_and_restores_staged_state_explicitly() {
 }
 
 #[test]
+fn restore_reports_conflicts_without_retrying_over_the_conflicted_index() {
+    let fixture = fixture_with_target("other");
+    fixture.write_worktree_file("README.md", "saved edit\n");
+    fixture
+        .repo
+        .apply_quick_switch(&fixture.repo.plan_quick_switch(request("other")).unwrap())
+        .unwrap();
+    fixture.checkout("feature");
+    fixture.commit_file("README.md", "upstream edit\n", "change readme");
+
+    let error = fixture.repo.restore_saved_work().unwrap_err();
+
+    assert!(matches!(error, SwitchError::SavedWorkConflict));
+    assert!(read_worktree(&fixture, "README.md").contains("<<<<<<<"));
+    assert_eq!(fixture.repo.list_saved_work().unwrap().len(), 1);
+}
+
+#[test]
 fn switch_carries_tracked_changes_onto_the_target_branch() {
     let fixture = fixture_with_target("other");
     fixture.write_worktree_file("README.md", "staged\n");

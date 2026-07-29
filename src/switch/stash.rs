@@ -49,8 +49,20 @@ pub(super) fn apply(runner: &crate::git::GitRunner, reference: &str) -> Result<b
     if indexed {
         return Ok(true);
     }
+    if has_unmerged_paths(runner)? {
+        return Err(SwitchError::SavedWorkConflict);
+    }
     runner.run_unlocked(GitCommand::write(stash_args(&["apply", reference])))?;
     Ok(false)
+}
+
+fn has_unmerged_paths(runner: &crate::git::GitRunner) -> Result<bool, SwitchError> {
+    let output = runner.run_unlocked(GitCommand::read(args(&[
+        "diff",
+        "--name-only",
+        "--diff-filter=U",
+    ])))?;
+    Ok(!output.stdout.is_empty())
 }
 
 pub(super) fn pop_carry(runner: &crate::git::GitRunner) -> Result<PopOutcome, SwitchError> {

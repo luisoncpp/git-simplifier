@@ -43,3 +43,4 @@ Avoid: "bug description + fix". Prefer: "what I learned that applies to future w
 | [windowless-builds-need-both-app-and-child-fixes.md](./windowless-builds-need-both-app-and-child-fixes.md) | Hiding the console needs a fix in the entry point *and* in every Git spawn; the second is invisible until the first lands | 2026-07-28 |
 | [close-to-tray-prevent-close-blocks-quit.md](./close-to-tray-prevent-close-blocks-quit.md) | `prevent_close` on hide-to-tray also blocks Quit unless exit is armed first | 2026-07-28 |
 | [async-menu-actions-should-dismiss-before-await.md](./async-menu-actions-should-dismiss-before-await.md) | Async menu choices should close before awaiting and project their target onto the stable parent control | 2026-07-28 |
+| [failed-stash-apply-can-mutate-before-error.md](./failed-stash-apply-can-mutate-before-error.md) | A failed indexed stash apply may already have created conflicts, so a fallback must not run blindly | 2026-07-28 |

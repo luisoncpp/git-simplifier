@@ -18,8 +18,9 @@ Backend caller submits the name of another local branch, or explicitly asks to r
 
 1. The caller explicitly requests restoration after returning to a branch; opening the app does not restore automatically.
 2. The current branch's WIP ref is applied non-recursively with `git stash apply --index`.
-3. If index restoration fails, a plain `git stash apply` is attempted and the result reports that the staged split was not restored.
-4. The WIP ref is deleted with an expected snapshot SHA only after apply succeeds. Failed application leaves the ref available for retry or inspection.
+3. If index restoration fails without creating unmerged paths, a plain `git stash apply` is attempted and the result reports that the staged split was not restored.
+4. If the indexed apply creates conflicts, restoration stops without retrying over the unmerged index. The result directs the user to resolve the conflict markers and delete Saved work after checking the result.
+5. The WIP ref is deleted with an expected snapshot SHA only after apply succeeds. Failed or conflicted application leaves the ref available for retry or inspection.
 
 ## Reads
 
@@ -50,4 +51,5 @@ Backend caller submits the name of another local branch, or explicitly asks to r
 - A plan becomes stale if HEAD, the target branch, tracked status, or untracked conflict set changes before application.
 - Nested submodule state is preserved in place rather than snapshotted per branch. Changes made inside a submodule while away from the source branch replace that in-place state.
 - If restoration conflicts, the WIP ref remains until the user resolves or explicitly deletes it.
+- An indexed apply that creates conflicts must not be followed by a plain apply; the first command has already mutated the index and worktree.
 - Carry pop conflicts leave the checkout on the target branch with conflict markers and may keep the stash entry until the user resolves and drops it.
