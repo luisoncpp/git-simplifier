@@ -8,6 +8,8 @@ use super::state::{args, branch_ref, text};
 
 pub(super) fn ensure_carry_safe(
     runner: &GitRunner,
+    source_branch: &str,
+    target_branch: &str,
     source_head: &ObjectId,
     target_head: &ObjectId,
 ) -> Result<(), SwitchError> {
@@ -15,7 +17,11 @@ pub(super) fn ensure_carry_safe(
     if conflicts.is_empty() {
         return Ok(());
     }
-    Err(SwitchError::CarryConflict(conflicts.join(", ")))
+    Err(SwitchError::CarryConflict {
+        source_branch: source_branch.to_string(),
+        target_branch: target_branch.to_string(),
+        paths: conflicts.join(", "),
+    })
 }
 
 fn carry_conflicts(

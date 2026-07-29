@@ -90,7 +90,7 @@ fn carry_rejects_when_changed_files_differ_between_branches() {
 
     assert!(matches!(
         result,
-        Err(SwitchError::CarryConflict(paths)) if paths.contains("README.md")
+        Err(SwitchError::CarryConflict { paths, .. }) if paths.contains("README.md")
     ));
 }
 
