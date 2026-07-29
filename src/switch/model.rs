@@ -34,6 +34,7 @@ pub struct QuickSwitchResult {
     pub target_branch: String,
     pub saved_work: Option<SavedWork>,
     pub carried_index: Option<bool>,
+    pub carry_warning: Option<String>,
     pub target_saved_work: Option<SavedWork>,
 }
 

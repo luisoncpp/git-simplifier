@@ -27,15 +27,6 @@ pub(crate) fn create(
     }
     let untracked = preflight::read_untracked(runner)?;
     preflight::ensure_untracked_safe(runner, &request.target_branch, &untracked)?;
-    if request.carry_changes && state::read_tracked_changes(runner)? {
-        preflight::ensure_carry_safe(
-            runner,
-            &source_branch,
-            &request.target_branch,
-            &source_head,
-            &target_head,
-        )?;
-    }
     let target_saved_work = read_saved_work(runner, &request.target_branch)?;
     Ok(QuickSwitchPlan {
         source_branch,
@@ -73,15 +64,6 @@ pub(crate) fn verify_current(
     }
     let untracked = preflight::read_untracked(runner)?;
     preflight::ensure_untracked_safe(runner, &plan.target_branch, &untracked)?;
-    if plan.carry_changes && plan.has_tracked_changes {
-        preflight::ensure_carry_safe(
-            runner,
-            &plan.source_branch,
-            &plan.target_branch,
-            &plan.source_head,
-            &plan.target_head,
-        )?;
-    }
     Ok(())
 }
 

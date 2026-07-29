@@ -267,7 +267,7 @@ Also offer, as opt-in with the exact config lines shown before writing: `submodu
 
 ---
 
-### 4.4 Quick branch switch
+### 4.4 Quick branch switch    a
 
 **Intent:** move between branches without losing in-progress work.
 

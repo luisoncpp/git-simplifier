@@ -1,9 +1,14 @@
 use std::ffi::OsString;
 
-use crate::git::{GitCommand, GitError};
-use crate::rewrite::ObjectId;
+use crate::git::GitCommand;
 
 use super::errors::SwitchError;
+use crate::rewrite::ObjectId;
+
+pub(super) struct PopOutcome {
+    pub applied_index: bool,
+    pub warning: Option<String>,
+}
 
 pub(super) fn snapshot(runner: &crate::git::GitRunner) -> Result<ObjectId, SwitchError> {
     let output = runner.run_unlocked(GitCommand::write(stash_args(&["create"])))?;
@@ -14,6 +19,15 @@ pub(super) fn snapshot(runner: &crate::git::GitRunner) -> Result<ObjectId, Switc
         ));
     }
     ObjectId::new(value).map_err(SwitchError::InvalidState)
+}
+
+pub(super) fn push_tracked(runner: &crate::git::GitRunner) -> Result<(), SwitchError> {
+    runner.run_unlocked(GitCommand::write(stash_args(&[
+        "push",
+        "-m",
+        "git-helper carry",
+    ])))?;
+    Ok(())
 }
 
 pub(super) fn reset_tracked(runner: &crate::git::GitRunner) -> Result<(), SwitchError> {
@@ -39,37 +53,33 @@ pub(super) fn apply(runner: &crate::git::GitRunner, reference: &str) -> Result<b
     Ok(false)
 }
 
-pub(super) fn apply_carry(
-    runner: &crate::git::GitRunner,
-    reference: &str,
-    target_branch: &str,
-) -> Result<bool, SwitchError> {
-    apply(runner, reference).map_err(|error| carry_apply_failed(error, target_branch))
-}
-
-fn carry_apply_failed(error: SwitchError, target_branch: &str) -> SwitchError {
-    let SwitchError::Git(git) = error else {
-        return error;
-    };
-    let detail = git_detail(&git);
-    SwitchError::CarryReapplyFailed(format!(
-        "You're on {target_branch}, but replaying the carried changes failed: {detail} \
-         The snapshot is still at refs/githelper/carry/pending."
-    ))
-}
-
-fn git_detail(error: &GitError) -> String {
-    match error {
-        GitError::Command { stderr, .. } => {
-            let text = String::from_utf8_lossy(stderr).trim().to_string();
-            if text.is_empty() {
-                error.to_string()
-            } else {
-                text
-            }
-        }
-        other => other.to_string(),
+pub(super) fn pop_carry(runner: &crate::git::GitRunner) -> Result<PopOutcome, SwitchError> {
+    if runner
+        .run_unlocked(GitCommand::write(stash_args(&["pop", "--index"])))
+        .is_ok()
+    {
+        return Ok(PopOutcome {
+            applied_index: true,
+            warning: None,
+        });
     }
+    if runner
+        .run_unlocked(GitCommand::write(stash_args(&["pop"])))
+        .is_ok()
+    {
+        return Ok(PopOutcome {
+            applied_index: false,
+            warning: None,
+        });
+    }
+    Ok(PopOutcome {
+        applied_index: false,
+        warning: Some(
+            "Carried changes could not be popped cleanly. Resolve any conflict markers in the \
+             working tree, then run git stash drop if an entry is still listed."
+                .to_string(),
+        ),
+    })
 }
 
 fn text(bytes: &[u8]) -> Result<String, SwitchError> {

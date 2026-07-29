@@ -13,7 +13,7 @@ use super::{plan, record, state, stash};
 
 struct TrackedPrep {
     saved_work: Option<SavedWork>,
-    carry_snapshot: Option<ObjectId>,
+    carry_pushed: bool,
 }
 
 pub(crate) fn switch(
@@ -26,8 +26,7 @@ pub(crate) fn switch(
     let operation_id = record::begin_switch(&oplog, switch_plan)?;
     let tracked = prepare_tracked_changes(runner, switch_plan)?;
     switch_branch(runner, &switch_plan.target_branch)?;
-    let carried_index =
-        reapply_carried_changes(runner, &tracked.carry_snapshot, &switch_plan.target_branch)?;
+    let (carried_index, carry_warning) = pop_carried_changes(runner, tracked.carry_pushed)?;
     let mut after = BTreeMap::new();
     after.insert("HEAD".to_string(), switch_plan.target_head.to_string());
     if let Some(saved) = &tracked.saved_work {
@@ -41,6 +40,7 @@ pub(crate) fn switch(
         target_branch: switch_plan.target_branch.clone(),
         saved_work: tracked.saved_work,
         carried_index,
+        carry_warning,
         target_saved_work: switch_plan.target_saved_work.clone(),
     })
 }
@@ -52,18 +52,18 @@ fn prepare_tracked_changes(
     if !switch_plan.has_tracked_changes {
         return Ok(TrackedPrep {
             saved_work: None,
-            carry_snapshot: None,
+            carry_pushed: false,
+        });
+    }
+    if switch_plan.carry_changes {
+        stash::push_tracked(runner)?;
+        return Ok(TrackedPrep {
+            saved_work: None,
+            carry_pushed: true,
         });
     }
     let snapshot = stash::snapshot(runner)?;
     stash::reset_tracked(runner)?;
-    if switch_plan.carry_changes {
-        update_ref(runner, state::CARRY_REF, &snapshot, "")?;
-        return Ok(TrackedPrep {
-            saved_work: None,
-            carry_snapshot: Some(snapshot),
-        });
-    }
     update_ref(
         runner,
         &switch_plan.saved_work_reference,
@@ -76,21 +76,19 @@ fn prepare_tracked_changes(
             reference: switch_plan.saved_work_reference.clone(),
             snapshot,
         }),
-        carry_snapshot: None,
+        carry_pushed: false,
     })
 }
 
-fn reapply_carried_changes(
+fn pop_carried_changes(
     runner: &crate::git::GitRunner,
-    carry_snapshot: &Option<ObjectId>,
-    target_branch: &str,
-) -> Result<Option<bool>, SwitchError> {
-    let Some(snapshot) = carry_snapshot else {
-        return Ok(None);
-    };
-    let applied_index = stash::apply_carry(runner, state::CARRY_REF, target_branch)?;
-    delete_ref(runner, state::CARRY_REF, snapshot)?;
-    Ok(Some(applied_index))
+    carry_pushed: bool,
+) -> Result<(Option<bool>, Option<String>), SwitchError> {
+    if !carry_pushed {
+        return Ok((None, None));
+    }
+    let outcome = stash::pop_carry(runner)?;
+    Ok((Some(outcome.applied_index), outcome.warning))
 }
 
 fn switch_branch(runner: &crate::git::GitRunner, target_branch: &str) -> Result<(), SwitchError> {

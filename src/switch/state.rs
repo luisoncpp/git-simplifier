@@ -7,7 +7,6 @@ use crate::rewrite::ObjectId;
 use super::errors::SwitchError;
 
 pub(super) const WIP_PREFIX: &str = "refs/githelper/wip/";
-pub(super) const CARRY_REF: &str = "refs/githelper/carry/pending";
 
 pub(super) fn read_branch(runner: &GitRunner) -> Result<String, SwitchError> {
     let output = runner

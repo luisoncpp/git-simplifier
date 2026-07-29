@@ -1,79 +1,9 @@
 use std::collections::BTreeSet;
 
 use crate::git::{GitCommand, GitRunner};
-use crate::rewrite::ObjectId;
 
 use super::errors::SwitchError;
 use super::state::{args, branch_ref, text};
-
-pub(super) fn ensure_carry_safe(
-    runner: &GitRunner,
-    source_branch: &str,
-    target_branch: &str,
-    source_head: &ObjectId,
-    target_head: &ObjectId,
-) -> Result<(), SwitchError> {
-    let conflicts = carry_conflicts(runner, source_head, target_head)?;
-    if conflicts.is_empty() {
-        return Ok(());
-    }
-    Err(SwitchError::CarryConflict {
-        source_branch: source_branch.to_string(),
-        target_branch: target_branch.to_string(),
-        paths: conflicts.join(", "),
-    })
-}
-
-fn carry_conflicts(
-    runner: &GitRunner,
-    source_head: &ObjectId,
-    target_head: &ObjectId,
-) -> Result<Vec<String>, SwitchError> {
-    let changed = read_tracked_paths(runner)?;
-    Ok(changed
-        .into_iter()
-        .filter(|path| trees_differ(runner, source_head, target_head, path))
-        .collect())
-}
-
-fn read_tracked_paths(runner: &GitRunner) -> Result<Vec<String>, SwitchError> {
-    let mut paths = read_diff_paths(runner, &["diff", "--name-only", "-z", "HEAD"])?;
-    paths.extend(read_diff_paths(
-        runner,
-        &["diff", "--cached", "--name-only", "-z"],
-    )?);
-    paths.sort();
-    paths.dedup();
-    Ok(paths)
-}
-
-fn read_diff_paths(runner: &GitRunner, command: &[&str]) -> Result<Vec<String>, SwitchError> {
-    let output = runner.run(GitCommand::read(args(command)))?;
-    output
-        .stdout
-        .split(|byte| *byte == 0)
-        .filter(|path| !path.is_empty())
-        .map(text)
-        .collect()
-}
-
-fn trees_differ(
-    runner: &GitRunner,
-    source_head: &ObjectId,
-    target_head: &ObjectId,
-    path: &str,
-) -> bool {
-    blob_at(runner, source_head, path) != blob_at(runner, target_head, path)
-}
-
-fn blob_at(runner: &GitRunner, commit: &ObjectId, path: &str) -> Option<String> {
-    let spec = format!("{}:{}", commit.as_str(), path);
-    runner
-        .run(GitCommand::read(args(&["rev-parse", "--verify", &spec])))
-        .ok()
-        .and_then(|output| text(&output.stdout).ok())
-        .map(|value| value.trim().to_string())
-}
 
 pub(super) fn read_untracked(runner: &GitRunner) -> Result<Vec<String>, SwitchError> {
     let output = runner.run(GitCommand::read(args(&[

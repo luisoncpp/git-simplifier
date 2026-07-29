@@ -8,31 +8,23 @@ pub(crate) fn quick_switch(plan: &QuickSwitchPlan) -> Vec<String> {
     if !plan.has_tracked_changes {
         return vec![switch];
     }
-    let mut commands = vec![
+    if plan.carry_changes {
+        return vec![
+            "git -c submodule.recurse=false stash push -m \"git-helper carry\"".to_string(),
+            switch,
+            "git -c submodule.recurse=false stash pop --index".to_string(),
+            "git -c submodule.recurse=false stash pop  # fallback".to_string(),
+        ];
+    }
+    vec![
         "git -c submodule.recurse=false stash create".to_string(),
-    ];
-    if !plan.carry_changes {
-        commands.push(format!(
+        format!(
             "git update-ref {} <snapshot> \"\"",
             plan.saved_work_reference
-        ));
-    }
-    if plan.carry_changes {
-        commands.push("git update-ref refs/githelper/carry/pending <snapshot> \"\"".to_string());
-    }
-    commands.push("git reset --hard --no-recurse-submodules HEAD".to_string());
-    commands.push(switch);
-    if plan.carry_changes {
-        commands.push(
-            "git -c submodule.recurse=false stash apply --index refs/githelper/carry/pending"
-                .to_string(),
-        );
-        commands.push(
-            "git -c submodule.recurse=false stash apply refs/githelper/carry/pending  # fallback"
-                .to_string(),
-        );
-    }
-    commands
+        ),
+        "git reset --hard --no-recurse-submodules HEAD".to_string(),
+        switch,
+    ]
 }
 
 pub(crate) fn sync(base: &RefName) -> Result<Vec<String>, String> {
@@ -73,12 +65,10 @@ mod tests {
         assert_eq!(
             quick_switch(&plan),
             vec![
-                "git -c submodule.recurse=false stash create",
-                "git update-ref refs/githelper/carry/pending <snapshot> \"\"",
-                "git reset --hard --no-recurse-submodules HEAD",
+                "git -c submodule.recurse=false stash push -m \"git-helper carry\"",
                 "git switch --no-recurse-submodules --no-guess -- other",
-                "git -c submodule.recurse=false stash apply --index refs/githelper/carry/pending",
-                "git -c submodule.recurse=false stash apply refs/githelper/carry/pending  # fallback",
+                "git -c submodule.recurse=false stash pop --index",
+                "git -c submodule.recurse=false stash pop  # fallback",
             ]
         );
     }

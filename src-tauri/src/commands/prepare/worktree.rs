@@ -44,9 +44,8 @@ pub(super) fn quick_switch(
     let mut warnings = Vec::new();
     if plan.carry_changes && plan.has_tracked_changes {
         warnings.push(
-            "Carry replays your edits on top of the target branch. If a changed file already \
-             differs between the two branches, Git may conflict even when nobody touched the \
-             target recently."
+            "Carry uses git stash push and stash pop. Conflicts are reported after the switch \
+             instead of blocking the review."
                 .to_string(),
         );
     }

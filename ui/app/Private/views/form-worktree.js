@@ -39,7 +39,7 @@ export function quickSwitchForm(state) {
   const dirty = worktreeCounts(state).some(([label]) => label === "staged" || label === "unstaged");
   const target = targets.find((branch) => branch.name === state.draft.targetBranch);
   const carryNote = dirty && state.draft.carryChanges
-    ? `<p class="hint">Tracked changes on ${esc(currentBranch(state))} will be replayed on ${esc(target?.name ?? "the target branch")}. If a changed file already differs between the branches, Git may conflict.</p>`
+    ? `<p class="hint">Tracked changes on ${esc(currentBranch(state))} will be stashed, the branch will switch, then popped onto ${esc(target?.name ?? "the target branch")}. Conflicts are reported afterwards.</p>`
     : dirty
       ? `<p class="hint">Tracked changes on ${esc(currentBranch(state))} will be saved before the switch.</p>`
       : "";

@@ -79,19 +79,18 @@ fn carry_allows_switch_when_source_already_has_saved_work() {
 }
 
 #[test]
-fn carry_rejects_when_changed_files_differ_between_branches() {
+fn carry_warns_when_pop_conflicts_on_divergent_files() {
     let fixture = fixture_with_target("other");
     fixture.checkout("other");
     fixture.commit_file("README.md", "target version\n", "target readme");
     fixture.checkout("feature");
     fixture.write_worktree_file("README.md", "my edit\n");
 
-    let result = fixture.repo.plan_quick_switch(carry_request("other"));
+    let plan = fixture.repo.plan_quick_switch(carry_request("other")).unwrap();
+    let result = fixture.repo.apply_quick_switch(&plan).unwrap();
 
-    assert!(matches!(
-        result,
-        Err(SwitchError::CarryConflict { paths, .. }) if paths.contains("README.md")
-    ));
+    assert_eq!(current_branch(&fixture), "other");
+    assert!(result.carry_warning.is_some());
 }
 
 #[test]
