@@ -119,34 +119,6 @@ h4 {
   border-radius: var(--radius);
 }
 
-.repo-picker {
-  display: grid;
-  gap: 3px;
-  width: 100%;
-  padding: 8px 10px;
-  text-align: left;
-  color: var(--text);
-  background: var(--surface);
-  border: 1px solid var(--border);
-  border-radius: var(--radius);
-}
-
-.repo-picker:hover {
-  border-color: var(--accent);
-}
-
-.repo-picker strong {
-  font-size: 13px;
-  overflow-wrap: anywhere;
-}
-
-.repo-picker code {
-  color: var(--muted);
-  display: block;
-  max-height: 2.6em;
-  overflow: hidden;
-}
-
 .rail nav {
   display: grid;
   gap: 2px;
