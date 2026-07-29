@@ -41,6 +41,15 @@ pub(super) fn quick_switch(
             plan.target_branch
         ));
     }
+    let mut warnings = Vec::new();
+    if plan.carry_changes && plan.has_tracked_changes {
+        warnings.push(
+            "Carry replays your edits on top of the target branch. If a changed file already \
+             differs between the two branches, Git may conflict even when nobody touched the \
+             target recently."
+                .to_string(),
+        );
+    }
     let review = OperationReview {
         plan_id: id.clone(),
         kind: "quick_switch".to_string(),
@@ -50,7 +59,7 @@ pub(super) fn quick_switch(
             "Untracked files and submodule checkouts".to_string(),
             format!("The commits on {}", plan.source_branch),
         ],
-        warnings: Vec::new(),
+        warnings,
         commands: review_commands::quick_switch(&plan),
         apply_label: "Switch branch".to_string(),
     };

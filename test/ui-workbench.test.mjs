@@ -129,7 +129,8 @@ test("quick switch offers carry changes when the worktree is dirty", async () =>
   assert.match(markup, /will be saved before the switch/);
 
   controller.state.draft.carryChanges = true;
-  assert.match(renderShell(controller.state), /will be applied on main after the switch/);
+  assert.match(renderShell(controller.state), /will be replayed on main/);
+  assert.match(renderShell(controller.state), /may conflict/);
 });
 
 test("quick switch never offers the branch that is already checked out", async () => {

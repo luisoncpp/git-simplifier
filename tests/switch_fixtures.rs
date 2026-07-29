@@ -79,6 +79,22 @@ fn carry_allows_switch_when_source_already_has_saved_work() {
 }
 
 #[test]
+fn carry_rejects_when_changed_files_differ_between_branches() {
+    let fixture = fixture_with_target("other");
+    fixture.checkout("other");
+    fixture.commit_file("README.md", "target version\n", "target readme");
+    fixture.checkout("feature");
+    fixture.write_worktree_file("README.md", "my edit\n");
+
+    let result = fixture.repo.plan_quick_switch(carry_request("other"));
+
+    assert!(matches!(
+        result,
+        Err(SwitchError::CarryConflict(paths)) if paths.contains("README.md")
+    ));
+}
+
+#[test]
 fn switch_rejects_an_untracked_file_that_target_would_overwrite() {
     let fixture = fixture_with_target("other");
     fixture.checkout("other");

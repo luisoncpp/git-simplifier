@@ -26,7 +26,8 @@ pub(crate) fn switch(
     let operation_id = record::begin_switch(&oplog, switch_plan)?;
     let tracked = prepare_tracked_changes(runner, switch_plan)?;
     switch_branch(runner, &switch_plan.target_branch)?;
-    let carried_index = reapply_carried_changes(runner, &tracked.carry_snapshot)?;
+    let carried_index =
+        reapply_carried_changes(runner, &tracked.carry_snapshot, &switch_plan.target_branch)?;
     let mut after = BTreeMap::new();
     after.insert("HEAD".to_string(), switch_plan.target_head.to_string());
     if let Some(saved) = &tracked.saved_work {
@@ -82,11 +83,12 @@ fn prepare_tracked_changes(
 fn reapply_carried_changes(
     runner: &crate::git::GitRunner,
     carry_snapshot: &Option<ObjectId>,
+    target_branch: &str,
 ) -> Result<Option<bool>, SwitchError> {
     let Some(snapshot) = carry_snapshot else {
         return Ok(None);
     };
-    let applied_index = stash::apply(runner, state::CARRY_REF)?;
+    let applied_index = stash::apply_carry(runner, state::CARRY_REF, target_branch)?;
     delete_ref(runner, state::CARRY_REF, snapshot)?;
     Ok(Some(applied_index))
 }

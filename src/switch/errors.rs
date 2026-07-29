@@ -16,6 +16,12 @@ pub enum SwitchError {
     ExistingSavedWork(String),
     #[error("untracked files would be overwritten on the target branch: {0}")]
     UntrackedConflict(String),
+    #[error(
+        "carried changes would conflict on the target branch because these files differ between the branches: {0}"
+    )]
+    CarryConflict(String),
+    #[error("{0}")]
+    CarryReapplyFailed(String),
     #[error("quick branch switch recording failed: {0}")]
     Recording(String),
 }
