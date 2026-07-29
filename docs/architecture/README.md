@@ -8,4 +8,5 @@ Covers only what's already implemented. For architecture docs of not implemented
 |------|-----------|-------|
 | [git-core.md](./git-core.md) | Rust Git runner and rewrite engine | Backend-only first vertical slice |
 | [workbench-ui.md](./workbench-ui.md) | Vanilla-JS workbench deep module | State rules, rendering, and the review surface |
+| [desktop-shell.md](./desktop-shell.md) | Tauri window lifecycle and system tray | Close hides to tray; Quit is tray-only |
 | [packaging.md](./packaging.md) | Windows installer bundling | NSIS per-user setup; `npm run installer` |

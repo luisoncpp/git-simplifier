@@ -41,6 +41,7 @@ Keep these docs operational. Prefer short tables, explicit file names, and seque
 
 | File | Scope |
 |------|-------|
+| [close-to-tray.md](./close-to-tray.md) | Window close hides to tray; tray Show/Quit |
 | [edit-message.md](./edit-message.md) | Backend Edit message planning and application |
 | [excluded-submodule.md](./excluded-submodule.md) | Backend Excluded submodule configuration and guard installation |
 | [force-push.md](./force-push.md) | Backend explicit force-push after a rewrite |
