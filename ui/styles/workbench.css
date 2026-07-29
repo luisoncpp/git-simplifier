@@ -345,6 +345,10 @@ h4 {
   overflow: auto;
 }
 
+.workspace.inspection {
+  overflow: hidden;
+}
+
 .workspace.split {
   grid-template-columns: minmax(320px, 1fr) minmax(340px, 0.95fr);
   align-items: start;

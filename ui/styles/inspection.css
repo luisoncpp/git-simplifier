@@ -16,13 +16,16 @@
 }
 
 .inspection-pane {
-  display: grid;
+  display: flex;
+  flex-direction: column;
   gap: 14px;
-  align-content: start;
+  min-height: 0;
+  height: 100%;
 }
 
 .inspection-head {
   display: flex;
+  flex-shrink: 0;
   align-items: flex-start;
   justify-content: space-between;
   gap: 24px;
@@ -49,8 +52,8 @@
 }
 
 .diff-output {
-  min-height: 260px;
-  max-height: calc(100vh - 220px);
+  flex: 1;
+  min-height: 0;
   margin: 0;
   padding: 14px 16px;
   overflow: auto;
@@ -73,9 +76,5 @@
 
   .inspection-head .primary {
     align-self: flex-start;
-  }
-
-  .diff-output {
-    max-height: 70vh;
   }
 }

@@ -54,9 +54,16 @@ function navItem(state: AppState, [id, label, count]: NavEntry): string {
 function main(state: AppState): string {
   return `<section class="main">${repoBar(state)}
     <div class="banner-stack">${banners(state)}</div>
-    <div class="workspace${state.review ? " split" : ""}">${pane(state)}${reviewPane(state)}</div>
+    <div class="workspace${workspaceClass(state)}">${pane(state)}${reviewPane(state)}</div>
     <footer class="status" role="status">${status(state)}</footer>
   </section>`;
+}
+
+function workspaceClass(state: AppState): string {
+  const classes = [];
+  if (state.review) classes.push("split");
+  if (state.view === "inspection") classes.push("inspection");
+  return classes.length ? ` ${classes.join(" ")}` : "";
 }
 
 function pane(state: AppState): string {
