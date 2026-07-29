@@ -1,21 +1,23 @@
 # Workbench UI
 
-The UI is a single deep module. `ui/app/index.js` is the only public interface (`AppController`, `renderShell`, the bridges); everything else lives under `ui/app/Private/` and must not be imported from outside it.
+The UI is a single deep module written in strict TypeScript (`tsc --noEmit` is the lint). `ui/app/index.ts` is the only public interface (`AppController`, `renderShell`, the bridges); everything else lives under `ui/app/Private/` and must not be imported from outside it. Imports carry explicit `.ts` extensions and type-only imports use `import type`, so Node's type stripping can run the sources directly in tests without a build step.
 
 | File | Responsibility |
 |------|----------------|
-| `Private/controller.js` | `AppController`: owns state, busy/error handling, and the prepare → apply → cancel boundary |
-| `Private/repository-switcher.js` | Recent repository menu: filter, open, remove, and persistence refresh |
-| `Private/events.js` | Delegated `click`/`change`/`input`/`keydown` dispatch tables keyed by `data-event` |
-| `Private/selection.js` | Draft mutations (path selection, message drafts, flags) plus the targeted patches they need |
-| `Private/discovery.js` | Snapshot reload and per-operation discovery; drops selections that no longer exist |
-| `Private/draft.js` | Draft shape and the derived reads over it (visible paths, selected commit, message drafts) |
-| `Private/operations.js` | Operation catalog, request builders, and `submitState` |
-| `Private/snapshot.js` | Typed reads over the Rust snapshot, including human sync-phase labels |
-| `Private/dom.js` | HTML escaping and `renderInto`, which preserves caret and scroll across a re-render |
-| `Private/views/repo-menu.js` | Rail repository picker and filterable recent list |
-| `Private/views/inspection.js` | Branch diff presentation and clipboard action |
-| `Private/views/path-list.js` | The changed-path checklist, shared by Uncommit and Split branch |
+| `Private/types.ts` | Wire shapes mirroring the Rust contracts, `AppState`, `Draft`, the `Bridge` interface, and the `__TAURI__` global |
+| `Private/state.ts` | `createState`: the initial `AppState` (mirrors `createDraft`) |
+| `Private/controller.ts` | `AppController`: owns state, busy/error handling, and the prepare → apply → cancel boundary |
+| `Private/repository-switcher.ts` | Recent repository menu: filter, open, remove, and persistence refresh |
+| `Private/events.ts` | Delegated `click`/`change`/`input`/`keydown` dispatch tables keyed by `data-event` |
+| `Private/selection.ts` | Draft mutations (path selection, message drafts, flags) plus the targeted patches they need |
+| `Private/discovery.ts` | Snapshot reload and per-operation discovery; drops selections that no longer exist |
+| `Private/draft.ts` | Draft shape and the derived reads over it (visible paths, selected commit, message drafts) |
+| `Private/operations.ts` | Operation catalog, request builders, and `submitState` |
+| `Private/snapshot.ts` | Typed reads over the Rust snapshot, including human sync-phase labels |
+| `Private/dom.ts` | HTML escaping and `renderInto`, which preserves caret and scroll across a re-render |
+| `Private/views/repo-menu.ts` | Rail repository picker and filterable recent list |
+| `Private/views/inspection.ts` | Branch diff presentation and clipboard action |
+| `Private/views/path-list.ts` | The changed-path checklist, shared by Uncommit and Split branch |
 | `Private/views/*` | Pure functions from state to markup |
 
 ## State rules

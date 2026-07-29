@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import test from "node:test";
-import { renderShell } from "../ui/app/index.js";
+import { renderShell } from "../ui/app/index.ts";
 import { controllerWith, snapshotWith } from "./support/controller.mjs";
 
 test("Inspection loads and renders the current branch diff", async () => {

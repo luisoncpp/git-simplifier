@@ -32,12 +32,7 @@ export interface RepositorySnapshot {
   operations: RecoveryEntry[];
 }
 
-export interface SavedWork {
-  branch: string;
-  reference: string;
-  snapshot: string;
-}
-
+export interface SavedWork { branch: string; reference: string; snapshot: string }
 export interface RecoveryEntry {
   id: string;
   operation: string;
@@ -53,23 +48,11 @@ export interface RecoveryEntry {
   recovery_command: string | null;
 }
 
-export interface BaseChoice {
-  reference: string;
-  display: string;
-  head: string;
-}
+export interface BaseChoice { reference: string; display: string; head: string }
 
-export interface ChangedPath {
-  path: string;
-  previous_path: string | null;
-  status: string;
-}
+export interface ChangedPath { path: string; previous_path: string | null; status: string }
 
-export interface Signature {
-  name: string;
-  email: string;
-  date: string;
-}
+export interface Signature { name: string; email: string; date: string }
 
 export interface EditableCommit {
   id: string;
@@ -86,16 +69,9 @@ export interface LocalBranch {
   saved_work: boolean;
 }
 
-export interface SubmoduleChoice {
-  path: string;
-  object: string;
-  excluded: boolean;
-}
+export interface SubmoduleChoice { path: string; object: string; excluded: boolean }
 
-export interface RecentRepository {
-  name: string;
-  path: string;
-}
+export interface RecentRepository { name: string; path: string }
 
 export interface OperationReview {
   plan_id: string;

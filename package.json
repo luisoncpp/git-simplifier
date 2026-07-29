@@ -7,7 +7,7 @@
     "dev": "vite",
     "build": "vite build",
     "preview": "vite preview",
-    "lint": "node scripts/lint.mjs",
+    "lint": "tsc --noEmit",
     "test": "node --test test/*.test.mjs",
     "tauri": "tauri",
     "installer": "tauri build"

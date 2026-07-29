@@ -1,10 +1,10 @@
 import { TauriBridge } from "./bridge.ts";
 import { loadOperationData, loadViewData, reloadState } from "./discovery.ts";
 import { focusNode, renderInto } from "./dom.ts";
-import { createDraft } from "./draft.ts";
 import { bindEvents } from "./events.ts";
 import { buildRequest, submitState } from "./operations.ts";
 import { loadRecentRepositories } from "./repository-switcher.ts";
+import { createState } from "./state.ts";
 import { renderShell } from "./views/shell.ts";
 import type {
   AppState,
@@ -29,32 +29,7 @@ export class AppController {
 
   constructor(bridge: Bridge = new TauriBridge()) {
     this.bridge = bridge;
-    this.state = {
-      view: "actions",
-      operation: "uncommit",
-      snapshot: null,
-      baseChoices: [],
-      paths: [],
-      commits: [],
-      branches: [],
-      submodules: [],
-      saved: [],
-      operations: [],
-      branchDiff: null,
-      diffCopied: false,
-      recentRepositories: [],
-      repoMenuOpen: false,
-      repoFilter: "",
-      repoHighlight: 0,
-      repoOpeningPath: "",
-      draft: createDraft(),
-      expanded: new Set(),
-      review: null,
-      outcome: null,
-      changingBase: false,
-      busy: false,
-      error: "",
-    };
+    this.state = createState();
   }
 
   async start(): Promise<void> {

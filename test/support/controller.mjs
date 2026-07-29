@@ -1,4 +1,4 @@
-import { AppController } from "../../ui/app/index.js";
+import { AppController } from "../../ui/app/index.ts";
 
 const BASE = "refs/remotes/origin/main";
 

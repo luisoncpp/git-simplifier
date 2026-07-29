@@ -1,14 +1,14 @@
 import assert from "node:assert/strict";
 import { readFile } from "node:fs/promises";
 import test from "node:test";
-import { renderShell } from "../ui/app/index.js";
+import { renderShell } from "../ui/app/index.ts";
 import {
   filteredRecents,
   openRecentRepository,
   removeRecentRepository,
   setRepoFilter,
   toggleRepoMenu,
-} from "../ui/app/Private/repository-switcher.js";
+} from "../ui/app/Private/repository-switcher.ts";
 import { controllerWith, snapshotWith } from "./support/controller.mjs";
 
 const RECENTS = [

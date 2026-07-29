@@ -1,11 +1,11 @@
 import assert from "node:assert/strict";
 import { readFile } from "node:fs/promises";
 import test from "node:test";
-import { AppController, renderShell } from "../ui/app/index.js";
+import { AppController, renderShell } from "../ui/app/index.ts";
 import { controllerWith, snapshotWith } from "./support/controller.mjs";
 
 test("the workbench never invents repository data or prompts for Git identifiers", async () => {
-  const controller = await readFile(new URL("../ui/app/Private/controller.js", import.meta.url), "utf8");
+  const controller = await readFile(new URL("../ui/app/Private/controller.ts", import.meta.url), "utf8");
   assert.doesNotMatch(controller, /window\.prompt|prompt\(/);
   const state = new AppController({}).state;
   const markup = renderShell(state);
@@ -22,7 +22,7 @@ test("the live announcer cannot extend the document below the viewport shell", a
 });
 
 test("the operation boundary stays prepare / apply / cancel", async () => {
-  const source = await readFile(new URL("../ui/app/Private/controller.js", import.meta.url), "utf8");
+  const source = await readFile(new URL("../ui/app/Private/controller.ts", import.meta.url), "utf8");
   assert.match(source, /prepare_operation/);
   assert.match(source, /apply_operation/);
   assert.match(source, /cancel_operation/);

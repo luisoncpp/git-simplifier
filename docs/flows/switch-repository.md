@@ -6,7 +6,7 @@ The user opens the rail Repository control and picks a recent path, removes one,
 
 ## Entry point
 
-UI: `repository-switcher.js` via `toggle-repo-menu` / `open-recent` / `remove-recent` / `pick-repository`.
+UI: `repository-switcher.ts` via `toggle-repo-menu` / `open-recent` / `remove-recent` / `pick-repository`.
 Tauri: `open_repository`, `list_recent_repositories`, `remove_recent_repository`.
 
 ## Step-by-step sequence
@@ -43,8 +43,8 @@ Tauri: `open_repository`, `list_recent_repositories`, `remove_recent_repository`
 - `src-tauri/src/commands/recents.rs`
 - `src-tauri/src/commands/actions.rs` (`open_repository`)
 - `src-tauri/src/commands/state.rs` (`open_path`)
-- `ui/app/Private/repository-switcher.js`
-- `ui/app/Private/views/repo-menu.js`
+- `ui/app/Private/repository-switcher.ts`
+- `ui/app/Private/views/repo-menu.ts`
 
 ## Common failure modes
 

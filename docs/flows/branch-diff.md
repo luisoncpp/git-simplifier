@@ -23,8 +23,8 @@ The user opens **Inspection → Branch diff**, refreshes while it is open, or ch
 - `src/inspection/diff.rs`
 - `src/repository/read.rs`
 - `src-tauri/src/commands/actions.rs`
-- `ui/app/Private/discovery.js`
-- `ui/app/Private/views/inspection.js`
+- `ui/app/Private/discovery.ts`
+- `ui/app/Private/views/inspection.ts`
 
 ## Failure modes
 

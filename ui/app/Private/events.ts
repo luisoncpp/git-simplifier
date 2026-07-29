@@ -71,7 +71,8 @@ function handleClick(controller: AppController, event: MouseEvent): void {
     repos.closeRepoMenu(controller);
   }
   const node = target?.closest?.("[data-event]") as ActionElement | null;
-  const action = node && !node.disabled ? CLICK[node.dataset.event ?? ""] : null;
+  if (!node || node.disabled) return;
+  const action = CLICK[node.dataset.event ?? ""];
   if (!action) return;
   event.preventDefault();
   settle(controller, action(controller, node.dataset.value ?? ""));

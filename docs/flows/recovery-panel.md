@@ -8,7 +8,7 @@ The UI opens or refreshes the operation history for a repository.
 
 `GitRepository::list_operations`
 
-The static web entry point is `ui/index.html`; its recovery view is toggled by `ui/app.js` and is ready for a Tauri command adapter.
+The static web entry point is `ui/index.html`; its recovery view is toggled by `ui/app.ts` and is ready for a Tauri command adapter.
 
 ## Sequence
 

@@ -1,10 +1,10 @@
 # Git Helper UI
 
-A compact dark workbench, not a preview dashboard. Vanilla JavaScript, one deep module: `ui/app/index.js` is the public interface and everything under `ui/app/Private/` is implementation. See [docs/architecture/workbench-ui.md](../docs/architecture/workbench-ui.md) for the state and rendering rules.
+A compact dark workbench, not a preview dashboard. Vanilla TypeScript (strict), one deep module: `ui/app/index.ts` is the public interface and everything under `ui/app/Private/` is implementation. Wire shapes mirror the Rust contracts in `ui/app/Private/types.ts`. See [docs/architecture/workbench-ui.md](../docs/architecture/workbench-ui.md) for the state and rendering rules.
 
 Run `npm.cmd run tauri dev` for desktop repository access. Browser mode deliberately reports that it cannot reach a repository and shows the reason of the last attempt; it contains no authoritative fixtures. Test fixtures may be supplied to `FixtureBridge` only.
 
-All writes go through `prepare_operation` → `OperationReview` → `apply_operation` or `cancel_operation`. JavaScript sends typed identifiers selected from Rust discovery results and never reconstructs Git commands. A failed repository open leaves the last valid repository active.
+All writes go through `prepare_operation` → `OperationReview` → `apply_operation` or `cancel_operation`. The UI sends typed identifiers selected from Rust discovery results and never reconstructs Git commands. A failed repository open leaves the last valid repository active.
 
 ## Layout
 
@@ -22,4 +22,4 @@ Uncommit and Split branch share the changed-path checklist but keep separate sel
 npm run lint && npm test
 ```
 
-`npm run lint` syntax-checks every script under `ui/`; `npm test` runs the workbench tests in `test/`.
+`npm run lint` type-checks the UI with `tsc --noEmit`; `npm test` runs the workbench tests in `test/`, which import the `.ts` sources directly (Node strips the types).

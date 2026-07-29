@@ -29,7 +29,7 @@ Repository switches, stale HEADs, changed sync fingerprints, cancellation, and a
 
 ## Files to inspect
 
-- `ui/app/Private/operations.js`, `controller.js`, `views/review.js`
+- `ui/app/Private/operations.ts`, `controller.ts`, `views/review.ts`
 - `src-tauri/src/commands/prepare/`, `apply.rs`, `review_commands/`
 
 ## Common failure modes

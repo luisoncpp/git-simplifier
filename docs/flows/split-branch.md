@@ -50,7 +50,7 @@ The record is reversible. `refs_before` stores the new branch with an empty valu
 
 ## Files to inspect
 
-- `ui/app/Private/views/form-branch.js`, `views/path-list.js`, `operations.js`
+- `ui/app/Private/views/form-branch.ts`, `views/path-list.ts`, `operations.ts`
 - `src-tauri/src/commands/prepare/branch.rs`, `commands/apply.rs`
 - `src/split/plan.rs`, `paths.rs`, `apply.rs`, `worktree.rs`, `review.rs`, `record.rs`
 - `src/repository.rs`
