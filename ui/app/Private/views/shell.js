@@ -3,6 +3,7 @@ import { baseRef, currentBranch, overviewOf, upstreamRef, worktreeCounts } from 
 import { actionsView } from "./actions.js";
 import { banners } from "./banners.js";
 import { recoveryView, savedView } from "./panels.js";
+import { repoSwitcher } from "./repo-menu.js";
 import { reviewPane } from "./review.js";
 
 const VIEWS = [
@@ -16,17 +17,17 @@ export function renderShell(state) {
 }
 
 function rail(state) {
-  const overview = overviewOf(state);
   return `<aside class="rail">
     <div class="brand"><span class="mark" aria-hidden="true">gh</span><strong>Git Helper</strong></div>
-    <button class="repo-picker" data-event="pick-repository" title="Open another repository">
-      <span class="eyebrow">Repository</span>
-      <strong>${esc(overview?.name ?? "Open a repository")}</strong>
-      <code>${esc(overview?.path ?? "No repository is open")}</code>
-    </button>
+    ${repoSwitcher(state)}
     <nav aria-label="Sections">${VIEWS.map((entry) => navItem(state, entry)).join("")}</nav>
-    <p class="rail-foot">${overview ? `Git ${esc(overview.git_version)}` : "Desktop access required"}</p>
+    <p class="rail-foot">${railFoot(state)}</p>
   </aside>`;
+}
+
+function railFoot(state) {
+  const overview = overviewOf(state);
+  return overview ? `Git ${esc(overview.git_version)}` : "Desktop access required";
 }
 
 function navItem(state, [id, label, count]) {

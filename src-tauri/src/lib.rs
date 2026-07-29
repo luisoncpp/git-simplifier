@@ -16,6 +16,8 @@ pub fn run() {
         .invoke_handler(tauri::generate_handler![
             commands::actions::app_ready,
             commands::actions::open_repository,
+            commands::actions::list_recent_repositories,
+            commands::actions::remove_recent_repository,
             commands::actions::load_snapshot,
             commands::actions::list_operations,
             commands::actions::list_saved_work,

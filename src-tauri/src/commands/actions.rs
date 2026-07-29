@@ -1,7 +1,7 @@
 use std::sync::atomic::{AtomicU64, Ordering};
 
 use git_helper_core::RefName;
-use tauri::State;
+use tauri::{AppHandle, State};
 
 use super::apply;
 use super::data::{
@@ -9,6 +9,7 @@ use super::data::{
     RepositorySnapshot,
 };
 use super::prepare;
+use super::recents::{RecentRepository, RecentStore};
 use super::repository::{self, with_repository};
 use super::state::AppState;
 
@@ -25,11 +26,31 @@ pub fn app_ready() -> &'static str {
 
 #[tauri::command(async)]
 pub fn open_repository(
+    app: AppHandle,
     state: State<'_, AppState>,
     request: OpenRepositoryInput,
 ) -> Result<RepositorySnapshot, String> {
-    state.open_path(request.path.into());
-    repository::snapshot(state.inner())
+    let path = request.path;
+    if let Err(error) = state.open_path(path.clone().into()) {
+        let _ = RecentStore::from_app(&app).and_then(|store| store.remove(&path));
+        return Err(error);
+    }
+    let snapshot = repository::snapshot(state.inner())?;
+    let _ = RecentStore::from_app(&app).and_then(|store| store.remember(&path));
+    Ok(snapshot)
+}
+
+#[tauri::command(async)]
+pub fn list_recent_repositories(app: AppHandle) -> Result<Vec<RecentRepository>, String> {
+    RecentStore::from_app(&app)?.list()
+}
+
+#[tauri::command(async)]
+pub fn remove_recent_repository(
+    app: AppHandle,
+    path: String,
+) -> Result<Vec<RecentRepository>, String> {
+    RecentStore::from_app(&app)?.remove(&path)
 }
 
 #[tauri::command(async)]

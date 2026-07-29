@@ -21,3 +21,7 @@ Implementation: `src-tauri/src/tray.rs`, wired from `lib.rs` via `.setup` and `.
 - There is no in-UI Quit; users must use the tray menu.
 - Left-click must not open the menu (`show_menu_on_left_click(false)`); the menu is for right-click.
 - Tray icon comes from `default_window_icon()` (bundled `icons/`), not a separate asset.
+
+## Recent repositories
+
+Successful `open_repository` calls append/promote the path in the app data file owned by `commands/recents.rs`. This is machine-local preference data, separate from repository-local `.git/githelper/` state. See [switch-repository.md](../flows/switch-repository.md).

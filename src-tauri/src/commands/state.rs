@@ -21,25 +21,25 @@ impl AppState {
             path: Mutex::new(path.clone()),
             pending: Mutex::new(None),
         };
-        state.open_path(path);
+        if let Err(error) = state.open_path(path) {
+            state.set_error(error);
+        }
         state
     }
 
-    pub fn open_path(&self, path: PathBuf) {
+    /// A failed open leaves the previous repository in place so a bad picker
+    /// choice cannot wipe a working session; the caller surfaces the error.
+    pub fn open_path(&self, path: PathBuf) -> Result<(), String> {
         let config = RepositoryConfig {
             path: path.clone(),
             git_executable: PathBuf::from("git"),
         };
-        let result = GitRepository::open(config);
-        match result {
-            Ok(repository) => {
-                if let Ok(mut current_path) = self.path.lock() {
-                    *current_path = path;
-                }
-                self.set_repository(repository);
-            }
-            Err(error) => self.set_error(error.to_string()),
+        let repository = GitRepository::open(config).map_err(|error| error.to_string())?;
+        if let Ok(mut current_path) = self.path.lock() {
+            *current_path = path;
         }
+        self.set_repository(repository);
+        Ok(())
     }
 
     fn set_repository(&self, repository: GitRepository) {

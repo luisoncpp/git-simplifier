@@ -4,6 +4,7 @@ import { focusNode, renderInto } from "./dom.js";
 import { createDraft } from "./draft.js";
 import { bindEvents } from "./events.js";
 import { buildRequest, submitState } from "./operations.js";
+import { loadRecentRepositories } from "./repository-switcher.js";
 import { renderShell } from "./views/shell.js";
 
 export class AppController {
@@ -20,6 +21,10 @@ export class AppController {
       submodules: [],
       saved: [],
       operations: [],
+      recentRepositories: [],
+      repoMenuOpen: false,
+      repoFilter: "",
+      repoHighlight: 0,
       draft: createDraft(),
       expanded: new Set(),
       review: null,
@@ -32,6 +37,7 @@ export class AppController {
 
   async start() {
     bindEvents(this);
+    await loadRecentRepositories(this);
     await this.refresh();
   }
 
@@ -146,22 +152,6 @@ export class AppController {
       this.state.changingBase = false;
       await this.reload(snapshot);
       this.announce(`Base is now ${value}`);
-    });
-  }
-
-  async openRepository() {
-    const path = await this.bridge.pickRepository().catch((error) => {
-      this.fail(error);
-      this.render();
-      return null;
-    });
-    if (!path) return;
-    await this.run(async () => {
-      const snapshot = await this.bridge.invoke("open_repository", { request: { path } });
-      this.state.draft = createDraft();
-      this.state.outcome = null;
-      this.state.expanded.clear();
-      await this.reload(snapshot);
     });
   }
 

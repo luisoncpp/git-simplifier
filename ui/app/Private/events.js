@@ -1,7 +1,11 @@
 import * as edit from "./selection.js";
+import * as repos from "./repository-switcher.js";
 
 const CLICK = {
-  "pick-repository": (controller) => controller.openRepository(),
+  "toggle-repo-menu": (controller) => repos.toggleRepoMenu(controller),
+  "pick-repository": (controller) => repos.openPickedRepository(controller),
+  "open-recent": (controller, value) => repos.openRecentRepository(controller, value),
+  "remove-recent": (controller, value) => repos.removeRecentRepository(controller, value),
   refresh: (controller) => controller.refresh(),
   "set-view": (controller, value) => controller.setView(value),
   "set-operation": (controller, value) => controller.selectOperation(value),
@@ -37,6 +41,7 @@ const CHANGE = {
 
 const INPUT = {
   "path-filter": edit.setPathFilter,
+  "repo-filter": repos.setRepoFilter,
   "commit-message": edit.setMessage,
   "split-branch-name": edit.setNewBranch,
   "split-message": edit.setSplitMessage,
@@ -54,6 +59,9 @@ export function bindEvents(controller) {
 }
 
 function handleClick(controller, event) {
+  if (controller.state.repoMenuOpen && !event.target.closest?.(".repo-switcher")) {
+    repos.closeRepoMenu(controller);
+  }
   const node = event.target.closest?.("[data-event]");
   const action = node && !node.disabled ? CLICK[node.dataset.event] : null;
   if (!action) return;
@@ -73,6 +81,7 @@ function dispatchNode(controller, event, table) {
 }
 
 function handleKeys(controller, event) {
+  if (handleRepoKeys(controller, event)) return;
   if (event.key === "Escape" && controller.state.review) {
     settle(controller, controller.cancelReview());
     return;
@@ -85,6 +94,26 @@ function handleKeys(controller, event) {
   if (!step || !event.target.closest?.('[role="tab"]')) return;
   event.preventDefault();
   settle(controller, edit.stepOperation(controller, step));
+}
+
+function handleRepoKeys(controller, event) {
+  if (!controller.state.repoMenuOpen) return false;
+  if (event.key === "Escape") {
+    event.preventDefault();
+    repos.closeRepoMenu(controller);
+    return true;
+  }
+  if (event.key === "ArrowDown" || event.key === "ArrowUp") {
+    event.preventDefault();
+    repos.moveRepoHighlight(controller, event.key === "ArrowDown" ? 1 : -1);
+    return true;
+  }
+  if (event.key === "Enter" && event.target?.dataset?.event === "repo-filter") {
+    event.preventDefault();
+    settle(controller, repos.activateHighlightedRepository(controller));
+    return true;
+  }
+  return false;
 }
 
 /// Without a `<form>` element there is no implicit submit, so the two places a
