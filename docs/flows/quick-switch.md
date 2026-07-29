@@ -11,7 +11,7 @@ Backend caller submits the name of another local branch, or explicitly asks to r
 3. Applying the plan records an in-flight `quick-switch` operation.
 4. If tracked superproject changes exist, a non-recursive `git stash create` creates a snapshot without touching the shared stash stack. The snapshot is first anchored at `refs/githelper/wip/<source-branch>`.
 5. Only after the WIP ref is written, tracked changes are removed with a non-recursive `git reset --hard HEAD`, then `git switch --no-recurse-submodules --no-guess -- <target-branch>` moves the checkout.
-6. When **carry changes** is enabled, tracked changes are snapshotted with `git stash create`, the worktree is reset, the checkout switches, and the snapshot is reapplied on the target branch with `git stash apply --index` (falling back to a plain apply). No Saved work ref is written for the source branch, so this mode can switch away even when Saved work already exists there.
+6. When **carry changes** is enabled, tracked changes are stored with `git stash push`, the checkout switches, and the stash is restored with `git stash pop --index` (falling back to a plain pop). Pop conflicts do not block the switch; the result reports a warning and leaves conflict markers for the user to resolve. No Saved work ref is written for the source branch.
 7. The result reports the newly created Saved work and any Saved work already waiting for the target branch.
 
 ## Restore sequence
@@ -50,3 +50,4 @@ Backend caller submits the name of another local branch, or explicitly asks to r
 - A plan becomes stale if HEAD, the target branch, tracked status, or untracked conflict set changes before application.
 - Nested submodule state is preserved in place rather than snapshotted per branch. Changes made inside a submodule while away from the source branch replace that in-place state.
 - If restoration conflicts, the WIP ref remains until the user resolves or explicitly deletes it.
+- Carry pop conflicts leave the checkout on the target branch with conflict markers and may keep the stash entry until the user resolves and drops it.
