@@ -1,0 +1,122 @@
+import { createDraft } from "./draft.ts";
+import { focusNode } from "./dom.ts";
+import { overviewOf } from "./snapshot.ts";
+import type { AppController } from "./controller.ts";
+import type { AppState, RecentRepository, RepositorySnapshot } from "./types.ts";
+
+export function filteredRecents(state: AppState): RecentRepository[] {
+  const query = state.repoFilter.trim().toLowerCase();
+  if (!query) return state.recentRepositories;
+  return state.recentRepositories.filter((entry) => {
+    return entry.name.toLowerCase().includes(query) || entry.path.toLowerCase().includes(query);
+  });
+}
+
+export async function loadRecentRepositories(controller: AppController): Promise<void> {
+  try {
+    controller.state.recentRepositories = await controller.bridge.invoke<RecentRepository[]>(
+      "list_recent_repositories",
+    );
+  } catch {
+    controller.state.recentRepositories = [];
+  }
+}
+
+export function toggleRepoMenu(controller: AppController): void {
+  if (controller.state.busy) return;
+  controller.state.repoMenuOpen = !controller.state.repoMenuOpen;
+  if (controller.state.repoMenuOpen) {
+    controller.state.repoFilter = "";
+    controller.state.repoHighlight = 0;
+  }
+  controller.render();
+  if (controller.state.repoMenuOpen) focusNode("#repo-filter");
+}
+
+export function closeRepoMenu(controller: AppController): void {
+  if (!controller.state.repoMenuOpen) return;
+  controller.state.repoMenuOpen = false;
+  controller.state.repoFilter = "";
+  controller.render();
+}
+
+export function setRepoFilter(controller: AppController, node: { value: string }): void {
+  controller.state.repoFilter = node.value;
+  controller.state.repoHighlight = 0;
+  controller.render();
+}
+
+export function moveRepoHighlight(controller: AppController, step: number): void {
+  const total = filteredRecents(controller.state).length;
+  if (!total) return;
+  const next = (controller.state.repoHighlight + step + total) % total;
+  controller.state.repoHighlight = next;
+  controller.render();
+}
+
+export async function openPickedRepository(controller: AppController): Promise<void> {
+  const path = await controller.bridge.pickRepository().catch((error: unknown) => {
+    controller.fail(error);
+    controller.render();
+    return null;
+  });
+  if (!path) return;
+  await openRepositoryPath(controller, path);
+}
+
+export async function openRecentRepository(controller: AppController, path: string): Promise<void> {
+  if (!path || controller.state.busy) return;
+  const current = overviewOf(controller.state)?.path;
+  if (current && samePath(current, path)) {
+    closeRepoMenu(controller);
+    return;
+  }
+  await openRepositoryPath(controller, path);
+}
+
+export async function removeRecentRepository(controller: AppController, path: string): Promise<void> {
+  if (!path || controller.state.busy) return;
+  controller.state.recentRepositories = await controller.bridge.invoke<RecentRepository[]>(
+    "remove_recent_repository",
+    { path },
+  );
+  const visible = filteredRecents(controller.state).length;
+  if (controller.state.repoHighlight >= visible) {
+    controller.state.repoHighlight = Math.max(0, visible - 1);
+  }
+  controller.render();
+}
+
+export async function activateHighlightedRepository(controller: AppController): Promise<void> {
+  const entry = filteredRecents(controller.state)[controller.state.repoHighlight];
+  if (!entry) return;
+  await openRecentRepository(controller, entry.path);
+}
+
+async function openRepositoryPath(controller: AppController, path: string): Promise<void> {
+  controller.state.repoMenuOpen = false;
+  controller.state.repoFilter = "";
+  controller.state.repoOpeningPath = path;
+  await controller.run(async () => {
+    await controller.cancelReview();
+    try {
+      const snapshot = await controller.bridge.invoke<RepositorySnapshot>("open_repository", {
+        request: { path },
+      });
+      controller.state.draft = createDraft();
+      controller.state.outcome = null;
+      controller.state.expanded.clear();
+      await controller.reload(snapshot);
+      await loadRecentRepositories(controller);
+    } catch (error) {
+      await loadRecentRepositories(controller);
+      throw error;
+    } finally {
+      controller.state.repoOpeningPath = "";
+    }
+  });
+}
+
+function samePath(left: string, right: string): boolean {
+  return left.replaceAll("/", "\\").toLowerCase() === right.replaceAll("/", "\\").toLowerCase();
+}
