@@ -1,4 +1,5 @@
 import assert from "node:assert/strict";
+import { readFile } from "node:fs/promises";
 import test from "node:test";
 import { renderShell } from "../ui/app/index.js";
 import {
@@ -47,6 +48,12 @@ test("the repository menu lists recents and filters them", () => {
   assert.equal(filteredRecents(controller.state).length, 1);
 });
 
+test("pressing a repository previews its selected state before the menu closes", async () => {
+  const css = await readFile(new URL("../ui/styles/repo-menu.css", import.meta.url), "utf8");
+
+  assert.match(css, /\.repo-row:has\(\.repo-open:active\)\s*\{/);
+});
+
 test("opening a recent repository reloads from the returned snapshot", async () => {
   const controller = withRecents({ repoMenuOpen: true });
   const commands = [];
@@ -65,7 +72,7 @@ test("opening a recent repository reloads from the returned snapshot", async () 
   assert.ok(commands.includes("list_recent_repositories"));
 });
 
-test("opening a recent repository visibly selects the target while it loads", async () => {
+test("opening a recent repository closes the menu and shows the target immediately", async () => {
   let finishOpen;
   const controller = withRecents({ repoMenuOpen: true });
   const original = controller.bridge.invoke.bind(controller.bridge);
@@ -77,14 +84,14 @@ test("opening a recent repository visibly selects the target while it loads", as
   };
 
   const opening = openRecentRepository(controller, "C:/work/beta");
-  await Promise.resolve();
+  const markup = renderShell(controller.state);
 
   assert.equal(controller.state.busy, true);
-  assert.match(
-    renderShell(controller.state),
-    /class="repo-row current" role="option" aria-selected="true">\s*<button[^>]*data-value="C:\/work\/beta"/,
-  );
+  assert.equal(controller.state.repoMenuOpen, false);
+  assert.doesNotMatch(markup, /id="repo-menu"/);
+  assert.match(markup, /<strong>beta<\/strong>\s*<code>C:\/work\/beta<\/code>/);
 
+  await Promise.resolve();
   finishOpen();
   await opening;
 });
@@ -103,10 +110,8 @@ test("a failed repository open restores the previous visible selection", async (
   await openRecentRepository(controller, "C:/work/beta");
 
   assert.equal(controller.state.repoOpeningPath, "");
-  assert.match(
-    renderShell(controller.state),
-    /class="repo-row current active" role="option" aria-selected="true">\s*<button[^>]*data-value="C:\/work\/alpha"/,
-  );
+  assert.equal(controller.state.repoMenuOpen, false);
+  assert.match(renderShell(controller.state), /<strong>alpha<\/strong>\s*<code>C:\/work\/alpha<\/code>/);
 });
 
 test("removing a recent repository keeps the menu open", async () => {

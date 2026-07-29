@@ -95,6 +95,10 @@
   background: color-mix(in srgb, var(--accent) 22%, var(--surface));
 }
 
+.repo-row:has(.repo-open:active) {
+  background: color-mix(in srgb, var(--accent) 22%, var(--surface));
+}
+
 .repo-open {
   display: grid;
   gap: 2px;

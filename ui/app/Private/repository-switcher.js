@@ -92,9 +92,11 @@ export async function activateHighlightedRepository(controller) {
 }
 
 async function openRepositoryPath(controller, path) {
-  await controller.cancelReview();
+  controller.state.repoMenuOpen = false;
+  controller.state.repoFilter = "";
   controller.state.repoOpeningPath = path;
   await controller.run(async () => {
+    await controller.cancelReview();
     try {
       const snapshot = await controller.bridge.invoke("open_repository", {
         request: { path },
@@ -102,8 +104,6 @@ async function openRepositoryPath(controller, path) {
       controller.state.draft = createDraft();
       controller.state.outcome = null;
       controller.state.expanded.clear();
-      controller.state.repoMenuOpen = false;
-      controller.state.repoFilter = "";
       await controller.reload(snapshot);
       await loadRecentRepositories(controller);
     } catch (error) {

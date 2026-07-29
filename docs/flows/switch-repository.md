@@ -13,9 +13,10 @@ Tauri: `open_repository`, `list_recent_repositories`, `remove_recent_repository`
 
 1. `start()` loads persisted recents into `state.recentRepositories`.
 2. Toggle opens the filter menu; Esc / outside click closes it.
-3. Choosing a recent path (or browsing) cancels any pending review, records the path as the in-flight
-   selection, then calls `open_repository`. While the call is pending, an open menu marks that target
-   as selected instead of continuing to mark the previous repository.
+3. Pressing a recent path immediately previews its selected color. Releasing the press closes the
+   menu synchronously, records the path as the in-flight selection, cancels any pending review, then
+   calls `open_repository`. While the call is pending, the repository picker shows that target
+   instead of continuing to show the previous path.
 4. Rust opens the path; on success it remembers the path at the front of the recent list and returns a snapshot.
 5. On open failure, Rust removes that path from recents (idempotent) and returns the error; the previous repository session stays open.
 6. The controller reloads from the returned snapshot (or refreshes the recent list after a failure),

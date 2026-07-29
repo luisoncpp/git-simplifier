@@ -3,18 +3,24 @@ import { filteredRecents } from "../repository-switcher.js";
 import { overviewOf } from "../snapshot.js";
 
 export function repoSwitcher(state) {
-  const overview = overviewOf(state);
+  const repository = displayedRepository(state);
   const open = state.repoMenuOpen;
   return `<div class="repo-switcher">
     <button class="repo-picker" type="button" data-event="toggle-repo-menu"
       aria-expanded="${open ? "true" : "false"}" aria-controls="repo-menu"
       title="Switch repository" ${state.busy ? "disabled" : ""}>
       <span class="eyebrow">Repository</span>
-      <strong>${esc(overview?.name ?? "Open a repository")}</strong>
-      <code>${esc(overview?.path ?? "No repository is open")}</code>
+      <strong>${esc(repository?.name ?? "Open a repository")}</strong>
+      <code>${esc(repository?.path ?? "No repository is open")}</code>
     </button>
     ${open ? repoMenu(state) : ""}
   </div>`;
+}
+
+function displayedRepository(state) {
+  if (!state.repoOpeningPath) return overviewOf(state);
+  const recent = state.recentRepositories.find((entry) => samePath(entry.path, state.repoOpeningPath));
+  return recent ?? { name: "Opening repository", path: state.repoOpeningPath };
 }
 
 function repoMenu(state) {
