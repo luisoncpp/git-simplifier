@@ -93,6 +93,7 @@ export async function activateHighlightedRepository(controller) {
 
 async function openRepositoryPath(controller, path) {
   await controller.cancelReview();
+  controller.state.repoOpeningPath = path;
   await controller.run(async () => {
     try {
       const snapshot = await controller.bridge.invoke("open_repository", {
@@ -108,6 +109,8 @@ async function openRepositoryPath(controller, path) {
     } catch (error) {
       await loadRecentRepositories(controller);
       throw error;
+    } finally {
+      controller.state.repoOpeningPath = "";
     }
   });
 }

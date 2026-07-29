@@ -21,6 +21,7 @@ The UI is a single deep module. `ui/app/index.js` is the only public interface (
 
 - **Discovery data is never mixed with user intent.** `state.paths`, `state.commits`, `state.branches`, and `state.submodules` come from Rust; `state.draft` holds what the user picked. A refresh replaces the former and reconciles the latter, so a selection that disappeared from the repository cannot be sent back.
 - **Recent repositories are app preference, not Git state.** `state.recentRepositories` is a list of paths loaded from the desktop app data file; it is never written into `.git`. Opening a repository promotes its path; remove only drops the preference entry.
+- **An in-flight repository choice is visible intent.** `state.repoOpeningPath` temporarily overrides the old snapshot path when the recent menu derives its selected row. It is cleared after success or failure, so a successful snapshot takes over and a failed open visibly returns to the previous repository.
 - **Every form control is state-backed.** Re-rendering therefore cannot lose a typed message, a filter query, or a path selection, and cancelling a review returns the user to the exact selection they had.
 - **A message draft is per commit** (`draft.messages` keyed by commit id). Changing the selected commit shows that commit's message; it never carries text from another commit into a rewrite.
 - **The Editable range is presented newest first.** Rust returns it oldest first for planning; the commit a user rewords is almost always the newest one.

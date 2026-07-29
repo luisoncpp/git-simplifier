@@ -43,7 +43,7 @@ function menuBody(state, entries) {
 }
 
 function repoRow(state, entry, index) {
-  const current = overviewOf(state)?.path ?? "";
+  const current = state.repoOpeningPath || overviewOf(state)?.path || "";
   const selected = samePath(current, entry.path);
   const active = index === state.repoHighlight;
   const classes = ["repo-row", selected ? "current" : "", active ? "active" : ""]

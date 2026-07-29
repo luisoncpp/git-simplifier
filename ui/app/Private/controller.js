@@ -25,6 +25,7 @@ export class AppController {
       repoMenuOpen: false,
       repoFilter: "",
       repoHighlight: 0,
+      repoOpeningPath: "",
       draft: createDraft(),
       expanded: new Set(),
       review: null,
