@@ -18,7 +18,8 @@ The UI is a single deep module written in strict TypeScript (`tsc --noEmit` is t
 | `Private/views/repo-menu.ts` | Rail repository picker and filterable recent list |
 | `Private/views/branch-picker.ts` | Searchable Quick switch branch menu (local + remote-only) |
 | `Private/branch-switcher.ts` | Branch menu open/filter/pick keyboard handlers |
-| `Private/views/inspection.ts` | Branch diff presentation and clipboard action |
+| `Private/views/inspection.ts` | Shared Inspection chrome, Raw diff presentation, and the clipboard action |
+| `Private/files-diff/` | Nested deep module: the structured per-file diff surface (unified/side-by-side, gap expansion, file navigator, Prism adapter). Only its `index.ts` may be imported |
 | `Private/views/path-list.ts` | The changed-path checklist, shared by Uncommit and Split branch |
 | `Private/views/*` | Pure functions from state to markup |
 
@@ -33,6 +34,11 @@ The UI is a single deep module written in strict TypeScript (`tsc --noEmit` is t
 - **A path selection belongs to one operation.** Uncommit and Split branch read the same changed-path list but mean opposite things by a tick — remove this from history versus copy this elsewhere — so each keeps its own set and `pathSetFor` picks by operation. Sharing one set would let a selection made for one operation arrive pre-ticked in the other.
 - `state.outcome` is cleared when the operation changes, when a new review is prepared, and when another repository is opened, so a result banner can never describe stale work.
 - `state.branchDiff` is read-only discovery data. Entering Inspection, refreshing, changing Base, or opening another repository regenerates it from Rust; the UI never reconstructs a Git command.
+- **The Inspection group is two views, not one.** `ViewId` has no `"inspection"` member: `"files-diff"` and `"raw-diff"` are siblings and every gate asks `isInspectionView`. Leaving one of the two named after the group would guarantee a future bug, and `loadViewData` gates *per view* so entering one section never pays for the other's Git work.
+- **The structured diff is two discovery collections and one intent object.** `state.fileDiffs` (the context-3 diff) is never replaced by an expanded version, which is what keeps every gap index and anchor id stable; `state.fileDiffsFull` is the per-path full-context cache, and its *presence* is what stops a second Rust call rather than a separate flag; `state.diffView` holds the layout, the collapsed set, the per-gap reveals, and the navigator.
+- **Layout and navigator state are session preference.** `resetFileDiffs` clears the diffs, the cache, the collapsed set, and the reveals, but never the layout or the navigator — a refresh or a Base change must not silently undo a choice the user made, the same reasoning that keeps `draft.pullAfterSwitch` sticky.
+- **Files diff keeps its own `collapsed` set** instead of sharing `state.expanded` with Recovery. Every file starts open, so default-open maps naturally onto an empty set, whereas `state.expanded` is keyed by oplog id and defaults closed. Consolidating the two would need prefixed keys and inverted defaults for no gain.
+- A wholly added or wholly deleted file has no gaps: its patch already contains every line, so it must not offer an expander.
 
 ## Rendering
 
@@ -40,7 +46,14 @@ The UI is a single deep module written in strict TypeScript (`tsc --noEmit` is t
 
 Two things are patched instead of re-rendered: the commit-message textarea keeps its native undo stack, so typing only refreshes `#message-tools` and `#submit-row`. The optional Split branch message is simpler — nothing depends on it, so typing records the value and skips the render entirely.
 
-The rail reserves an **Inspection** group for read-only tools. Branch diff is its first item: it renders the generated `Base...HEAD` patch in a scroll-preserving code surface and copies the state value through the platform clipboard in one action.
+The rail reserves an **Inspection** group for read-only tools, in the order it lists them: **Files diff** renders the same `Base...HEAD` patch per file with line numbers, syntax highlighting, and expandable context, and **Raw diff** renders it as text and copies it through the platform clipboard in one action.
+
+Two rendering rules the Files diff depends on:
+
+- **A jump must scroll after `render()`.** `renderInto` restores every `[data-scroll]` offset *synchronously* after the markup swap, so a scroll performed before or during a render loses the race — and an `href="#file-3"` fragment both fights that restore and pushes a history entry. `jumpToFile` therefore renders first, then calls `dom.ts`'s `revealByDataset`, which finds the card by dataset value for the same reason focus and scroll restoration do: keys carry repository paths.
+- **Anchor ids come from the array index, never the path**, which may contain slashes, spaces, quotes, and non-ASCII. The path travels alongside as `data-file`.
+
+`prismjs` is the project's only runtime dependency and is confined to `files-diff/highlight.ts`. The core and every grammar load through `import()` behind a `globalThis.document` check, so the bundler-free test runner never resolves the package and highlighting degrades to escaped plain text; the core is published to `globalThis.Prism` before any grammar runs, because the component files bind a free `Prism` through the global. Prism's output is **already escaped HTML** — every branch of `highlightCode` returns safe markup, and callers must concatenate it raw rather than passing it through `esc` again. Tokenizing is per line, so a construct spanning several lines (a block comment, a template literal) is coloured wrongly; whole-file tokenizing is incompatible with a windowed view. The tint of a changed row is carried entirely by its background and its `+`/`−` glyph, leaving every foreground colour to Prism — a `color` on the row would either lose to the tokens or invite an `!important` that smothers highlighting exactly where it matters most.
 
 ## Disabled controls always say why
 

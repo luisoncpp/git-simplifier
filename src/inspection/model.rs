@@ -68,3 +68,77 @@ pub struct SubmoduleChoice {
     pub object: ObjectId,
     pub excluded: bool,
 }
+
+#[derive(Clone, Copy, Debug, Eq, PartialEq, Serialize, Deserialize)]
+#[serde(rename_all = "snake_case")]
+pub enum FileDiffStatus {
+    Added,
+    Deleted,
+    Modified,
+    /// Unreachable while the patch argv keeps `--no-renames`, which reports a
+    /// rename as a delete plus an add.
+    Renamed,
+}
+
+#[derive(Clone, Copy, Debug, Eq, PartialEq, Serialize, Deserialize)]
+#[serde(rename_all = "snake_case")]
+pub enum DiffLineKind {
+    Context,
+    Add,
+    Del,
+}
+
+/// One changed file of a `Base...HEAD` patch.
+///
+/// `complete` is the contract the expansion query fulfils: true means `hunks`
+/// already hold every line of the file, so a viewer has nothing left to fetch
+/// and must stop offering context-expansion controls.
+///
+/// A mode change is not a status — a file can be modified and chmod'ed in the
+/// same patch — so callers read "mode only" as empty `hunks` with differing
+/// modes.
+#[derive(Clone, Debug, Eq, PartialEq, Serialize, Deserialize)]
+pub struct FileDiff {
+    pub path: RepoPath,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub previous_path: Option<RepoPath>,
+    pub status: FileDiffStatus,
+    /// Absent on the side where the file does not exist.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub old_mode: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub new_mode: Option<String>,
+    pub binary: bool,
+    pub complete: bool,
+    pub hunks: Vec<DiffHunk>,
+}
+
+#[derive(Clone, Debug, Eq, PartialEq, Serialize, Deserialize)]
+pub struct DiffHunk {
+    /// Git's own convention: the start is 0 when the line count is 0.
+    pub old_start: u32,
+    pub old_lines: u32,
+    pub new_start: u32,
+    pub new_lines: u32,
+    /// The section heading after the closing `@@`, empty when Git printed none.
+    pub heading: String,
+    pub lines: Vec<DiffLine>,
+}
+
+#[derive(Clone, Debug, Eq, PartialEq, Serialize, Deserialize)]
+pub struct DiffLine {
+    pub kind: DiffLineKind,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub old_line: Option<u32>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub new_line: Option<u32>,
+    /// Content without the `+`/`-`/space marker and without the line
+    /// terminator. A CRLF file keeps its trailing `\r` here.
+    pub text: String,
+    #[serde(default, skip_serializing_if = "is_false")]
+    pub no_newline: bool,
+}
+
+fn is_false(value: &bool) -> bool {
+    !*value
+}

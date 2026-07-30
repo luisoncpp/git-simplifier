@@ -14,7 +14,11 @@
   },
   "devDependencies": {
     "@tauri-apps/cli": "^2.5.0",
+    "@types/prismjs": "^1.26.6",
     "typescript": "^5.9.3",
     "vite": "^6.1.0"
+  },
+  "dependencies": {
+    "prismjs": "^1.30.0"
   }
 }

@@ -1,6 +1,7 @@
 pub mod actions;
 mod apply;
 mod data;
+pub mod diffs;
 mod prepare;
 mod recents;
 mod repository;

@@ -46,7 +46,10 @@ test("operation tabs still switch when their discovery request fails", async () 
 });
 
 test("Git-backed Tauri commands run off the window thread", async () => {
-  const source = await readFile(new URL("../src-tauri/src/commands/actions.rs", import.meta.url), "utf8");
+  const files = ["actions", "diffs"].map((name) =>
+    readFile(new URL(`../src-tauri/src/commands/${name}.rs`, import.meta.url), "utf8"),
+  );
+  const source = (await Promise.all(files)).join("\n");
   const commands = [...source.matchAll(/#\[tauri::command(?:\(async\))?\]\s+pub fn (\w+)/g)];
   const blocking = commands
     .filter((match) => match[1] !== "app_ready" && !match[0].includes("(async)"))

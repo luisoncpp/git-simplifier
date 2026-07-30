@@ -1,16 +1,17 @@
 mod diff;
 mod errors;
 mod model;
+mod patch;
 mod queries;
 
 pub use errors::InspectionError;
 pub use model::{
-    ChangedPath, EditableCommit, LocalBranchChoice, RemoteBaseChoice, RepositoryOverview,
-    SubmoduleChoice, WorktreeSummary,
+    ChangedPath, DiffHunk, DiffLine, DiffLineKind, EditableCommit, FileDiff, FileDiffStatus,
+    LocalBranchChoice, RemoteBaseChoice, RepositoryOverview, SubmoduleChoice, WorktreeSummary,
 };
 
 use crate::git::GitRunner;
-use crate::rewrite::RefName;
+use crate::rewrite::{RefName, RepoPath};
 
 pub(crate) fn overview(runner: &GitRunner) -> Result<RepositoryOverview, InspectionError> {
     queries::overview(runner)
@@ -26,6 +27,19 @@ pub(crate) fn changed_paths(
 }
 pub(crate) fn branch_diff(runner: &GitRunner, base: &RefName) -> Result<String, InspectionError> {
     diff::branch_diff(runner, base)
+}
+pub(crate) fn files_diff(
+    runner: &GitRunner,
+    base: &RefName,
+) -> Result<Vec<FileDiff>, InspectionError> {
+    diff::files_diff(runner, base)
+}
+pub(crate) fn full_file_diff(
+    runner: &GitRunner,
+    base: &RefName,
+    path: &RepoPath,
+) -> Result<Option<FileDiff>, InspectionError> {
+    diff::full_file_diff(runner, base, path)
 }
 pub(crate) fn editable_commits(
     runner: &GitRunner,

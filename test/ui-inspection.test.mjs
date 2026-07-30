@@ -3,7 +3,7 @@ import test from "node:test";
 import { renderShell } from "../ui/app/index.ts";
 import { controllerWith, snapshotWith } from "./support/controller.mjs";
 
-test("Inspection loads and renders the current branch diff", async () => {
+test("Raw diff loads and renders the current branch patch", async () => {
   const commands = [];
   const patch = "diff --git a/src/app.js b/src/app.js\n+new line\n";
   const controller = controllerWith({
@@ -14,18 +14,33 @@ test("Inspection loads and renders the current branch diff", async () => {
     },
   });
 
-  await controller.setView("inspection");
+  await controller.setView("raw-diff");
 
   const markup = renderShell(controller.state);
   assert.equal(controller.state.branchDiff, patch);
+  // Per-view gating: opening Raw diff must not also fetch the structured diff.
   assert.deepEqual(commands, ["generate_branch_diff"]);
   assert.match(markup, />Inspection</);
-  assert.match(markup, /Branch diff/);
+  assert.match(markup, /Raw diff/);
+  assert.doesNotMatch(markup, /Branch diff/);
   assert.match(markup, /data-event="copy-diff"/);
   assert.match(markup, /\+new line/);
 });
 
-test("Inspection explains that Base is required without requesting a diff", async () => {
+test("the Inspection rail lists Files diff before Raw diff", () => {
+  const controller = controllerWith({});
+
+  const markup = renderShell(controller.state);
+
+  assert.match(markup, /data-value="files-diff"/);
+  assert.match(markup, /data-value="raw-diff"/);
+  assert.ok(
+    markup.indexOf('data-value="files-diff"') < markup.indexOf('data-value="raw-diff"'),
+    "Files diff is the readable view and leads the group",
+  );
+});
+
+test("Raw diff explains that Base is required without requesting a diff", async () => {
   const commands = [];
   const controller = controllerWith({
     async invoke(command) {
@@ -34,13 +49,13 @@ test("Inspection explains that Base is required without requesting a diff", asyn
     },
   }, { base: null });
 
-  await controller.setView("inspection");
+  await controller.setView("raw-diff");
 
   assert.deepEqual(commands, []);
   assert.match(renderShell(controller.state), /Set Base to generate a diff/);
 });
 
-test("refresh regenerates an open Inspection diff", async () => {
+test("refresh regenerates an open Raw diff", async () => {
   let generation = 0;
   const controller = controllerWith({
     async invoke(command) {
@@ -50,7 +65,7 @@ test("refresh regenerates an open Inspection diff", async () => {
     },
   });
 
-  await controller.setView("inspection");
+  await controller.setView("raw-diff");
   await controller.refresh();
 
   assert.equal(controller.state.branchDiff, "patch 2");
@@ -64,7 +79,7 @@ test("the generated diff is copied to the clipboard in one action", async () => 
     value: { writeText: async (value) => writes.push(value) },
   });
   controller.state.branchDiff = "diff content";
-  controller.state.view = "inspection";
+  controller.state.view = "raw-diff";
 
   try {
     await controller.copyDiff();

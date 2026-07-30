@@ -15,6 +15,13 @@ pub struct BaseRequest {
     pub base: String,
 }
 
+/// The diff viewer expands one file at a time, which `BaseRequest` cannot say.
+#[derive(Clone, Debug, Deserialize)]
+pub struct FilePathRequest {
+    pub base: String,
+    pub path: String,
+}
+
 #[derive(Debug, Deserialize)]
 pub struct OpenRepositoryInput {
     pub path: String,

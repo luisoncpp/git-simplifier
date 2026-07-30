@@ -117,6 +117,29 @@ async function openRepositoryPath(controller: AppController, path: string): Prom
   });
 }
 
+/// Truthy when the key belonged to the open repository menu, so the delegated
+/// dispatcher stops looking. Enter returns its promise so the caller reports a
+/// failed open instead of losing it.
+export function handleKeys(controller: AppController, event: KeyboardEvent): boolean | Promise<void> {
+  if (!controller.state.repoMenuOpen) return false;
+  if (event.key === "Escape") {
+    event.preventDefault();
+    closeRepoMenu(controller);
+    return true;
+  }
+  if (event.key === "ArrowDown" || event.key === "ArrowUp") {
+    event.preventDefault();
+    moveRepoHighlight(controller, event.key === "ArrowDown" ? 1 : -1);
+    return true;
+  }
+  const target = event.target as HTMLElement | null;
+  if (event.key === "Enter" && target?.dataset?.event === "repo-filter") {
+    event.preventDefault();
+    return activateHighlightedRepository(controller);
+  }
+  return false;
+}
+
 function samePath(left: string, right: string): boolean {
   return left.replaceAll("/", "\\").toLowerCase() === right.replaceAll("/", "\\").toLowerCase();
 }

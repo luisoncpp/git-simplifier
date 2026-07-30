@@ -3,6 +3,8 @@
 /// Rust newtypes (RefName, ObjectId, RepoPath) serialize as plain strings;
 /// RefValue additionally tolerates legacy `{ value }` wrappers.
 
+import type { DiffViewState, FileDiff } from "./files-diff/index.ts";
+
 export type RefValue = string | { value?: string } | null | undefined;
 
 export interface WorktreeSummary {
@@ -111,7 +113,10 @@ export type OperationRequest =
   | { kind: "resume_sync" }
   | { kind: "force_push" };
 
-export type ViewId = "actions" | "saved" | "recovery" | "inspection";
+/// The two Inspection sections are separate views: every gate that used to read
+/// `"inspection"` now asks `isInspectionView`, so neither can be mistaken for the
+/// group.
+export type ViewId = "actions" | "saved" | "recovery" | "files-diff" | "raw-diff";
 
 export type OperationId =
   | "uncommit"
@@ -155,6 +160,9 @@ export interface AppState {
   operations: RecoveryEntry[];
   branchDiff: string | null;
   diffCopied: boolean;
+  fileDiffs: FileDiff[] | null;
+  fileDiffsFull: Map<string, FileDiff>;
+  diffView: DiffViewState;
   recentRepositories: RecentRepository[];
   repoMenuOpen: boolean;
   repoFilter: string;

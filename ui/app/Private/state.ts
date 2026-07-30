@@ -1,5 +1,12 @@
 import { createDraft } from "./draft.ts";
-import type { AppState } from "./types.ts";
+import { createDiffView } from "./files-diff/index.ts";
+import type { AppState, ViewId } from "./types.ts";
+
+const INSPECTION: ViewId[] = ["files-diff", "raw-diff"];
+
+/// Both Inspection sections load read-only diff data on entry, so the gates that
+/// used to test a single view id test the group instead.
+export const isInspectionView = (view: ViewId): boolean => INSPECTION.includes(view);
 
 export function createState(): AppState {
   return {
@@ -15,6 +22,9 @@ export function createState(): AppState {
     operations: [],
     branchDiff: null,
     diffCopied: false,
+    fileDiffs: null,
+    fileDiffsFull: new Map(),
+    diffView: createDiffView(),
     recentRepositories: [],
     repoMenuOpen: false,
     repoFilter: "",

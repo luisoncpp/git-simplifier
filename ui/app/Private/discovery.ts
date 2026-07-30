@@ -1,6 +1,8 @@
 import { adoptBranch, adoptCommit, adoptPaths, adoptSubmodule } from "./draft.ts";
+import { loadFileDiffs } from "./files-diff/index.ts";
 import { discoveryFor } from "./operations.ts";
 import { baseRef } from "./snapshot.ts";
+import { isInspectionView } from "./state.ts";
 import type { AppController } from "./controller.ts";
 import type { AppState, BaseChoice, RepositorySnapshot } from "./types.ts";
 
@@ -42,12 +44,20 @@ export async function loadOperationData(controller: AppController): Promise<void
   adoptSelections(state);
 }
 
+/// Gated per view, so entering one Inspection section never pays for the other's
+/// Git work.
 export async function loadViewData(controller: AppController): Promise<void> {
   const state = controller.state;
-  if (state.view !== "inspection") return;
+  if (!isInspectionView(state.view)) return;
+  const base = baseRef(state);
+  if (state.view === "raw-diff") return loadBranchDiff(controller, base);
+  return loadFileDiffs(controller, base);
+}
+
+async function loadBranchDiff(controller: AppController, base: string): Promise<void> {
+  const state = controller.state;
   state.diffCopied = false;
   state.branchDiff = null;
-  const base = baseRef(state);
   if (!base) return;
   state.branchDiff = await controller.bridge.invoke<string>("generate_branch_diff", { request: { base } });
 }

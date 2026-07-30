@@ -42,7 +42,8 @@ Keep these docs operational. Prefer short tables, explicit file names, and seque
 | File | Scope |
 |------|-------|
 | [close-to-tray.md](./close-to-tray.md) | Window close hides to tray; tray Show/Quit |
-| [branch-diff.md](./branch-diff.md) | Generate and copy the current branch's committed `Base...HEAD` patch |
+| [raw-diff.md](./raw-diff.md) | Generate and copy the current branch's committed `Base...HEAD` patch as text |
+| [files-diff.md](./files-diff.md) | Per-file diff viewer: unified/side-by-side, gap expansion, file navigator |
 | [edit-message.md](./edit-message.md) | Backend Edit message planning and application |
 | [excluded-submodule.md](./excluded-submodule.md) | Backend Excluded submodule configuration and guard installation |
 | [force-push.md](./force-push.md) | Backend explicit force-push after a rewrite |

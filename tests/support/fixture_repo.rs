@@ -35,6 +35,31 @@ impl FixtureRepo {
         run(&self.repo, &["commit", "-m", message]);
     }
 
+    /// Seeds `content` into Base *and* onto `feature`, so a later edit produces a
+    /// mid-file hunk with real context instead of a whole-file rewrite.
+    pub fn commit_base_file(&self, path: &str, content: &str) {
+        self.switch_to_base();
+        write_file(self.root.path(), path, content);
+        run(&self.repo, &["add", "--", path]);
+        run(&self.repo, &["commit", "-m", "seed base file"]);
+        self.set_base_ref();
+        self.switch_to_feature();
+        run(&self.repo, &["merge", "--ff-only", "base"]);
+    }
+
+    pub fn commit_bytes(&self, path: &str, content: &[u8], message: &str) {
+        fs::write(self.root.path().join(path), content).unwrap();
+        run(&self.repo, &["add", "--", path]);
+        run(&self.repo, &["commit", "-m", message]);
+    }
+
+    /// `update-index --chmod` records the mode change whatever `core.filemode`
+    /// says, so a mode-only diff is reproducible on Windows too.
+    pub fn chmod_executable(&self, path: &str, message: &str) {
+        run(&self.repo, &["update-index", "--chmod=+x", "--", path]);
+        run(&self.repo, &["commit", "-m", message]);
+    }
+
     pub fn remove_file(&self, path: &str, message: &str) {
         run(&self.repo, &["rm", "--quiet", "--", path]);
         run(&self.repo, &["commit", "-m", message]);

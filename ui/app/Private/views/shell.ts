@@ -1,5 +1,7 @@
 import { esc } from "../dom.ts";
+import { filesDiffView } from "../files-diff/index.ts";
 import { baseRef, currentBranch, overviewOf, refValue, upstreamRef, worktreeCounts } from "../snapshot.ts";
+import { isInspectionView } from "../state.ts";
 import type { AppState, ViewId } from "../types.ts";
 import { actionsView } from "./actions.ts";
 import { banners } from "./banners.ts";
@@ -15,7 +17,12 @@ const VIEWS: NavEntry[] = [
   ["saved", "Saved work", (state) => state.saved.length],
   ["recovery", "Recovery", (state) => state.operations.length],
 ];
-const INSPECTION_VIEWS: NavEntry[] = [["inspection", "Branch diff", () => 0]];
+/// Array order is rail order. Files diff leads because it is the readable view;
+/// Raw diff stays for copying the patch as text.
+const INSPECTION_VIEWS: NavEntry[] = [
+  ["files-diff", "Files diff", (state) => state.fileDiffs?.length ?? 0],
+  ["raw-diff", "Raw diff", () => 0],
+];
 
 export function renderShell(state: AppState): string {
   return `<div class="shell">${rail(state)}${main(state)}</div>`;
@@ -62,7 +69,7 @@ function main(state: AppState): string {
 function workspaceClass(state: AppState): string {
   const classes = [];
   if (state.review) classes.push("split");
-  if (state.view === "inspection") classes.push("inspection");
+  if (isInspectionView(state.view)) classes.push("inspection");
   return classes.length ? ` ${classes.join(" ")}` : "";
 }
 
@@ -70,7 +77,8 @@ function pane(state: AppState): string {
   if (!state.snapshot) return emptyPane(state);
   if (state.view === "saved") return savedView(state);
   if (state.view === "recovery") return recoveryView(state);
-  if (state.view === "inspection") return inspectionView(state);
+  if (state.view === "files-diff") return filesDiffView(state);
+  if (state.view === "raw-diff") return inspectionView(state);
   return actionsView(state);
 }
 

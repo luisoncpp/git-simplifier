@@ -2,9 +2,10 @@ import { TauriBridge } from "./bridge.ts";
 import { loadOperationData, loadViewData, reloadState } from "./discovery.ts";
 import { focusNode, renderInto } from "./dom.ts";
 import { bindEvents } from "./events.ts";
+import { resetFileDiffs } from "./files-diff/index.ts";
 import { buildRequest, submitState } from "./operations.ts";
 import { loadRecentRepositories } from "./repository-switcher.ts";
-import { createState } from "./state.ts";
+import { createState, isInspectionView } from "./state.ts";
 import { renderShell } from "./views/shell.ts";
 import type {
   AppState,
@@ -88,9 +89,10 @@ export class AppController {
     await this.cancelReview();
     this.state.view = view;
     this.state.error = "";
-    if (view === "inspection") {
+    if (isInspectionView(view)) {
       this.state.branchDiff = null;
       this.state.diffCopied = false;
+      resetFileDiffs(this.state);
       await this.run(() => loadViewData(this));
       return;
     }

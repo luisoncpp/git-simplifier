@@ -1,6 +1,7 @@
 import * as edit from "./selection.ts";
 import * as repos from "./repository-switcher.ts";
 import * as branches from "./branch-switcher.ts";
+import * as diff from "./files-diff/index.ts";
 import type { AppController } from "./controller.ts";
 import type { FieldNode, OperationId, ViewId } from "./types.ts";
 
@@ -44,6 +45,12 @@ const CLICK: Record<string, ClickHandler> = {
   "toggle-entry": (controller, value) => edit.toggleEntry(controller, value),
   copy: (controller, value) => controller.copy(value),
   "copy-diff": (controller) => controller.copyDiff(),
+  "set-diff-layout": (controller, value) => diff.setLayout(controller, value),
+  "toggle-file": (controller, value) => diff.toggleFile(controller, value),
+  "set-all-files": (controller, value) => diff.setAllFiles(controller, value),
+  "expand-gap": (controller, value, node) => diff.expandGap(controller, value, node),
+  "toggle-file-navigator": (controller) => diff.toggleNavigator(controller),
+  "jump-to-file": (controller, value) => diff.jumpToFile(controller, value),
 };
 
 const CHANGE: Record<string, FieldHandler> = {
@@ -105,9 +112,15 @@ function dispatchNode(controller: AppController, event: Event, table: Record<str
   settle(controller, action(controller, node));
 }
 
+/// A menu's own module owns its keyboard map. A handled key returns a truthy
+/// value — sometimes the promise it started — so `settle` still reports a
+/// rejected activation here rather than in two more places.
 function handleKeys(controller: AppController, event: KeyboardEvent): void {
-  if (handleRepoKeys(controller, event)) return;
-  if (handleBranchKeys(controller, event)) return;
+  const handled = repos.handleKeys(controller, event) || branches.handleKeys(controller, event);
+  if (handled) {
+    settle(controller, handled);
+    return;
+  }
   if (event.key === "Escape" && controller.state.review) {
     settle(controller, controller.cancelReview());
     return;
@@ -121,48 +134,6 @@ function handleKeys(controller: AppController, event: KeyboardEvent): void {
   if (!step || !target?.closest?.('[role="tab"]')) return;
   event.preventDefault();
   settle(controller, edit.stepOperation(controller, step));
-}
-
-function handleRepoKeys(controller: AppController, event: KeyboardEvent): boolean {
-  if (!controller.state.repoMenuOpen) return false;
-  if (event.key === "Escape") {
-    event.preventDefault();
-    repos.closeRepoMenu(controller);
-    return true;
-  }
-  if (event.key === "ArrowDown" || event.key === "ArrowUp") {
-    event.preventDefault();
-    repos.moveRepoHighlight(controller, event.key === "ArrowDown" ? 1 : -1);
-    return true;
-  }
-  const target = event.target as HTMLElement | null;
-  if (event.key === "Enter" && target?.dataset?.event === "repo-filter") {
-    event.preventDefault();
-    settle(controller, repos.activateHighlightedRepository(controller));
-    return true;
-  }
-  return false;
-}
-
-function handleBranchKeys(controller: AppController, event: KeyboardEvent): boolean {
-  if (!controller.state.draft.branchMenuOpen) return false;
-  if (event.key === "Escape") {
-    event.preventDefault();
-    branches.closeBranchMenu(controller);
-    return true;
-  }
-  if (event.key === "ArrowDown" || event.key === "ArrowUp") {
-    event.preventDefault();
-    branches.moveBranchHighlight(controller, event.key === "ArrowDown" ? 1 : -1);
-    return true;
-  }
-  const target = event.target as HTMLElement | null;
-  if (event.key === "Enter" && target?.dataset?.event === "branch-filter") {
-    event.preventDefault();
-    branches.activateHighlightedBranch(controller);
-    return true;
-  }
-  return false;
 }
 
 /// Without a `<form>` element there is no implicit submit, so the two places a

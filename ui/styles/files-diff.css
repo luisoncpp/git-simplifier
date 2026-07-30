@@ -1,0 +1,379 @@
+.files-diff-pane .inspection-head {
+  align-items: flex-start;
+}
+
+.diff-tools {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+}
+
+.layout-toggle {
+  display: flex;
+  overflow: hidden;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+}
+
+.layout-toggle .ghost {
+  border: 0;
+  border-radius: 0;
+}
+
+.layout-toggle .ghost.active,
+.diff-tools .ghost.active {
+  color: #0c0e11;
+  background: var(--accent);
+}
+
+/* `min-height: 0` is required on every ancestor of the scroller, or the sticky
+   file headers stop sticking inside the flex column. */
+.files-diff-body {
+  display: grid;
+  flex: 1;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 12px;
+  min-height: 0;
+}
+
+.files-diff-body.with-navigator {
+  grid-template-columns: minmax(0, 1fr) 240px;
+}
+
+.file-list {
+  min-height: 0;
+  padding: 8px;
+  overflow: auto;
+  background: #090b0d;
+  border: 1px solid var(--border);
+  border-top: 2px solid var(--accent);
+  border-radius: var(--radius);
+}
+
+.file-card {
+  margin-bottom: 10px;
+  overflow: clip;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+}
+
+.file-card:last-child {
+  margin-bottom: 0;
+}
+
+/* The containing block is the card, so each header sticks only while its own file
+   is on screen and is pushed out by the next one. */
+.file-head {
+  position: sticky;
+  top: 0;
+  z-index: 2;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  padding: 5px 10px;
+  background: var(--elevated);
+  border-bottom: 1px solid var(--border);
+}
+
+.file-toggle {
+  display: flex;
+  flex: 1;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+  padding: 0;
+  color: var(--text);
+  text-align: left;
+  background: none;
+  border: 0;
+  cursor: pointer;
+}
+
+.file-toggle:focus-visible {
+  outline: 2px solid var(--focus);
+  outline-offset: 2px;
+}
+
+.caret {
+  width: 10px;
+  color: var(--muted);
+  font-size: 10px;
+}
+
+.file-path {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.file-counts {
+  display: inline-flex;
+  flex-shrink: 0;
+  gap: 6px;
+  font-size: 11px;
+}
+
+.count-add {
+  color: var(--good);
+}
+
+.count-del {
+  color: var(--bad);
+}
+
+table.hunk {
+  width: 100%;
+  border-collapse: collapse;
+  table-layout: fixed;
+  font-family: "Cascadia Mono", Consolas, ui-monospace, monospace;
+  font-size: 12px;
+  line-height: 1.55;
+}
+
+col.c-num {
+  width: 48px;
+}
+
+td.num {
+  padding: 0 6px;
+  color: #6d7580;
+  text-align: right;
+  vertical-align: top;
+  background: #0c0e11;
+  border-right: 1px solid #1c2027;
+  user-select: none;
+}
+
+/* `pre-wrap`, not `pre`: a horizontal scrollbar under a sticky header is
+   miserable, and the split layout has no room for one. */
+td.code {
+  padding: 0 8px 0 4px;
+  overflow-wrap: anywhere;
+  white-space: pre-wrap;
+  tab-size: 4;
+}
+
+.sign {
+  display: inline-block;
+  width: 1ch;
+  user-select: none;
+}
+
+.no-newline {
+  color: var(--muted);
+}
+
+/* The tint is background-only and the sign carries the colour. Setting `color`
+   here would either lose to Prism's tokens or invite an `!important` that kills
+   highlighting inside the changed lines — where it matters most. */
+tr.add,
+td.code.add,
+tr.add .sign {
+  background: #122318;
+}
+
+tr.del,
+td.code.del,
+tr.del .sign {
+  background: #2a1614;
+}
+
+tr.add td.num,
+td.num.add {
+  background: #16311e;
+}
+
+tr.del td.num,
+td.num.del {
+  background: #3a1c19;
+}
+
+tr.add .sign,
+td.code.add .sign {
+  color: var(--good);
+}
+
+tr.del .sign,
+td.code.del .sign {
+  color: var(--bad);
+}
+
+td.nil {
+  background: #0c0e11;
+}
+
+/* The cell stays a table-cell — `display: flex` on a `td` drops it out of the
+   table formatting context and the colspan stops spanning. */
+tr.gap > td {
+  padding: 2px 8px;
+  background: #10161f;
+  border-top: 1px solid #1c2027;
+  border-bottom: 1px solid #1c2027;
+}
+
+.gap-actions {
+  display: inline-flex;
+  gap: 2px;
+  margin-right: 10px;
+  vertical-align: middle;
+}
+
+.gap-btn {
+  min-width: 22px;
+  padding: 0 4px;
+  color: var(--focus);
+  font-size: 12px;
+  background: none;
+  border: 1px solid transparent;
+  border-radius: var(--radius);
+  cursor: pointer;
+}
+
+.gap-btn:hover {
+  background: var(--elevated);
+  border-color: var(--border);
+}
+
+.gap-header {
+  display: inline-block;
+  overflow: hidden;
+  max-width: calc(100% - 100px);
+  color: var(--muted);
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  vertical-align: middle;
+}
+
+.file-navigator {
+  position: sticky;
+  top: 0;
+  align-self: start;
+  max-height: 100%;
+  padding: 8px;
+  overflow: auto;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+}
+
+.file-navigator ul {
+  margin: 6px 0 0;
+  padding: 0;
+  list-style: none;
+}
+
+.nav-file {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  width: 100%;
+  min-width: 0;
+  padding: 4px 6px;
+  color: var(--text);
+  font-size: 11px;
+  text-align: left;
+  background: none;
+  border: 0;
+  border-radius: var(--radius);
+  cursor: pointer;
+}
+
+.nav-file:hover {
+  background: var(--elevated);
+}
+
+.nav-file code {
+  overflow: hidden;
+  flex: 1;
+  min-width: 0;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.token.comment,
+.token.prolog,
+.token.doctype,
+.token.cdata {
+  color: #7c8695;
+  font-style: italic;
+}
+
+.token.punctuation {
+  color: #9aa4b2;
+}
+
+.token.property,
+.token.tag,
+.token.symbol {
+  color: #ff9d7a;
+}
+
+.token.boolean,
+.token.number,
+.token.constant {
+  color: #e8c07d;
+}
+
+.token.selector,
+.token.string,
+.token.char,
+.token.attr-value {
+  color: #a8cf8e;
+}
+
+.token.operator,
+.token.entity,
+.token.url {
+  color: #8fb8e0;
+}
+
+.token.keyword,
+.token.atrule {
+  color: #d59bff;
+}
+
+.token.function,
+.token.class-name {
+  color: #7fd0c4;
+}
+
+.token.regex,
+.token.important,
+.token.variable {
+  color: #ffb27a;
+}
+
+/* Prism's own diff tokens are unrelated to our add/del rows and must not paint
+   over them. */
+.token.deleted,
+.token.inserted {
+  color: inherit;
+  background: none;
+}
+
+@media (max-width: 860px) {
+  .files-diff-body.with-navigator {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .file-navigator {
+    position: static;
+    order: -1;
+    max-height: 220px;
+  }
+
+  col.c-num {
+    width: 34px;
+  }
+
+  table.hunk {
+    font-size: 11px;
+  }
+
+  .file-head .was,
+  .file-navigator .file-counts {
+    display: none;
+  }
+}

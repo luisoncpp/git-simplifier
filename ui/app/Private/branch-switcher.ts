@@ -48,3 +48,26 @@ export function activateHighlightedBranch(controller: AppController): void {
   if (!entry) return;
   pickBranch(controller, entry.name, entry.remote ?? "");
 }
+
+/// Truthy when the key belonged to the open branch menu, so the delegated
+/// dispatcher stops looking.
+export function handleKeys(controller: AppController, event: KeyboardEvent): boolean {
+  if (!controller.state.draft.branchMenuOpen) return false;
+  if (event.key === "Escape") {
+    event.preventDefault();
+    closeBranchMenu(controller);
+    return true;
+  }
+  if (event.key === "ArrowDown" || event.key === "ArrowUp") {
+    event.preventDefault();
+    moveBranchHighlight(controller, event.key === "ArrowDown" ? 1 : -1);
+    return true;
+  }
+  const target = event.target as HTMLElement | null;
+  if (event.key === "Enter" && target?.dataset?.event === "branch-filter") {
+    event.preventDefault();
+    activateHighlightedBranch(controller);
+    return true;
+  }
+  return false;
+}

@@ -23,6 +23,15 @@ export function focusNode(selector: string): void {
   globalThis.document?.querySelector<HTMLElement>(selector)?.focus({ preventScroll: true });
 }
 
+/// Scrolls an element into view by dataset value, for the same reason the focus
+/// and scroll restores use one: keys carry repository paths. Callers must invoke
+/// this *after* `renderInto`, whose scroll restore would otherwise undo it.
+export function revealByDataset(name: string, key: string): void {
+  const root = globalThis.document?.querySelector("#app");
+  if (!root) return;
+  byDataset(root, name, key)?.scrollIntoView({ block: "start" });
+}
+
 function captureFocus(root: Element): FocusSnapshot | null {
   const active = root.ownerDocument.activeElement as HTMLElement | null;
   const key = active?.dataset?.focus;
