@@ -2,6 +2,7 @@ use std::sync::atomic::{AtomicU64, Ordering};
 
 use git_helper_core::RefName;
 use tauri::{AppHandle, State};
+use tauri_plugin_opener::OpenerExt;
 
 use super::apply;
 use super::data::{
@@ -51,6 +52,13 @@ pub fn remove_recent_repository(
     path: String,
 ) -> Result<Vec<RecentRepository>, String> {
     RecentStore::from_app(&app)?.remove(&path)
+}
+
+#[tauri::command(async)]
+pub fn reveal_in_explorer(app: AppHandle, path: String) -> Result<(), String> {
+    app.opener()
+        .reveal_item_in_dir(&path)
+        .map_err(|error| error.to_string())
 }
 
 #[tauri::command(async)]

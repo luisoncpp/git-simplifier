@@ -13,6 +13,7 @@ export function repoSwitcher(state: AppState): string {
   const open = state.repoMenuOpen;
   return `<div class="repo-switcher">
     <button class="repo-picker" type="button" data-event="toggle-repo-menu"
+      data-context-path="${esc(repository?.path ?? "")}"
       aria-expanded="${open ? "true" : "false"}" aria-controls="repo-menu"
       title="Switch repository" ${state.busy ? "disabled" : ""}>
       <span class="eyebrow">Repository</span>
@@ -20,6 +21,7 @@ export function repoSwitcher(state: AppState): string {
       <code>${esc(repository?.path ?? "No repository is open")}</code>
     </button>
     ${open ? repoMenu(state) : ""}
+    ${repoContextMenu(state)}
   </div>`;
 }
 
@@ -61,7 +63,8 @@ function repoRow(state: AppState, entry: RecentRepository, index: number): strin
   const classes = ["repo-row", selected ? "current" : "", active ? "active" : ""]
     .filter(Boolean)
     .join(" ");
-  return `<div class="${classes}" role="option" aria-selected="${selected ? "true" : "false"}">
+  return `<div class="${classes}" role="option" aria-selected="${selected ? "true" : "false"}"
+    data-context-path="${esc(entry.path)}">
     <button class="repo-open" type="button" data-event="open-recent" data-value="${esc(entry.path)}"
       ${state.busy ? "disabled" : ""}>
       <strong>${esc(entry.name)}</strong>
@@ -74,4 +77,16 @@ function repoRow(state: AppState, entry: RecentRepository, index: number): strin
 
 function samePath(left: string, right: string): boolean {
   return left.replaceAll("/", "\\").toLowerCase() === right.replaceAll("/", "\\").toLowerCase();
+}
+
+function repoContextMenu(state: AppState): string {
+  const menu = state.repoContextMenu;
+  if (!menu) return "";
+  return `<div class="repo-context-menu" role="menu" aria-label="Repository actions"
+    style="left:${menu.x}px;top:${menu.y}px">
+    <button class="repo-context-item" type="button" role="menuitem"
+      data-event="reveal-repository" data-value="${esc(menu.path)}">
+      Reveal in File Explorer
+    </button>
+  </div>`;
 }

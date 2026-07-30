@@ -157,6 +157,35 @@
   background: var(--surface);
 }
 
+.repo-context-menu {
+  position: fixed;
+  z-index: 40;
+  min-width: 200px;
+  padding: 4px;
+  background: var(--elevated);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  box-shadow: 0 4px 8px rgb(0 0 0 / 0.4);
+}
+
+.repo-context-item {
+  display: block;
+  width: 100%;
+  min-height: 32px;
+  padding: 6px 10px;
+  text-align: left;
+  color: var(--text);
+  background: transparent;
+  border: 0;
+  border-radius: calc(var(--radius) - 2px);
+  font-size: 13px;
+}
+
+.repo-context-item:hover:not(:disabled),
+.repo-context-item:focus-visible {
+  background: var(--surface);
+}
+
 @keyframes repo-menu-in {
   from {
     opacity: 0;

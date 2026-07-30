@@ -2,12 +2,12 @@
 
 ## Trigger
 
-The user opens the rail Repository control and picks a recent path, removes one, or browses for a new folder.
+The user opens the rail Repository control and picks a recent path, removes one, browses for a new folder, or right-clicks a repository row or the current picker to reveal its folder in the system file manager.
 
 ## Entry point
 
-UI: `repository-switcher.ts` via `toggle-repo-menu` / `open-recent` / `remove-recent` / `pick-repository`.
-Tauri: `open_repository`, `list_recent_repositories`, `remove_recent_repository`.
+UI: `repository-switcher.ts` via `toggle-repo-menu` / `open-recent` / `remove-recent` / `pick-repository` / `reveal-repository`.
+Tauri: `open_repository`, `list_recent_repositories`, `remove_recent_repository`, `reveal_in_explorer`.
 
 ## Step-by-step sequence
 
@@ -22,6 +22,8 @@ Tauri: `open_repository`, `list_recent_repositories`, `remove_recent_repository`
 6. The controller reloads from the returned snapshot (or refreshes the recent list after a failure),
    clears draft / outcome / expanded, and clears the in-flight selection. A failure therefore restores
    the previous repository as the visible selection.
+7. Right-clicking a recent row or the current picker opens a context menu; **Reveal in File Explorer**
+   calls `reveal_in_explorer`, which uses the desktop opener plugin to show that path in the OS file manager.
 
 ## Reads
 

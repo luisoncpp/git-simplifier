@@ -15,7 +15,7 @@ The UI is a single deep module written in strict TypeScript (`tsc --noEmit` is t
 | `Private/operations.ts` | Operation catalog, request builders, and `submitState` |
 | `Private/snapshot.ts` | Typed reads over the Rust snapshot, including human sync-phase labels |
 | `Private/dom.ts` | HTML escaping and `renderInto`, which preserves caret and scroll across a re-render |
-| `Private/views/repo-menu.ts` | Rail repository picker and filterable recent list |
+| `Private/views/repo-menu.ts` | Rail repository picker, filterable recent list, and the reveal-in-explorer context menu |
 | `Private/views/branch-picker.ts` | Searchable Quick switch branch menu (local + remote-only) |
 | `Private/branch-switcher.ts` | Branch menu open/filter/pick keyboard handlers |
 | `Private/views/inspection.ts` | Shared Inspection chrome, Raw diff presentation, and the clipboard action |

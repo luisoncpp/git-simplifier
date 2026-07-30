@@ -3,5 +3,5 @@
   "identifier": "default",
   "description": "Default desktop permissions for Git Helper",
   "windows": ["main"],
-  "permissions": ["core:default", "dialog:default"]
+  "permissions": ["core:default", "dialog:default", "opener:allow-reveal-item-in-dir"]
 }

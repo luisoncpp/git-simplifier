@@ -37,6 +37,7 @@ export function closeRepoMenu(controller: AppController): void {
   if (!controller.state.repoMenuOpen) return;
   controller.state.repoMenuOpen = false;
   controller.state.repoFilter = "";
+  closeRepoContextMenu(controller, /*render=*/false);
   controller.render();
 }
 
@@ -85,6 +86,34 @@ export async function removeRecentRepository(controller: AppController, path: st
     controller.state.repoHighlight = Math.max(0, visible - 1);
   }
   controller.render();
+}
+
+export function openRepoContextMenu(
+  controller: AppController,
+  path: string,
+  x: number,
+  y: number,
+): void {
+  if (!path || controller.state.busy) return;
+  controller.state.repoContextMenu = { path, x, y };
+  controller.render();
+}
+
+export function closeRepoContextMenu(controller: AppController, render = true): void {
+  if (!controller.state.repoContextMenu) return;
+  controller.state.repoContextMenu = null;
+  if (render) controller.render();
+}
+
+export async function revealRepository(controller: AppController, path: string): Promise<void> {
+  if (!path) return;
+  closeRepoContextMenu(controller);
+  try {
+    await controller.bridge.invoke("reveal_in_explorer", { path });
+  } catch (error) {
+    controller.fail(error);
+    controller.render();
+  }
 }
 
 export async function activateHighlightedRepository(controller: AppController): Promise<void> {

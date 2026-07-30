@@ -5,7 +5,9 @@ import { renderShell } from "../ui/app/index.ts";
 import {
   filteredRecents,
   openRecentRepository,
+  openRepoContextMenu,
   removeRecentRepository,
+  revealRepository,
   setRepoFilter,
   toggleRepoMenu,
 } from "../ui/app/Private/repository-switcher.ts";
@@ -130,4 +132,29 @@ test("toggling the picker opens an empty teach state", () => {
 
   assert.equal(controller.state.repoMenuOpen, true);
   assert.match(renderShell(controller.state), /No recent repositories yet/);
+});
+
+test("the repository context menu offers reveal in file explorer", () => {
+  const controller = withRecents({ repoMenuOpen: true });
+  openRepoContextMenu(controller, "C:/work/beta", 120, 80);
+
+  const markup = renderShell(controller.state);
+  assert.match(markup, /Reveal in File Explorer/);
+  assert.match(markup, /data-event="reveal-repository"/);
+  assert.match(markup, /style="left:120px;top:80px"/);
+});
+
+test("reveal in file explorer asks the desktop shell to show the folder", async () => {
+  const controller = withRecents();
+  const commands = [];
+  const original = controller.bridge.invoke.bind(controller.bridge);
+  controller.bridge.invoke = async (command, args) => {
+    commands.push([command, args]);
+    return original(command, args);
+  };
+
+  await revealRepository(controller, "C:/work/beta");
+
+  assert.deepEqual(commands[0], ["reveal_in_explorer", { path: "C:/work/beta" }]);
+  assert.equal(controller.state.repoContextMenu, null);
 });

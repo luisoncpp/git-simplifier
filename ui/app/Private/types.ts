@@ -77,6 +77,8 @@ export interface SubmoduleChoice { path: string; object: string; excluded: boole
 
 export interface RecentRepository { name: string; path: string }
 
+export interface RepoContextMenu { path: string; x: number; y: number }
+
 export interface OperationReview {
   plan_id: string;
   kind: string;
@@ -168,6 +170,7 @@ export interface AppState {
   repoFilter: string;
   repoHighlight: number;
   repoOpeningPath: string;
+  repoContextMenu: RepoContextMenu | null;
   draft: Draft;
   expanded: Set<string>;
   review: OperationReview | null;

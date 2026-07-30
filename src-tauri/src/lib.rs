@@ -6,6 +6,7 @@ mod tray;
 pub fn run() {
     tauri::Builder::default()
         .plugin(tauri_plugin_dialog::init())
+        .plugin(tauri_plugin_opener::init())
         .manage(commands::AppState::new())
         .manage(tray::ExitAllowed::new())
         .setup(|app| {
@@ -18,6 +19,7 @@ pub fn run() {
             commands::actions::open_repository,
             commands::actions::list_recent_repositories,
             commands::actions::remove_recent_repository,
+            commands::actions::reveal_in_explorer,
             commands::actions::load_snapshot,
             commands::actions::list_operations,
             commands::actions::list_saved_work,
