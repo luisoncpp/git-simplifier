@@ -104,6 +104,7 @@ export interface OperationOutcome {
 /// side; src-tauri has a test asserting each of these deserializes.
 export type OperationRequest =
   | { kind: "uncommit"; base: string; paths: string[] }
+  | { kind: "revert"; base: string; paths: string[]; target: "head" | "base" }
   | { kind: "edit_message"; base: string; commit: string; message: string }
   | { kind: "exclude_submodule"; path: string; install_hook: boolean; disable_recurse: boolean }
   | { kind: "split_branch"; base: string; new_branch: string; paths: string[]; message: string }
@@ -123,6 +124,7 @@ export type ViewId = "actions" | "saved" | "recovery" | "files-diff" | "raw-diff
 
 export type OperationId =
   | "uncommit"
+  | "revert"
   | "edit_message"
   | "exclude_submodule"
   | "split_branch"
@@ -134,6 +136,8 @@ export interface Draft {
   pathFilter: string;
   selectedPaths: Set<string>;
   splitPaths: Set<string>;
+  revertPaths: Set<string>;
+  revertTarget: "head" | "base";
   newBranch: string;
   splitMessage: string;
   commit: string;

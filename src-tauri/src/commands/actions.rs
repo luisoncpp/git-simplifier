@@ -125,6 +125,19 @@ pub fn list_changed_paths(
 }
 
 #[tauri::command(async)]
+pub fn list_revert_paths(
+    state: State<'_, AppState>,
+    request: BaseRequest,
+) -> Result<Vec<git_helper_core::ChangedPath>, String> {
+    let base = RefName::new(request.base).map_err(|error| error.to_string())?;
+    with_repository(state.inner(), |repository| {
+        repository
+            .list_revert_paths(base)
+            .map_err(|error| error.to_string())
+    })
+}
+
+#[tauri::command(async)]
 pub fn list_editable_commits(
     state: State<'_, AppState>,
     request: BaseRequest,

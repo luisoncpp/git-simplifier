@@ -18,7 +18,8 @@ export interface OperationDef {
 }
 
 export const OPERATIONS: OperationDef[] = [
-  { id: "uncommit", label: "Uncommit paths", needsBase: true },
+  { id: "uncommit", label: "Uncommit", needsBase: true },
+  { id: "revert", label: "Revert", needsBase: true },
   { id: "edit_message", label: "Edit message", needsBase: true },
   { id: "exclude_submodule", label: "Exclude submodule", needsBase: false },
   { id: "split_branch", label: "Split branch", needsBase: true },
@@ -42,6 +43,7 @@ export interface Discovery {
 
 const DISCOVERY: Partial<Record<OperationId, DiscoveryLoad>> = {
   uncommit: (bridge, base) => bridge.invoke<ChangedPath[]>("list_changed_paths", { request: { base } }),
+  revert: (bridge, base) => bridge.invoke<ChangedPath[]>("list_revert_paths", { request: { base } }),
   edit_message: (bridge, base) => bridge.invoke<EditableCommit[]>("list_editable_commits", { request: { base } }),
   split_branch: (bridge, base) => bridge.invoke<ChangedPath[]>("list_changed_paths", { request: { base } }),
   quick_switch: (bridge) => bridge.invoke<LocalBranch[]>("list_local_branches"),
@@ -50,6 +52,7 @@ const DISCOVERY: Partial<Record<OperationId, DiscoveryLoad>> = {
 
 const RESULT_KEY: Partial<Record<OperationId, DiscoveryKey>> = {
   uncommit: "paths",
+  revert: "paths",
   edit_message: "commits",
   split_branch: "paths",
   quick_switch: "branches",
@@ -69,6 +72,9 @@ export function buildRequest(state: AppState): OperationRequest {
   const base = baseRef(state);
   const draft = state.draft;
   if (kind === "uncommit") return { kind, base, paths: [...draft.selectedPaths] };
+  if (kind === "revert") {
+    return { kind, base, paths: [...draft.revertPaths], target: draft.revertTarget };
+  }
   if (kind === "edit_message") {
     return { kind, base, commit: draft.commit, message: messageFor(state) };
   }
@@ -124,6 +130,13 @@ const SPECIFIC_REASON: Partial<Record<OperationId, (state: AppState) => string>>
   uncommit: (state) => {
     if (!state.paths.length) return "Nothing on this branch differs from Base.";
     if (!state.draft.selectedPaths.size) return "Select at least one path.";
+    return "";
+  },
+  revert: (state) => {
+    if (!state.paths.length) {
+      return "Nothing differs from Base and there is no tracked local dirt.";
+    }
+    if (!state.draft.revertPaths.size) return "Select at least one path.";
     return "";
   },
   edit_message: (state) => {

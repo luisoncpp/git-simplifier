@@ -4,6 +4,7 @@ mod inspection;
 mod push;
 mod recording;
 mod repository;
+mod revert;
 mod rewrite;
 mod split;
 mod switch;
@@ -24,6 +25,7 @@ pub use push::{
 };
 pub use recording::{RecoveryEntry, RecoveryError};
 pub use repository::{GitRepository, RepositoryState};
+pub use revert::{RevertError, RevertPlan, RevertRequest, RevertResult, RevertTarget};
 pub use rewrite::{
     ApplyError, ApplyResult, CommitMetadata, CommitRewrite, EditMessageRequest, ObjectId, RefName,
     RepoPath, RewriteAction, RewriteError, RewriteOperation, RewritePlan, Signature, TreeEntry,

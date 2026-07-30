@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 import { renderShell } from "../ui/app/index.ts";
-import { setCommit, setMessage, setNewBranch, setPathFilter, setSplitMessage, togglePath } from "../ui/app/Private/selection.ts";
+import { setCommit, setMessage, setNewBranch, setPathFilter, setRevertTarget, setSplitMessage, togglePath } from "../ui/app/Private/selection.ts";
 import { OPERATIONS } from "../ui/app/Private/operations.ts";
 import { submitRow } from "../ui/app/Private/views/actions.ts";
 import { controllerWith, snapshotWith } from "./support/controller.mjs";
@@ -20,7 +20,7 @@ function withData(data) {
   return controllerWith({
     async invoke(command) {
       if (command === "list_editable_commits") return COMMITS;
-      if (command === "list_changed_paths") return PATHS;
+      if (command === "list_changed_paths" || command === "list_revert_paths") return PATHS;
       if (command === "list_local_branches") return data.branches ?? [];
       if (command === "list_submodules") return data.submodules ?? [];
       if (command === "load_snapshot") return snapshotWith({});
@@ -89,6 +89,36 @@ test("uncommit refuses to prepare with nothing selected and explains why", async
   await controller.submitOperation();
 
   assert.deepEqual(sent.request.paths, ["src/keys.env"]);
+});
+
+test("revert keeps its own selection and sends the chosen source", async () => {
+  const controller = withData({});
+  await controller.refresh();
+  togglePath(controller, { value: "src/keys.env", checked: true });
+
+  await controller.selectOperation("revert");
+  assert.equal(controller.state.draft.revertPaths.size, 0);
+  assert.match(renderShell(controller.state), /0 of 2 selected/);
+  assert.match(renderShell(controller.state), />Uncommit</);
+  assert.match(renderShell(controller.state), />Revert</);
+
+  togglePath(controller, { value: "src/app.js", checked: true });
+  setRevertTarget(controller, { value: "base" });
+
+  let sent = null;
+  controller.bridge.invoke = async (command, args) => {
+    sent = args;
+    return { plan_id: "op-revert", title: "t", impact: [], preserves: [], warnings: [], commands: [], apply_label: "Apply" };
+  };
+  await controller.submitOperation();
+
+  assert.deepEqual([...controller.state.draft.selectedPaths], ["src/keys.env"]);
+  assert.deepEqual(sent.request, {
+    kind: "revert",
+    base: "refs/remotes/origin/main",
+    paths: ["src/app.js"],
+    target: "base",
+  });
 });
 
 test("the path filter narrows the list and keeps the query visible", async () => {

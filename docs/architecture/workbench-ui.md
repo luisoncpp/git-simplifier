@@ -20,7 +20,7 @@ The UI is a single deep module written in strict TypeScript (`tsc --noEmit` is t
 | `Private/branch-switcher.ts` | Branch menu open/filter/pick keyboard handlers |
 | `Private/views/inspection.ts` | Shared Inspection chrome, Raw diff presentation, and the clipboard action |
 | `Private/files-diff/` | Nested deep module: the structured per-file diff surface (unified/side-by-side, gap expansion, file navigator, Prism adapter). Only its `index.ts` may be imported |
-| `Private/views/path-list.ts` | The changed-path checklist, shared by Uncommit and Split branch |
+| `Private/views/path-list.ts` | The changed-path checklist, shared by Uncommit, Revert, and Split branch |
 | `Private/views/*` | Pure functions from state to markup |
 
 ## State rules
@@ -31,7 +31,7 @@ The UI is a single deep module written in strict TypeScript (`tsc --noEmit` is t
 - **Every form control is state-backed.** Re-rendering therefore cannot lose a typed message, a filter query, or a path selection, and cancelling a review returns the user to the exact selection they had.
 - **A message draft is per commit** (`draft.messages` keyed by commit id). Changing the selected commit shows that commit's message; it never carries text from another commit into a rewrite.
 - **The Editable range is presented newest first.** Rust returns it oldest first for planning; the commit a user rewords is almost always the newest one.
-- **A path selection belongs to one operation.** Uncommit and Split branch read the same changed-path list but mean opposite things by a tick — remove this from history versus copy this elsewhere — so each keeps its own set and `pathSetFor` picks by operation. Sharing one set would let a selection made for one operation arrive pre-ticked in the other.
+- **A path selection belongs to one operation.** Uncommit, Revert, and Split branch can all show a path checklist, but each keeps its own set (`selectedPaths`, `revertPaths`, `splitPaths`) and `pathSetFor` picks by operation. Sharing one set would let a selection made for one operation arrive pre-ticked in another. Revert’s discovery list is wider than Uncommit’s: tracked local dirt unioned with `Base...HEAD`.
 - `state.outcome` is cleared when the operation changes, when a new review is prepared, and when another repository is opened, so a result banner can never describe stale work.
 - `state.branchDiff` is read-only discovery data. Entering Inspection, refreshing, changing Base, or opening another repository regenerates it from Rust; the UI never reconstructs a Git command.
 - **The Inspection group is two views, not one.** `ViewId` has no `"inspection"` member: `"files-diff"` and `"raw-diff"` are siblings and every gate asks `isInspectionView`. Leaving one of the two named after the group would guarantee a future bug, and `loadViewData` gates *per view* so entering one section never pays for the other's Git work.

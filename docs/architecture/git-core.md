@@ -8,7 +8,8 @@ The backend is a Rust library with a small public façade:
 - `GitRunner` records the Git version when opened and resolves the repository Git directory lazily on first use; refreshes reuse those immutable values instead of launching identity-only Git processes.
 - `GitRunner::run` acquires the repository lock for a standalone write. Multi-command transactions acquire the lock at the `GitRepository` boundary and must execute their writes with `run_unlocked`; a single-command write such as setting Base must not add an outer lock.
 - `rewrite` builds immutable Uncommit and Edit message plans from a remote-tracking Base and the first-parent Editable range.
-- `materialize` applies either plan through a temporary index, `commit-tree`, and one expected-old-SHA `update-ref`.
+- `materialize` applies either rewrite plan through a temporary index, `commit-tree`, and one expected-old-SHA `update-ref`.
+- `revert` overwrites selected tracked paths in the index and worktree from HEAD or Base without rewriting history; discovery is the union of porcelain tracked dirt and `Base...HEAD`.
 - `exclusion` builds and applies repo-local Excluded submodule plans: it validates a HEAD gitlink, configures `ignore = all`, optionally disables recursive submodule commands, and appends a guarded `pre-commit` block without replacing existing hook bytes.
 - `switch` builds and applies Quick branch switch plans: tracked changes are captured by `git stash create`, anchored under `refs/githelper/wip/<branch>`, and removed only after the ref is durable; switching never includes untracked files. With **carry changes**, the snapshot is reapplied on the target branch instead of being stored on the source.
 - `sync` fetches a remote-tracking Base ref, anchors tracked changes under `refs/githelper/backup/*`, merges Base without changing a local Base branch, and reapplies Saved work. The oplog phase distinguishes Base merge conflicts from Saved work reapply conflicts; interrupted conflicts can be resumed after the user resolves them, while an interrupted fetch can be retried against the same recorded operation.
@@ -19,6 +20,8 @@ The backend is a Rust library with a small public façade:
 - `list_operations` reads those entries as recovery-panel data, including exact commands, moved refs, snapshots, phases, and a ref-only recovery command for reversible operations. A recorded previous value that is empty means the ref did not exist before the operation, so its recovery command deletes the ref instead of restoring a former target. It never changes refs or the worktree.
 
 Edit message preserves trees, merge parents, and original commit metadata; unlike Uncommit, it does not touch the real index.
+
+Revert is the opposite trade: it writes the index and worktree for selected tracked paths (`git restore --staged --worktree`) and never moves branch refs. Review alone is the safety surface — there is no Saved work snapshot before the overwrite. Pathspecs use `:(top,literal)` so a repository opened below the Git root still matches root-relative names.
 
 Excluded submodule configuration is separate from history cleanup. It writes only repo-local config and the local `pre-commit` hook; cleanup of a pointer already present in the Editable range reuses `plan_uncommit` with that gitlink path. A plan exposes the exact config lines, hook guard, and opt-in staging pathspec so a UI can show them before applying.
 

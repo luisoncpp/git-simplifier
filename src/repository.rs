@@ -8,6 +8,9 @@ use crate::push::{
     PublishError,
 };
 use crate::recording::{self, RecoveryEntry, RecoveryError};
+use crate::revert::{
+    self, RevertError, RevertPlan, RevertRequest, RevertResult,
+};
 use crate::rewrite::{
     self, ApplyError, ApplyResult, EditMessageRequest, RewriteError, RewritePlan, UncommitRequest,
 };
@@ -72,6 +75,15 @@ impl GitRepository {
 
     pub fn plan_uncommit(&self, request: UncommitRequest) -> Result<RewritePlan, RewriteError> {
         rewrite::plan(&self.runner, request)
+    }
+
+    pub fn plan_revert(&self, request: RevertRequest) -> Result<RevertPlan, RevertError> {
+        revert::create(&self.runner, request)
+    }
+
+    pub fn apply_revert(&self, plan: &RevertPlan) -> Result<RevertResult, RevertError> {
+        self.runner
+            .with_write_lock(|| revert::apply(&self.runner, plan))
     }
 
     pub fn plan_exclude_submodule(

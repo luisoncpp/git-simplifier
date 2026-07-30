@@ -30,6 +30,7 @@ export function submitRow(state: AppState): string {
 
 const ACTION_WORDS: Record<string, string> = {
   uncommit: "uncommit",
+  revert: "revert",
   edit_message: "message edit",
   exclude_submodule: "exclusion",
   split_branch: "split",

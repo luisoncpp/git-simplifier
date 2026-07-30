@@ -26,6 +26,7 @@ pub fn run() {
             commands::actions::list_base_choices,
             commands::actions::set_base,
             commands::actions::list_changed_paths,
+            commands::actions::list_revert_paths,
             commands::diffs::generate_branch_diff,
             commands::diffs::generate_files_diff,
             commands::diffs::generate_full_file_diff,

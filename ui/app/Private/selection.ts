@@ -87,6 +87,13 @@ export function setCarryChanges(controller: AppController, node: FieldNode): voi
   controller.render();
 }
 
+export function setRevertTarget(controller: AppController, node: FieldNode): void {
+  const value = node.value;
+  if (value !== "head" && value !== "base") return;
+  controller.state.draft.revertTarget = value;
+  controller.render();
+}
+
 export function setChangingBase(controller: AppController, value: string): void {
   controller.state.changingBase = value === "true";
   controller.render();

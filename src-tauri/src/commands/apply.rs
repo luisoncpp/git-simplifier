@@ -1,6 +1,6 @@
 use git_helper_core::{
     ExcludeSubmodulePlan, ForcePushPlan, ObjectId, PublishBranchPlan, QuickSwitchPlan,
-    QuickSwitchResult, RefName, RewritePlan, SplitBranchPlan, SyncRequest,
+    QuickSwitchResult, RefName, RevertPlan, RewritePlan, SplitBranchPlan, SyncRequest,
 };
 
 use super::data::{OperationOutcome, PendingOperation};
@@ -15,6 +15,7 @@ pub(super) fn apply(
         PendingOperation::Uncommit { plan, .. } | PendingOperation::EditMessage { plan, .. } => {
             rewrite(state, plan)
         }
+        PendingOperation::Revert { plan, .. } => revert(state, plan),
         PendingOperation::Exclude { plan, .. } => exclude(state, plan),
         PendingOperation::Split { plan, .. } => split_branch(state, plan),
         PendingOperation::Publish { plan, .. } => publish_branch(state, plan),
@@ -44,6 +45,21 @@ fn rewrite(state: &AppState, plan: RewritePlan) -> Result<OperationOutcome, Stri
     let mut outcome = bare("rewrite", "History rewritten", details);
     outcome.offer_force_push = true;
     Ok(outcome)
+}
+
+fn revert(state: &AppState, plan: RevertPlan) -> Result<OperationOutcome, String> {
+    let result = with_repository(state, |repo| {
+        repo.apply_revert(&plan).map_err(|e| e.to_string())
+    })?;
+    Ok(bare(
+        "revert",
+        "Paths reverted",
+        vec![format!(
+            "{} path(s) now match {} in the index and working tree",
+            result.paths.len(),
+            result.source
+        )],
+    ))
 }
 
 fn exclude(state: &AppState, plan: ExcludeSubmodulePlan) -> Result<OperationOutcome, String> {

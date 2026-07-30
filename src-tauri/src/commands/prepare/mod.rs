@@ -1,5 +1,6 @@
 mod branch;
 mod history;
+mod revert;
 mod saved_work;
 mod switch;
 mod worktree;
@@ -22,6 +23,7 @@ pub(super) fn prepare(
 ) -> Result<Prepared, String> {
     match request {
         PrepareOperationRequest::Uncommit(input) => history::uncommit(state, id, input),
+        PrepareOperationRequest::Revert(input) => revert::revert(state, id, input),
         PrepareOperationRequest::EditMessage(input) => history::edit_message(state, id, input),
         PrepareOperationRequest::ExcludeSubmodule(input) => history::exclude(state, id, input),
         PrepareOperationRequest::ForcePush => history::force_push(state, id),

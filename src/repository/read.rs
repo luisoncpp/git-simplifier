@@ -44,6 +44,13 @@ impl GitRepository {
         inspection::changed_paths(&self.runner, &base)
     }
 
+    pub fn list_revert_paths(
+        &self,
+        base: RefName,
+    ) -> Result<Vec<ChangedPath>, crate::revert::RevertError> {
+        crate::revert::list_paths(&self.runner, &base)
+    }
+
     pub fn branch_diff(
         &self,
         base: RefName,

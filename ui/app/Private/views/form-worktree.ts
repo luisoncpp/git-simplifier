@@ -4,6 +4,35 @@ import { baseRef, currentBranch, savedWorkFor, upstreamRef, worktreeCounts } fro
 import type { AppState, SubmoduleChoice } from "../types.ts";
 import { branchPicker, selectedSwitchTarget, switchTargets } from "./branch-picker.ts";
 import { emptyState, fieldNote } from "./parts.ts";
+import { pathChecklist } from "./path-list.ts";
+
+export function revertForm(state: AppState): string {
+  if (!baseRef(state)) {
+    return emptyState("Set a Base ref", "Revert lists Base…HEAD diffs and tracked local dirt, so Base has to be chosen first.");
+  }
+  if (!state.paths.length) {
+    return emptyState(
+      "Nothing to revert",
+      `No path differs from ${baseRef(state)} and there is no tracked local dirt.`,
+    );
+  }
+  const target = state.draft.revertTarget;
+  const source = target === "base" ? baseRef(state) : "HEAD";
+  return `<fieldset><legend>Paths to overwrite on disk</legend>
+    ${fieldNote(`Selected paths are restored from ${source} in both the index and the working tree. Commits are not rewritten.`)}
+    <div class="list-tools" role="radiogroup" aria-label="Revert source">
+      ${targetOption(state, "head", "To HEAD")}
+      ${targetOption(state, "base", `To Base (${esc(baseRef(state) ?? "")})`)}
+    </div>
+    ${pathChecklist(state)}
+  </fieldset>`;
+}
+
+function targetOption(state: AppState, value: "head" | "base", label: string): string {
+  const checked = state.draft.revertTarget === value ? " checked" : "";
+  return `<label class="check-row inline"><input type="radio" name="revert-target"
+    data-event="select-revert-target" value="${value}"${checked} /> ${label}</label>`;
+}
 
 export function excludeForm(state: AppState): string {
   if (!state.submodules.length) {

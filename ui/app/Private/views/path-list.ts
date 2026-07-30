@@ -2,8 +2,8 @@ import { esc } from "../dom.ts";
 import { pathSetFor, pathValue, visiblePaths } from "../draft.ts";
 import type { AppState, ChangedPath } from "../types.ts";
 
-/// Uncommit and Split branch pick from the same list — every path that differs
-/// from Base — so the control is shared and only the selection set differs.
+/// Uncommit, Revert, and Split branch share the checklist control; each keeps
+/// its own selection set so ticks never cross operations.
 export function pathChecklist(state: AppState): string {
   const shown = visiblePaths(state);
   const selected = pathSetFor(state).size;

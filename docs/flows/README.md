@@ -53,3 +53,4 @@ Keep these docs operational. Prefer short tables, explicit file names, and seque
 | [split-branch.md](./split-branch.md) | Backend Split branch copy of selected paths onto a new branch |
 | [sync.md](./sync.md) | Backend Sync with Base, Saved work reapply, and resumable conflicts |
 | [uncommit-rewrite.md](./uncommit-rewrite.md) | Backend Uncommit planning and application |
+| [revert.md](./revert.md) | Backend Revert of tracked paths to HEAD or Base |

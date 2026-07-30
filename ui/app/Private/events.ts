@@ -61,6 +61,7 @@ const CHANGE: Record<string, FieldHandler> = {
   "select-submodule": edit.setSubmodule,
   "select-branch": edit.setTargetBranch,
   "toggle-path": edit.togglePath,
+  "select-revert-target": edit.setRevertTarget,
   "toggle-install-hook": edit.setInstallHook,
   "toggle-disable-recurse": edit.setDisableRecurse,
   "toggle-carry-changes": edit.setCarryChanges,

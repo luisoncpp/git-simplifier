@@ -13,6 +13,8 @@ export function createDraft(): Draft {
     pathFilter: "",
     selectedPaths: new Set(),
     splitPaths: new Set(),
+    revertPaths: new Set(),
+    revertTarget: "head",
     newBranch: "",
     splitMessage: "",
     commit: "",
@@ -30,10 +32,13 @@ export function createDraft(): Draft {
   };
 }
 
-/// Uncommit and Split branch read the same path list but mean opposite things
-/// by a tick, so a selection never crosses from one operation to the other.
-export const pathSetFor = (state: AppState): Set<string> =>
-  state.operation === "split_branch" ? state.draft.splitPaths : state.draft.selectedPaths;
+/// Each path-picking operation keeps its own ticks so a selection made for one
+/// never arrives pre-ticked in another.
+export const pathSetFor = (state: AppState): Set<string> => {
+  if (state.operation === "split_branch") return state.draft.splitPaths;
+  if (state.operation === "revert") return state.draft.revertPaths;
+  return state.draft.selectedPaths;
+};
 
 export const pathValue = (entry: { path: RefValue }): string => {
   const path = entry.path;
@@ -53,7 +58,7 @@ export const commitValue = (commit: { id: RefValue }): string => {
 /// exist have to be dropped instead of being sent back to Rust.
 export function adoptPaths(draft: Draft, paths: ChangedPath[]): void {
   const available = new Set(paths.map(pathValue));
-  for (const set of [draft.selectedPaths, draft.splitPaths]) {
+  for (const set of [draft.selectedPaths, draft.splitPaths, draft.revertPaths]) {
     for (const selected of set) {
       if (!available.has(selected)) set.delete(selected);
     }

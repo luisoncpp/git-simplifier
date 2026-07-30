@@ -45,6 +45,13 @@ pub struct UncommitInput {
 }
 
 #[derive(Clone, Debug, Deserialize)]
+pub struct RevertInput {
+    pub base: String,
+    pub paths: Vec<String>,
+    pub target: String,
+}
+
+#[derive(Clone, Debug, Deserialize)]
 pub struct EditMessageInput {
     pub base: String,
     pub commit: String,
@@ -104,6 +111,7 @@ pub struct DeleteSavedWorkInput {
 #[serde(tag = "kind", rename_all = "snake_case")]
 pub enum PrepareOperationRequest {
     Uncommit(UncommitInput),
+    Revert(RevertInput),
     EditMessage(EditMessageInput),
     ExcludeSubmodule(ExcludeSubmoduleInput),
     SplitBranch(SplitBranchInput),
@@ -149,6 +157,10 @@ pub enum PendingOperation {
     Uncommit {
         id: String,
         plan: git_helper_core::RewritePlan,
+    },
+    Revert {
+        id: String,
+        plan: git_helper_core::RevertPlan,
     },
     EditMessage {
         id: String,
@@ -202,6 +214,7 @@ impl PendingOperation {
     pub fn id(&self) -> &str {
         match self {
             Self::Uncommit { id, .. }
+            | Self::Revert { id, .. }
             | Self::EditMessage { id, .. }
             | Self::Exclude { id, .. }
             | Self::Split { id, .. }
@@ -227,6 +240,7 @@ mod tests {
     fn every_operation_payload_the_ui_sends_deserializes() {
         let payloads = [
             r#"{"kind":"uncommit","base":"refs/remotes/origin/main","paths":["a.txt"]}"#,
+            r#"{"kind":"revert","base":"refs/remotes/origin/main","paths":["a.txt"],"target":"head"}"#,
             r#"{"kind":"edit_message","base":"refs/remotes/origin/main","commit":"abcdef1","message":"new"}"#,
             r#"{"kind":"exclude_submodule","path":"vendor/sdk","install_hook":true,"disable_recurse":false}"#,
             r#"{"kind":"split_branch","base":"refs/remotes/origin/main","new_branch":"carved","paths":["a.txt"],"message":""}"#,
