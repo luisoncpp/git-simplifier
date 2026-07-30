@@ -140,6 +140,8 @@ pub struct OperationOutcome {
     pub offer_publish_branch: Option<String>,
     /// When set, the quick-switch pull could not fast-forward and the user must choose.
     pub offer_resolve_pull: bool,
+    /// When set, the current branch has Saved work ready for the restore review.
+    pub offer_restore_saved_work: bool,
 }
 
 #[derive(Clone, Debug)]

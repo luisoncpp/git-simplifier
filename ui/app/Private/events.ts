@@ -43,6 +43,7 @@ const CLICK: Record<string, ClickHandler> = {
   "reset-message": (controller) => edit.resetMessage(controller),
   "dismiss-error": (controller) => edit.dismissError(controller),
   "dismiss-outcome": (controller) => edit.dismissOutcome(controller),
+  "dismiss-saved-work-notice": (controller) => edit.dismissSavedWorkNotice(controller),
   "toggle-entry": (controller, value) => edit.toggleEntry(controller, value),
   copy: (controller, value) => controller.copy(value),
   "copy-diff": (controller) => controller.copyDiff(),

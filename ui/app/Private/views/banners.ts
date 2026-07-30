@@ -1,10 +1,10 @@
 import { esc } from "../dom.ts";
-import { quickSwitchPause, syncPause } from "../snapshot.ts";
+import { currentBranch, quickSwitchPause, savedWorkFor, syncPause } from "../snapshot.ts";
 import type { SyncPause } from "../snapshot.ts";
 import type { AppState, OperationOutcome } from "../types.ts";
 
 export function banners(state: AppState): string {
-  return `${syncBanner(state)}${quickSwitchBanner(state)}${errorBanner(state)}${outcomeBanner(state)}`;
+  return `${syncBanner(state)}${quickSwitchBanner(state)}${savedWorkBanner(state)}${errorBanner(state)}${outcomeBanner(state)}`;
 }
 
 function syncBanner(state: AppState): string {
@@ -34,6 +34,25 @@ function quickSwitchBanner(state: AppState): string {
   </div>`;
 }
 
+/// Notice and offer — never auto-restore. Hidden while a result already offers
+/// restore, or while a pull decision must finish first.
+function savedWorkBanner(state: AppState): string {
+  const branch = currentBranch(state);
+  if (!savedWorkFor(state, branch)) return "";
+  if (state.dismissedSavedWorkBranch === branch) return "";
+  if (state.outcome?.offer_restore_saved_work) return "";
+  if (state.outcome?.offer_resolve_pull || quickSwitchPause(state)) return "";
+  const disabled = state.busy ? "disabled" : "";
+  return `<div class="banner warn" role="status">
+    <div><strong>Saved work is waiting</strong>
+      <p>This branch has a snapshot from a previous visit. Restore it when you are ready.</p></div>
+    <div class="banner-actions">
+      <button class="primary small" data-event="restore-saved" ${disabled}>Review restore</button>
+      <button class="ghost small" data-event="dismiss-saved-work-notice" ${disabled}>Dismiss</button>
+    </div>
+  </div>`;
+}
+
 function resumeHint(pause: SyncPause): string {
   if (pause.retry) return "Nothing was written yet. Reconnect to the remote and retry the fetch.";
   return "Resolve the conflicted files in your editor, then resume. Your Saved work stays anchored until then.";
@@ -57,6 +76,12 @@ function followUp(state: AppState, outcome: OperationOutcome): string {
     return `<button class="primary small" data-event="publish-branch"
       data-value="${esc(outcome.offer_publish_branch)}" ${disabled}>Review push of ${esc(outcome.offer_publish_branch)}</button>`;
   }
+  if (outcome.offer_restore_saved_work) {
+    return `<div class="banner-actions">
+      <button class="primary small" data-event="restore-saved" ${disabled}>Review restore</button>
+      <button class="ghost small" data-event="dismiss-outcome" ${disabled}>Dismiss</button>
+    </div>`;
+  }
   return "";
 }
 
@@ -78,6 +103,6 @@ function outcomeBanner(state: AppState): string {
   return `<div class="banner ${tone}">
     <div><strong>${esc(outcome.headline)}</strong><ul>${details}</ul></div>
     ${followUp(state, outcome)}
-    <button class="ghost small" data-event="dismiss-outcome" aria-label="Dismiss result">Dismiss</button>
+    ${outcome.offer_restore_saved_work ? "" : `<button class="ghost small" data-event="dismiss-outcome" aria-label="Dismiss result">Dismiss</button>`}
   </div>`;
 }

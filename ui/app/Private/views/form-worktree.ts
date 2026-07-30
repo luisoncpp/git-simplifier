@@ -60,7 +60,7 @@ export function quickSwitchForm(state: AppState): string {
       ${state.draft.carryChanges ? "checked" : ""} /> Carry tracked changes to the target branch</label>` : ""}
     ${carryNote}${remoteNote}
     ${target && !target.remote && target.saved_work
-      ? `<p class="hint">${esc(target.name)} has Saved work waiting. Restore it from the Saved work section after you arrive.</p>`
+      ? `<p class="hint">${esc(target.name)} has Saved work waiting. After you arrive, a banner will offer to restore it.</p>`
       : ""}
   </fieldset>`;
 }

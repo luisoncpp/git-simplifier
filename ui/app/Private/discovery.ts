@@ -1,7 +1,7 @@
 import { adoptBranch, adoptCommit, adoptPaths, adoptSubmodule } from "./draft.ts";
 import { loadFileDiffs } from "./files-diff/index.ts";
 import { discoveryFor } from "./operations.ts";
-import { baseRef } from "./snapshot.ts";
+import { baseRef, currentBranch, savedWorkFor } from "./snapshot.ts";
 import { isInspectionView } from "./state.ts";
 import type { AppController } from "./controller.ts";
 import type { AppState, BaseChoice, RepositorySnapshot } from "./types.ts";
@@ -18,6 +18,9 @@ export async function reloadState(
   state.saved = state.snapshot.saved_work ?? [];
   state.operations = state.snapshot.operations ?? [];
   state.error = preservedError;
+  if (!savedWorkFor(state, currentBranch(state))) {
+    state.dismissedSavedWorkBranch = null;
+  }
   await Promise.all([loadOperationData(controller), loadViewData(controller)]);
 }
 

@@ -38,5 +38,6 @@ export function createState(): AppState {
     changingBase: false,
     busy: false,
     error: "",
+    dismissedSavedWorkBranch: null,
   };
 }

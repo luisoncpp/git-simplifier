@@ -97,6 +97,7 @@ export interface OperationOutcome {
   offer_force_push: boolean;
   offer_publish_branch: string | null;
   offer_resolve_pull?: boolean;
+  offer_restore_saved_work?: boolean;
 }
 
 /// Flat payloads matching PrepareOperationRequest's tagged enum on the Rust
@@ -178,6 +179,8 @@ export interface AppState {
   changingBase: boolean;
   busy: boolean;
   error: string;
+  /// Branch whose persistent Saved work notice the user dismissed for this visit.
+  dismissedSavedWorkBranch: string | null;
 }
 
 export interface Bridge {

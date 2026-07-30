@@ -1,6 +1,6 @@
 use git_helper_core::{
-    ExcludeSubmodulePlan, ForcePushPlan, ObjectId, PublishBranchPlan, QuickSwitchPlan, RefName,
-    RewritePlan, SplitBranchPlan, SyncRequest,
+    ExcludeSubmodulePlan, ForcePushPlan, ObjectId, PublishBranchPlan, QuickSwitchPlan,
+    QuickSwitchResult, RefName, RewritePlan, SplitBranchPlan, SyncRequest,
 };
 
 use super::data::{OperationOutcome, PendingOperation};
@@ -41,14 +41,9 @@ fn rewrite(state: &AppState, plan: RewritePlan) -> Result<OperationOutcome, Stri
             result.dropped_commits.len()
         ));
     }
-    Ok(OperationOutcome {
-        kind: "rewrite".to_string(),
-        headline: "History rewritten".to_string(),
-        details,
-        offer_force_push: true,
-        offer_publish_branch: None,
-        offer_resolve_pull: false,
-    })
+    let mut outcome = bare("rewrite", "History rewritten", details);
+    outcome.offer_force_push = true;
+    Ok(outcome)
 }
 
 fn exclude(state: &AppState, plan: ExcludeSubmodulePlan) -> Result<OperationOutcome, String> {
@@ -69,24 +64,17 @@ fn exclude(state: &AppState, plan: ExcludeSubmodulePlan) -> Result<OperationOutc
     if details.is_empty() {
         details.push("The exclusion was already in place".to_string());
     }
-    Ok(OperationOutcome {
-        kind: "exclude_submodule".to_string(),
-        headline: "Submodule excluded".to_string(),
-        details,
-        offer_force_push: false,
-        offer_publish_branch: None,
-        offer_resolve_pull: false,
-    })
+    Ok(bare("exclude_submodule", "Submodule excluded", details))
 }
 
 fn split_branch(state: &AppState, plan: SplitBranchPlan) -> Result<OperationOutcome, String> {
     let result = with_repository(state, |repo| {
         repo.apply_split_branch(&plan).map_err(|e| e.to_string())
     })?;
-    Ok(OperationOutcome {
-        kind: "split_branch".to_string(),
-        headline: "Branch created".to_string(),
-        details: vec![
+    let mut outcome = bare(
+        "split_branch",
+        "Branch created",
+        vec![
             format!("{} points at {}", result.branch, result.commit),
             format!(
                 "{} still carries the same {} file(s)",
@@ -94,33 +82,69 @@ fn split_branch(state: &AppState, plan: SplitBranchPlan) -> Result<OperationOutc
                 result.paths.len()
             ),
         ],
-        offer_force_push: false,
-        offer_publish_branch: Some(result.branch.clone()),
-        offer_resolve_pull: false,
-    })
+    );
+    outcome.offer_publish_branch = Some(result.branch.clone());
+    Ok(outcome)
 }
 
 fn publish_branch(state: &AppState, plan: PublishBranchPlan) -> Result<OperationOutcome, String> {
     let result = with_repository(state, |repo| {
         repo.apply_publish_branch(&plan).map_err(|e| e.to_string())
     })?;
-    Ok(OperationOutcome {
-        kind: "publish_branch".to_string(),
-        headline: "Branch published".to_string(),
-        details: vec![
+    Ok(bare(
+        "publish_branch",
+        "Branch published",
+        vec![
             format!("{} now exists on {}", plan.branch_name, result.remote),
             format!("{} tracks {}", plan.branch_name, result.upstream),
         ],
-        offer_force_push: false,
-        offer_publish_branch: None,
-        offer_resolve_pull: false,
-    })
+    ))
 }
 
 fn quick_switch(state: &AppState, plan: QuickSwitchPlan) -> Result<OperationOutcome, String> {
     let result = with_repository(state, |repo| {
         repo.apply_quick_switch(&plan).map_err(|e| e.to_string())
     })?;
+    let offer_restore = result.target_saved_work.is_some() && !result.pull_decision_needed;
+    let headline = if result.pull_decision_needed {
+        "Pull needs a decision"
+    } else {
+        "Branch switched"
+    };
+    let mut outcome = bare("quick_switch", headline, switch_details(&result));
+    outcome.offer_resolve_pull = result.pull_decision_needed;
+    outcome.offer_restore_saved_work = offer_restore;
+    Ok(outcome)
+}
+
+fn resolve_pull(
+    state: &AppState,
+    resolution: git_helper_core::PullResolution,
+) -> Result<OperationOutcome, String> {
+    let (result, offer_restore) = with_repository(state, |repo| {
+        let result = repo
+            .resolve_quick_switch_pull(resolution)
+            .map_err(|e| e.to_string())?;
+        let offer_restore = repo
+            .list_saved_work()
+            .map_err(|e| e.to_string())?
+            .iter()
+            .any(|saved| saved.branch == result.target_branch);
+        Ok((result, offer_restore))
+    })?;
+    let mut details = resolve_details(&result);
+    if offer_restore {
+        details.push(format!(
+            "Saved work for {} is ready to restore",
+            result.target_branch
+        ));
+    }
+    let mut outcome = bare("resolve_quick_switch_pull", "Pull decision applied", details);
+    outcome.offer_restore_saved_work = offer_restore;
+    Ok(outcome)
+}
+
+fn switch_details(result: &QuickSwitchResult) -> Vec<String> {
     let mut details = vec![format!("Now on {}", result.target_branch)];
     if let Some(saved) = &result.saved_work {
         details.push(format!("Tracked changes saved for {}", saved.branch));
@@ -134,41 +158,17 @@ fn quick_switch(state: &AppState, plan: QuickSwitchPlan) -> Result<OperationOutc
             result.target_branch
         ));
     }
-    if let Some(warning) = &result.carry_warning {
-        details.push(warning.clone());
-    }
-    if let Some(warning) = &result.pull_warning {
-        details.push(warning.clone());
-    }
+    push_warnings(&mut details, result);
     if result.target_saved_work.is_some() {
         details.push(format!(
             "Saved work for {} is ready to restore",
             result.target_branch
         ));
     }
-    let headline = if result.pull_decision_needed {
-        "Pull needs a decision"
-    } else {
-        "Branch switched"
-    };
-    Ok(OperationOutcome {
-        kind: "quick_switch".to_string(),
-        headline: headline.to_string(),
-        details,
-        offer_force_push: false,
-        offer_publish_branch: None,
-        offer_resolve_pull: result.pull_decision_needed,
-    })
+    details
 }
 
-fn resolve_pull(
-    state: &AppState,
-    resolution: git_helper_core::PullResolution,
-) -> Result<OperationOutcome, String> {
-    let result = with_repository(state, |repo| {
-        repo.resolve_quick_switch_pull(resolution)
-            .map_err(|e| e.to_string())
-    })?;
+fn resolve_details(result: &QuickSwitchResult) -> Vec<String> {
     let mut details = vec![format!("Still on {}", result.target_branch)];
     if result.pulled {
         details.push("Local branch now matches the chosen remote update".to_string());
@@ -182,31 +182,30 @@ fn resolve_pull(
     if let Some(warning) = &result.carry_warning {
         details.push(warning.clone());
     }
-    Ok(OperationOutcome {
-        kind: "resolve_quick_switch_pull".to_string(),
-        headline: "Pull decision applied".to_string(),
-        details,
-        offer_force_push: false,
-        offer_publish_branch: None,
-        offer_resolve_pull: false,
-    })
+    details
+}
+
+fn push_warnings(details: &mut Vec<String>, result: &QuickSwitchResult) {
+    if let Some(warning) = &result.carry_warning {
+        details.push(warning.clone());
+    }
+    if let Some(warning) = &result.pull_warning {
+        details.push(warning.clone());
+    }
 }
 
 fn force_push(state: &AppState, plan: ForcePushPlan) -> Result<OperationOutcome, String> {
     let result = with_repository(state, |repo| {
         repo.apply_force_push(&plan).map_err(|e| e.to_string())
     })?;
-    Ok(OperationOutcome {
-        kind: "force_push".to_string(),
-        headline: "Force push completed".to_string(),
-        details: vec![format!(
+    Ok(bare(
+        "force_push",
+        "Force push completed",
+        vec![format!(
             "{} on {} now points at {}",
             result.branch, result.remote, result.new_head
         )],
-        offer_force_push: false,
-        offer_publish_branch: None,
-        offer_resolve_pull: false,
-    })
+    ))
 }
 
 fn sync(state: &AppState, base: RefName, head: ObjectId) -> Result<OperationOutcome, String> {
@@ -214,14 +213,11 @@ fn sync(state: &AppState, base: RefName, head: ObjectId) -> Result<OperationOutc
     let result = with_repository(state, |repo| {
         repo.sync(SyncRequest { base }).map_err(|e| e.to_string())
     })?;
-    Ok(OperationOutcome {
-        kind: "sync".to_string(),
-        headline: "Sync completed".to_string(),
-        details: vec![format!("HEAD now points at {}", result.new_head)],
-        offer_force_push: false,
-        offer_publish_branch: None,
-        offer_resolve_pull: false,
-    })
+    Ok(bare(
+        "sync",
+        "Sync completed",
+        vec![format!("HEAD now points at {}", result.new_head)],
+    ))
 }
 
 fn restore(state: &AppState, head: ObjectId) -> Result<OperationOutcome, String> {
@@ -236,14 +232,7 @@ fn restore(state: &AppState, head: ObjectId) -> Result<OperationOutcome, String>
     if !result.applied_index {
         details.push("The staged split could not be restored; everything is unstaged".to_string());
     }
-    Ok(OperationOutcome {
-        kind: "restore_saved_work".to_string(),
-        headline: "Saved work restored".to_string(),
-        details,
-        offer_force_push: false,
-        offer_publish_branch: None,
-        offer_resolve_pull: false,
-    })
+    Ok(bare("restore_saved_work", "Saved work restored", details))
 }
 
 fn delete(state: &AppState, branch: String, head: ObjectId) -> Result<OperationOutcome, String> {
@@ -251,14 +240,11 @@ fn delete(state: &AppState, branch: String, head: ObjectId) -> Result<OperationO
     let result = with_repository(state, |repo| {
         repo.delete_saved_work(branch).map_err(|e| e.to_string())
     })?;
-    Ok(OperationOutcome {
-        kind: "delete_saved_work".to_string(),
-        headline: "Saved work deleted".to_string(),
-        details: vec![format!("Removed {}", result.reference)],
-        offer_force_push: false,
-        offer_publish_branch: None,
-        offer_resolve_pull: false,
-    })
+    Ok(bare(
+        "delete_saved_work",
+        "Saved work deleted",
+        vec![format!("Removed {}", result.reference)],
+    ))
 }
 
 fn resume(state: &AppState, operation_id: String) -> Result<OperationOutcome, String> {
@@ -267,14 +253,11 @@ fn resume(state: &AppState, operation_id: String) -> Result<OperationOutcome, St
         return Err("the recorded sync changed since the review; prepare again".to_string());
     }
     let result = with_repository(state, |repo| repo.resume_sync().map_err(|e| e.to_string()))?;
-    Ok(OperationOutcome {
-        kind: "resume_sync".to_string(),
-        headline: "Sync finished".to_string(),
-        details: vec![format!("HEAD now points at {}", result.new_head)],
-        offer_force_push: false,
-        offer_publish_branch: None,
-        offer_resolve_pull: false,
-    })
+    Ok(bare(
+        "resume_sync",
+        "Sync finished",
+        vec![format!("HEAD now points at {}", result.new_head)],
+    ))
 }
 
 fn ensure_unchanged(state: &AppState, head: &ObjectId, label: &str) -> Result<(), String> {
@@ -287,4 +270,16 @@ fn ensure_unchanged(state: &AppState, head: &ObjectId, label: &str) -> Result<()
         ));
     }
     Ok(())
+}
+
+fn bare(kind: &str, headline: &str, details: Vec<String>) -> OperationOutcome {
+    OperationOutcome {
+        kind: kind.to_string(),
+        headline: headline.to_string(),
+        details,
+        offer_force_push: false,
+        offer_publish_branch: None,
+        offer_resolve_pull: false,
+        offer_restore_saved_work: false,
+    }
 }

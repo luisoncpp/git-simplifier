@@ -26,11 +26,12 @@ Backend caller submits another branch name (local, or a remote-tracking ref that
 
 ## Restore sequence
 
-1. The caller explicitly requests restoration after returning to a branch; opening the app does not restore automatically.
-2. The current branch's WIP ref is applied non-recursively with `git stash apply --index`.
+1. After a successful Quick switch onto a branch that already has Saved work (and no pull decision is pending), the outcome sets `offer_restore_saved_work` so the result banner offers **Review restore**. Opening the app or refreshing while the current branch has Saved work shows the same offer on a persistent banner. Restoration is never automatic.
+2. The caller confirms via the restore review; the current branch's WIP ref is applied non-recursively with `git stash apply --index`.
 3. If index restoration fails without creating unmerged paths, a plain `git stash apply` is attempted and the result reports that the staged split was not restored.
 4. If the indexed apply creates conflicts, restoration stops without retrying over the unmerged index. The result directs the user to resolve the conflict markers and delete Saved work after checking the result.
 5. The WIP ref is deleted with an expected snapshot SHA only after apply succeeds. Failed or conflicted application leaves the ref available for retry or inspection.
+6. When a pull decision was pending, the restore offer waits until replace / merge-pull / cancel finishes; the resolve outcome then offers restore if Saved work is still present.
 
 ## Reads
 

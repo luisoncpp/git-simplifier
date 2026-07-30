@@ -1,5 +1,6 @@
 import { pathSetFor, pathValue, visiblePaths } from "./draft.ts";
 import { OPERATIONS } from "./operations.ts";
+import { currentBranch } from "./snapshot.ts";
 import { messageTools } from "./views/form-history.ts";
 import { submitRow } from "./views/actions.ts";
 import type { AppController } from "./controller.ts";
@@ -98,6 +99,11 @@ export function dismissError(controller: AppController): void {
 
 export function dismissOutcome(controller: AppController): void {
   controller.state.outcome = null;
+  controller.render();
+}
+
+export function dismissSavedWorkNotice(controller: AppController): void {
+  controller.state.dismissedSavedWorkBranch = currentBranch(controller.state) || null;
   controller.render();
 }
 

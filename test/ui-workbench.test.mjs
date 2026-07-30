@@ -325,6 +325,69 @@ test("a rewrite still offers a force push and never the publish button", () => {
   assert.doesNotMatch(banner, /data-event="publish-branch"/);
 });
 
+test("switching onto Saved work offers a restore review from the result banner", () => {
+  const controller = controllerWith({});
+  controller.state.saved = [
+    { branch: "feature", reference: "refs/githelper/wip/feature", snapshot: "e".repeat(40) },
+  ];
+  controller.state.outcome = {
+    kind: "quick_switch",
+    headline: "Branch switched",
+    details: ["Now on feature", "Saved work for feature is ready to restore"],
+    offer_force_push: false,
+    offer_publish_branch: null,
+    offer_restore_saved_work: true,
+  };
+
+  const banner = bannerOf(renderShell(controller.state));
+  assert.match(banner, /data-event="restore-saved"/);
+  assert.match(banner, /Review restore/);
+  assert.doesNotMatch(renderShell(controller.state), /Saved work is waiting/);
+});
+
+test("Saved work on the current branch shows a persistent restore offer", () => {
+  const controller = controllerWith({});
+  controller.state.saved = [
+    { branch: "feature", reference: "refs/githelper/wip/feature", snapshot: "e".repeat(40) },
+  ];
+
+  const markup = renderShell(controller.state);
+  assert.match(markup, /Saved work is waiting/);
+  assert.match(markup, /data-event="restore-saved"/);
+  assert.match(markup, /data-event="dismiss-saved-work-notice"/);
+  assert.match(markup, /Review restore/);
+});
+
+test("dismissing the Saved work notice hides it until the snapshot is gone", () => {
+  const controller = controllerWith({});
+  controller.state.saved = [
+    { branch: "feature", reference: "refs/githelper/wip/feature", snapshot: "e".repeat(40) },
+  ];
+
+  controller.state.dismissedSavedWorkBranch = "feature";
+  assert.doesNotMatch(renderShell(controller.state), /Saved work is waiting/);
+});
+
+test("a pending pull decision suppresses the Saved work restore banner", () => {
+  const controller = controllerWith({ quick_switch_status: "pull-ff-failed" });
+  controller.state.saved = [
+    { branch: "feature", reference: "refs/githelper/wip/feature", snapshot: "e".repeat(40) },
+  ];
+  controller.state.outcome = {
+    kind: "quick_switch",
+    headline: "Pull needs a decision",
+    details: ["Now on feature"],
+    offer_force_push: false,
+    offer_publish_branch: null,
+    offer_resolve_pull: true,
+  };
+
+  const markup = renderShell(controller.state);
+  assert.match(markup, /Replace with remote/);
+  assert.doesNotMatch(markup, /Saved work is waiting/);
+  assert.doesNotMatch(markup, /data-event="restore-saved"/);
+});
+
 /// The operation strip always contains a Force push tab, so a follow-up
 /// assertion has to look at the result banner rather than the whole shell.
 function bannerOf(markup) {
