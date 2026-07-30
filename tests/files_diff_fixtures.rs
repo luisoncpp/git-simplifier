@@ -1,6 +1,6 @@
 mod support;
 
-use git_helper_core::{DiffLineKind, FileDiff, FileDiffStatus, RefName, RepoPath};
+use git_helper_core::{DiffCompare, DiffLineKind, FileDiff, FileDiffStatus, RefName, RepoPath};
 use support::fixture_repo::FixtureRepo;
 
 fn base() -> RefName {
@@ -38,7 +38,7 @@ fn files_diff_numbers_context_add_and_delete_lines_of_a_modified_file() {
         "edit line 6",
     );
 
-    let file = only(fixture.repo.files_diff(base()).unwrap());
+    let file = only(fixture.repo.files_diff(base(), DiffCompare::Head).unwrap());
 
     assert_eq!(file.path.as_str(), "src/app.ts");
     assert_eq!(file.status, FileDiffStatus::Modified);
@@ -85,7 +85,7 @@ fn files_diff_separates_two_hunks_that_are_far_apart() {
     let edited = replace_line(&replace_line(&seeded, 5, "near top"), 30, "near bottom");
     fixture.commit_file("wide.txt", &edited, "edit both ends");
 
-    let file = only(fixture.repo.files_diff(base()).unwrap());
+    let file = only(fixture.repo.files_diff(base(), DiffCompare::Head).unwrap());
 
     assert_eq!(file.hunks.len(), 2);
     let first = &file.hunks[0];
@@ -101,7 +101,7 @@ fn files_diff_reports_an_added_file_with_no_old_line_numbers() {
     let fixture = FixtureRepo::new();
     fixture.commit_file("added.txt", "first\nsecond\n", "add a file");
 
-    let file = only(fixture.repo.files_diff(base()).unwrap());
+    let file = only(fixture.repo.files_diff(base(), DiffCompare::Head).unwrap());
 
     assert_eq!(file.status, FileDiffStatus::Added);
     assert_eq!(file.old_mode, None);
@@ -127,7 +127,7 @@ fn files_diff_reports_a_deleted_file_with_no_new_line_numbers() {
     let fixture = FixtureRepo::new();
     fixture.remove_file("README.md", "drop the readme");
 
-    let file = only(fixture.repo.files_diff(base()).unwrap());
+    let file = only(fixture.repo.files_diff(base(), DiffCompare::Head).unwrap());
 
     assert_eq!(file.path.as_str(), "README.md");
     assert_eq!(file.status, FileDiffStatus::Deleted);
@@ -146,7 +146,7 @@ fn files_diff_marks_the_last_line_when_the_file_has_no_trailing_newline() {
     let fixture = FixtureRepo::new();
     fixture.commit_file("tail.txt", "only line", "add a file with no final newline");
 
-    let file = only(fixture.repo.files_diff(base()).unwrap());
+    let file = only(fixture.repo.files_diff(base(), DiffCompare::Head).unwrap());
 
     let lines = &file.hunks[0].lines;
     assert_eq!(lines.len(), 1, "the marker is not itself a line: {lines:?}");
@@ -164,7 +164,7 @@ fn files_diff_skips_a_binary_payload_without_losing_the_next_file() {
     );
     fixture.commit_file("after.txt", "text\n", "add text after the image");
 
-    let files = fixture.repo.files_diff(base()).unwrap();
+    let files = fixture.repo.files_diff(base(), DiffCompare::Head).unwrap();
 
     assert_eq!(files.len(), 2, "{files:?}");
     let image = files
@@ -192,7 +192,7 @@ fn files_diff_reports_a_mode_change_with_no_hunks() {
     let fixture = FixtureRepo::new();
     fixture.chmod_executable("README.md", "make the readme executable");
 
-    let file = only(fixture.repo.files_diff(base()).unwrap());
+    let file = only(fixture.repo.files_diff(base(), DiffCompare::Head).unwrap());
 
     assert_eq!(file.status, FileDiffStatus::Modified);
     assert_eq!(file.old_mode.as_deref(), Some("100644"));
@@ -207,7 +207,7 @@ fn files_diff_preserves_carriage_returns_in_content() {
     fixture.set_config("core.autocrlf", "false");
     fixture.commit_file("crlf.txt", "alpha\r\nbeta\r\n", "add a CRLF file");
 
-    let file = only(fixture.repo.files_diff(base()).unwrap());
+    let file = only(fixture.repo.files_diff(base(), DiffCompare::Head).unwrap());
 
     let texts: Vec<&str> = file.hunks[0]
         .lines
@@ -226,7 +226,7 @@ fn files_diff_parses_a_header_path_that_contains_a_space() {
     let fixture = FixtureRepo::new();
     fixture.commit_file("spaced name.txt", "content\n", "add a spaced path");
 
-    let file = only(fixture.repo.files_diff(base()).unwrap());
+    let file = only(fixture.repo.files_diff(base(), DiffCompare::Head).unwrap());
 
     assert_eq!(file.path.as_str(), "spaced name.txt");
 }
@@ -236,7 +236,7 @@ fn files_diff_parses_an_octal_escaped_non_ascii_path() {
     let fixture = FixtureRepo::new();
     fixture.commit_file("café.txt", "content\n", "add a non-ASCII path");
 
-    let file = only(fixture.repo.files_diff(base()).unwrap());
+    let file = only(fixture.repo.files_diff(base(), DiffCompare::Head).unwrap());
 
     assert_eq!(file.path.as_str(), "café.txt");
 }
@@ -252,8 +252,8 @@ fn files_diff_describes_the_same_changes_as_the_copyable_patch() {
     fixture.set_config("color.ui", "always");
     fixture.set_config("diff.noprefix", "true");
 
-    let patch = fixture.repo.branch_diff(base()).unwrap();
-    let files = fixture.repo.files_diff(base()).unwrap();
+    let patch = fixture.repo.branch_diff(base(), DiffCompare::Head).unwrap();
+    let files = fixture.repo.files_diff(base(), DiffCompare::Head).unwrap();
 
     let added_text = patch
         .lines()
@@ -296,7 +296,7 @@ fn full_file_diff_returns_every_line_of_one_file() {
     );
     let path = RepoPath::new("wide.txt".to_string()).unwrap();
 
-    let file = fixture.repo.full_file_diff(base(), path).unwrap().unwrap();
+    let file = fixture.repo.full_file_diff(base(), path, DiffCompare::Head).unwrap().unwrap();
 
     assert!(file.complete);
     assert_eq!(file.hunks.len(), 1);
@@ -315,7 +315,7 @@ fn full_file_diff_ignores_other_changed_files() {
     fixture.commit_file("two.txt", "two\n", "add two");
     let path = RepoPath::new("two.txt".to_string()).unwrap();
 
-    let file = fixture.repo.full_file_diff(base(), path).unwrap().unwrap();
+    let file = fixture.repo.full_file_diff(base(), path, DiffCompare::Head).unwrap().unwrap();
 
     assert_eq!(file.path.as_str(), "two.txt");
 }
@@ -328,7 +328,7 @@ fn full_file_diff_pins_its_pathspec_to_the_repository_root() {
     let nested = fixture.reopen_at("sub");
     let path = RepoPath::new("sub/nested.txt".to_string()).unwrap();
 
-    let file = nested.full_file_diff(base(), path).unwrap().unwrap();
+    let file = nested.full_file_diff(base(), path, DiffCompare::Head).unwrap().unwrap();
 
     assert_eq!(file.path.as_str(), "sub/nested.txt");
 }
@@ -339,7 +339,7 @@ fn full_file_diff_returns_nothing_for_a_path_with_no_changes() {
     fixture.commit_file("changed.txt", "changed\n", "add a file");
     let path = RepoPath::new("README.md".to_string()).unwrap();
 
-    let file = fixture.repo.full_file_diff(base(), path).unwrap();
+    let file = fixture.repo.full_file_diff(base(), path, DiffCompare::Head).unwrap();
 
     assert!(
         file.is_none(),
@@ -353,8 +353,8 @@ fn files_diff_rejects_a_base_that_is_not_remote_tracking() {
     let local = RefName::new("refs/heads/base".to_string()).unwrap();
     let path = RepoPath::new("README.md".to_string()).unwrap();
 
-    let listed = fixture.repo.files_diff(local.clone()).unwrap_err();
-    let expanded = fixture.repo.full_file_diff(local, path).unwrap_err();
+    let listed = fixture.repo.files_diff(local.clone(), DiffCompare::Head).unwrap_err();
+    let expanded = fixture.repo.full_file_diff(local, path, DiffCompare::Head).unwrap_err();
 
     assert!(listed.to_string().contains("remote-tracking"), "{listed}");
     assert!(

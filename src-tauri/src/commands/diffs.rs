@@ -1,7 +1,7 @@
 use git_helper_core::{RefName, RepoPath};
 use tauri::State;
 
-use super::data::{BaseRequest, FilePathRequest};
+use super::data::{DiffRequest, FilePathRequest};
 use super::repository::with_repository;
 use super::state::AppState;
 
@@ -11,12 +11,12 @@ use super::state::AppState;
 #[tauri::command(async)]
 pub fn generate_branch_diff(
     state: State<'_, AppState>,
-    request: BaseRequest,
+    request: DiffRequest,
 ) -> Result<String, String> {
     let base = RefName::new(request.base).map_err(|error| error.to_string())?;
     with_repository(state.inner(), |repository| {
         repository
-            .branch_diff(base)
+            .branch_diff(base, request.compare)
             .map_err(|error| error.to_string())
     })
 }
@@ -24,12 +24,12 @@ pub fn generate_branch_diff(
 #[tauri::command(async)]
 pub fn generate_files_diff(
     state: State<'_, AppState>,
-    request: BaseRequest,
+    request: DiffRequest,
 ) -> Result<Vec<git_helper_core::FileDiff>, String> {
     let base = RefName::new(request.base).map_err(|error| error.to_string())?;
     with_repository(state.inner(), |repository| {
         repository
-            .files_diff(base)
+            .files_diff(base, request.compare)
             .map_err(|error| error.to_string())
     })
 }
@@ -45,7 +45,7 @@ pub fn generate_full_file_diff(
     let path = RepoPath::new(request.path).map_err(|error| error.to_string())?;
     with_repository(state.inner(), |repository| {
         repository
-            .full_file_diff(base, path)
+            .full_file_diff(base, path, request.compare)
             .map_err(|error| error.to_string())
     })
 }

@@ -1,4 +1,5 @@
 import { revealByDataset } from "../dom.ts";
+import { loadViewData } from "../discovery.ts";
 import { ensureFullDiff } from "./load.ts";
 import type { AppController } from "../controller.ts";
 import type { AppState } from "../types.ts";
@@ -16,6 +17,13 @@ interface GapTarget {
 export function setLayout(controller: AppController, value: string): void {
   controller.state.diffView.layout = value === "split" ? "split" : "unified";
   controller.render();
+}
+
+export function setCompare(controller: AppController, value: string): Promise<void> {
+  const compare = value === "local" ? "local" : "head";
+  if (controller.state.diffView.compare === compare) return Promise.resolve();
+  controller.state.diffView.compare = compare;
+  return controller.run(() => loadViewData(controller));
 }
 
 export function toggleFile(controller: AppController, path: string): void {

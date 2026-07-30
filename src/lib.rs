@@ -14,9 +14,9 @@ pub use exclusion::{
 };
 pub use git::{AccessMode, GitCommand, GitError, GitOutput, RepositoryConfig};
 pub use inspection::{
-    ChangedPath, DiffHunk, DiffLine, DiffLineKind, EditableCommit, FileDiff, FileDiffStatus,
-    InspectionError, LocalBranchChoice, RemoteBaseChoice, RepositoryOverview, SubmoduleChoice,
-    WorktreeSummary,
+    ChangedPath, DiffCompare, DiffHunk, DiffLine, DiffLineKind, EditableCommit, FileDiff,
+    FileDiffStatus, InspectionError, LocalBranchChoice, RemoteBaseChoice, RepositoryOverview,
+    SubmoduleChoice, WorktreeSummary,
 };
 pub use push::{
     ForcePushError, ForcePushPlan, ForcePushResult, PublishBranchPlan, PublishBranchResult,

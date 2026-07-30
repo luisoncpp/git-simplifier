@@ -10,7 +10,7 @@ All writes go through `prepare_operation` → `OperationReview` → `apply_opera
 
 ## Layout
 
-Uncommit and Split branch share the changed-path checklist but keep separate selections, because a tick means the opposite thing in each. A repository rail, a single-row repository bar (branch, Base with a Change affordance, upstream, working-tree chips), the operation tab strip, and the form. The rail's Inspection group holds two read-only views: **Files diff** (per-file, unified by default with a side-by-side toggle, gaps expandable up/down/all, and a collapsible file navigator that starts closed) and **Raw diff**, the same patch as copyable text. A pending review opens as a second column beside the form and stacks below 860 CSS pixels. There is no decorative page heading in operation screens; the tab strip is the title.
+Uncommit and Split branch share the changed-path checklist but keep separate selections, because a tick means the opposite thing in each. A repository rail, a single-row repository bar (branch, Base with a Change affordance, upstream, working-tree chips), the operation tab strip, and the form. The rail's Inspection group holds two read-only views: **Files diff** (per-file, unified by default with a side-by-side toggle, a **HEAD / Local** compare toggle, gaps expandable up/down/all, and a collapsible file navigator that starts closed) and **Raw diff**, the same patch as copyable text with the same compare toggle. A pending review opens as a second column beside the form and stacks below 860 CSS pixels. There is no decorative page heading in operation screens; the tab strip is the title.
 
 ## Keyboard
 

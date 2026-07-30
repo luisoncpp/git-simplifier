@@ -1,6 +1,6 @@
 import { esc } from "../dom.ts";
-import { baseRef, currentBranch } from "../snapshot.ts";
-import { missingBaseGuidance } from "../views/inspection.ts";
+import { baseRef } from "../snapshot.ts";
+import { compareToggle, diffCompareNote, diffEmptyState, missingBaseGuidance } from "../views/inspection.ts";
 import { emptyState } from "../views/parts.ts";
 import { fileCard } from "./file-card.ts";
 import { fileNavigator } from "./navigator.ts";
@@ -23,7 +23,8 @@ export function filesDiffView(state: AppState): string {
 
 function body(state: AppState, files: FileDiff[]): string {
   if (!files.length) {
-    return emptyState("No committed changes", "The current branch has no committed changes outside Base.");
+    const [title, detail] = diffEmptyState(state.diffView.compare);
+    return emptyState(title, detail);
   }
   const open = state.diffView.navigatorOpen;
   return `<div class="files-diff-body${open ? " with-navigator" : ""}">
@@ -35,14 +36,13 @@ function body(state: AppState, files: FileDiff[]): string {
 }
 
 function head(state: AppState, files: FileDiff[]): string {
-  const branch = currentBranch(state) || "detached HEAD";
   const added = files.reduce((total, file) => total + addedCount(file), 0);
   const removed = files.reduce((total, file) => total + removedCount(file), 0);
   return `<header class="inspection-head">
     <div>
       <p class="eyebrow">Files diff</p>
       <h1>Changes since Base</h1>
-      <p class="note"><code>${esc(baseRef(state))}...${esc(branch)}</code> · ${files.length} file(s)
+      <p class="note">${diffCompareNote(state)} · ${files.length} file(s)
         <span class="count-add">+${added}</span> <span class="count-del">&minus;${removed}</span></p>
     </div>
     ${tools(state.diffView, files.length)}
@@ -53,6 +53,7 @@ function tools(view: DiffViewState, total: number): string {
   const allClosed = total > 0 && view.collapsed.size >= total;
   const idle = total ? "" : "disabled";
   return `<div class="diff-tools">
+    ${compareToggle(view)}
     <div class="layout-toggle" role="group" aria-label="Diff layout">
       ${LAYOUTS.map((layout) => layoutButton(view, layout)).join("")}
     </div>

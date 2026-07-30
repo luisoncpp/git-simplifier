@@ -4,7 +4,7 @@ use std::sync::mpsc;
 use std::thread;
 use std::time::Duration;
 
-use git_helper_core::RefName;
+use git_helper_core::{DiffCompare, RefName};
 use support::fixture_repo::FixtureRepo;
 
 #[test]
@@ -43,11 +43,24 @@ fn branch_diff_is_a_stable_patch_of_committed_changes_since_base() {
     fixture.set_config("diff.noprefix", "true");
     let base = RefName::new("refs/remotes/origin/base".to_string()).unwrap();
 
-    let diff = fixture.repo.branch_diff(base).unwrap();
+    let diff = fixture.repo.branch_diff(base, DiffCompare::Head).unwrap();
 
     assert!(diff.contains("--- a/README.md"), "{diff}");
     assert!(diff.contains("+++ b/README.md"), "{diff}");
     assert!(diff.contains("+committed"));
     assert!(!diff.contains("working tree only"));
     assert!(!diff.contains("\u{1b}["));
+}
+
+#[test]
+fn branch_diff_local_includes_worktree_dirt_and_committed_changes() {
+    let fixture = FixtureRepo::new();
+    fixture.commit_file("README.md", "base\ncommitted\n", "extend readme");
+    fixture.write_worktree_file("README.md", "working tree only\n");
+    let base = RefName::new("refs/remotes/origin/base".to_string()).unwrap();
+
+    let diff = fixture.repo.branch_diff(base, DiffCompare::Local).unwrap();
+
+    assert!(diff.contains("+committed") || diff.contains("working tree only"), "{diff}");
+    assert!(diff.contains("working tree only"), "{diff}");
 }

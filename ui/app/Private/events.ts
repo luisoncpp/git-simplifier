@@ -46,6 +46,7 @@ const CLICK: Record<string, ClickHandler> = {
   copy: (controller, value) => controller.copy(value),
   "copy-diff": (controller) => controller.copyDiff(),
   "set-diff-layout": (controller, value) => diff.setLayout(controller, value),
+  "set-diff-compare": (controller, value) => diff.setCompare(controller, value),
   "toggle-file": (controller, value) => diff.toggleFile(controller, value),
   "set-all-files": (controller, value) => diff.setAllFiles(controller, value),
   "expand-gap": (controller, value, node) => diff.expandGap(controller, value, node),

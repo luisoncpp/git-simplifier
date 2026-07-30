@@ -6,6 +6,7 @@ import {
   expandGap,
   jumpToFile,
   setAllFiles,
+  setCompare,
   setLayout,
   toggleFile,
   toggleNavigator,
@@ -107,16 +108,18 @@ function fullAppDiff() {
 
 function diffController(overview = {}) {
   const commands = [];
+  const requests = [];
   const controller = controllerWith({
-    async invoke(command) {
+    async invoke(command, args) {
       commands.push(command);
+      requests.push(args);
       if (command === "generate_files_diff") return fileDiffsFixture();
       if (command === "generate_full_file_diff") return fullAppDiff();
       if (command === "load_snapshot") return snapshotWith(overview);
       return [];
     },
   }, overview);
-  return { controller, commands };
+  return { controller, commands, requests };
 }
 
 const gapNode = (gap, dir) => ({ dataset: { gap: String(gap), dir } });
@@ -352,4 +355,25 @@ test("highlighting degrades to escaped plain text with no document", async () =>
   const markup = renderShell(controller.state);
   assert.match(markup, /if \(a &lt; b\) return;/);
   assert.doesNotMatch(markup, /class="token/, "the test run must never load Prism");
+});
+
+test("Files diff shows a HEAD/Local compare toggle", async () => {
+  const { controller } = diffController();
+  await controller.setView("files-diff");
+
+  const markup = renderShell(controller.state);
+  assert.match(markup, /aria-label="Diff compare"/);
+  assert.match(markup, /data-event="set-diff-compare"[^>]*data-value="head"/);
+  assert.match(markup, /data-event="set-diff-compare"[^>]*data-value="local"/);
+});
+
+test("switching compare reloads with the chosen mode and keeps it across refresh", async () => {
+  const { controller, requests } = diffController();
+  await controller.setView("files-diff");
+
+  await setCompare(controller, "local");
+  await controller.refresh();
+
+  assert.equal(controller.state.diffView.compare, "local");
+  assert.deepEqual(requests.at(-1), { request: { base: "refs/remotes/origin/main", compare: "local" } });
 });

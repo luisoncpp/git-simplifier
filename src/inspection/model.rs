@@ -69,6 +69,19 @@ pub struct SubmoduleChoice {
     pub excluded: bool,
 }
 
+/// Which side of an Inspection diff is compared against the merge base of Base
+/// and HEAD.
+#[derive(Clone, Copy, Debug, Default, Eq, PartialEq, Serialize, Deserialize)]
+#[serde(rename_all = "snake_case")]
+pub enum DiffCompare {
+    /// `Base...HEAD`: committed changes from the merge base to HEAD.
+    #[default]
+    Head,
+    /// Merge base → working tree: committed branch work plus uncommitted tracked
+    /// changes.
+    Local,
+}
+
 #[derive(Clone, Copy, Debug, Eq, PartialEq, Serialize, Deserialize)]
 #[serde(rename_all = "snake_case")]
 pub enum FileDiffStatus {

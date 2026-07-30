@@ -4,6 +4,7 @@
 export type FileDiffStatus = "added" | "deleted" | "modified" | "renamed";
 export type DiffLineKind = "context" | "add" | "del";
 export type DiffLayout = "unified" | "split";
+export type DiffCompare = "head" | "local";
 
 export interface DiffLine {
   kind: DiffLineKind;
@@ -48,6 +49,8 @@ export interface GapReveal {
 
 export interface DiffViewState {
   layout: DiffLayout;
+  /// HEAD compares merge-base → HEAD; Local compares merge-base → working tree.
+  compare: DiffCompare;
   /// Paths the user closed. Every file starts open, so empty means all open —
   /// which is why this is not the shared `state.expanded` set, whose members are
   /// closed-by-default oplog ids.
@@ -59,5 +62,11 @@ export interface DiffViewState {
 }
 
 export function createDiffView(): DiffViewState {
-  return { layout: "unified", collapsed: new Set(), reveals: new Map(), navigatorOpen: false };
+  return {
+    layout: "unified",
+    compare: "head",
+    collapsed: new Set(),
+    reveals: new Map(),
+    navigatorOpen: false,
+  };
 }

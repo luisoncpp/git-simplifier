@@ -1,10 +1,10 @@
 use std::ffi::OsString;
 
 use crate::git::{GitCommand, GitRunner};
-use crate::rewrite::{RefName, RepoPath};
+use crate::rewrite::{ObjectId, RefName, RepoPath};
 
 use super::errors::InspectionError;
-use super::model::FileDiff;
+use super::model::{DiffCompare, FileDiff};
 
 const LOAD_CONTEXT: &str = "3";
 /// Git has no infinite-context flag, and `INT_MAX` is not safe: xdiff computes a
@@ -13,9 +13,13 @@ const LOAD_CONTEXT: &str = "3";
 /// never fires. Ten million lines exceeds any file worth diffing.
 const FULL_CONTEXT: &str = "10000000";
 
-pub(crate) fn branch_diff(runner: &GitRunner, base: &RefName) -> Result<String, InspectionError> {
+pub(crate) fn branch_diff(
+    runner: &GitRunner,
+    base: &RefName,
+    compare: DiffCompare,
+) -> Result<String, InspectionError> {
     super::queries::ensure_remote_base(base)?;
-    let range = merge_base_range(base);
+    let range = diff_tip(runner, base, compare)?;
     patch_text(runner, diff_args(&range, LOAD_CONTEXT, /*pathspec=*/ None))
 }
 
@@ -24,8 +28,9 @@ pub(crate) fn branch_diff(runner: &GitRunner, base: &RefName) -> Result<String, 
 pub(crate) fn files_diff(
     runner: &GitRunner,
     base: &RefName,
+    compare: DiffCompare,
 ) -> Result<Vec<FileDiff>, InspectionError> {
-    super::patch::parse_patch(&branch_diff(runner, base)?)
+    super::patch::parse_patch(&branch_diff(runner, base, compare)?)
 }
 
 /// One file at full context, so a viewer can reveal any window of it without
@@ -35,9 +40,10 @@ pub(crate) fn full_file_diff(
     runner: &GitRunner,
     base: &RefName,
     path: &RepoPath,
+    compare: DiffCompare,
 ) -> Result<Option<FileDiff>, InspectionError> {
     super::queries::ensure_remote_base(base)?;
-    let range = merge_base_range(base);
+    let range = diff_tip(runner, base, compare)?;
     // Pinned so the pathspec and the names Git prints agree below the Git root.
     let pathspec = format!(":(top,literal){}", path.as_str());
     let text = patch_text(runner, diff_args(&range, FULL_CONTEXT, Some(&pathspec)))?;
@@ -48,8 +54,30 @@ pub(crate) fn full_file_diff(
     Ok(Some(file))
 }
 
-fn merge_base_range(base: &RefName) -> String {
-    format!("{}...HEAD", base.as_str())
+fn diff_tip(
+    runner: &GitRunner,
+    base: &RefName,
+    compare: DiffCompare,
+) -> Result<String, InspectionError> {
+    match compare {
+        DiffCompare::Head => Ok(format!("{}...HEAD", base.as_str())),
+        DiffCompare::Local => merge_base_oid(runner, base).map(|oid| oid.as_str().to_string()),
+    }
+}
+
+fn merge_base_oid(runner: &GitRunner, base: &RefName) -> Result<ObjectId, InspectionError> {
+    let output = runner.run(GitCommand::read(vec![
+        "merge-base".into(),
+        base.as_str().into(),
+        "HEAD".into(),
+    ]))?;
+    ObjectId::new(
+        String::from_utf8(output.stdout)
+            .map_err(|_| InspectionError::Parse("merge-base was not UTF-8".to_string()))?
+            .trim()
+            .to_string(),
+    )
+    .map_err(InspectionError::Parse)
 }
 
 /// The single source of truth for the stable patch flags. Both Inspection

@@ -6,8 +6,9 @@ mod queries;
 
 pub use errors::InspectionError;
 pub use model::{
-    ChangedPath, DiffHunk, DiffLine, DiffLineKind, EditableCommit, FileDiff, FileDiffStatus,
-    LocalBranchChoice, RemoteBaseChoice, RepositoryOverview, SubmoduleChoice, WorktreeSummary,
+    ChangedPath, DiffCompare, DiffHunk, DiffLine, DiffLineKind, EditableCommit, FileDiff,
+    FileDiffStatus, LocalBranchChoice, RemoteBaseChoice, RepositoryOverview, SubmoduleChoice,
+    WorktreeSummary,
 };
 
 use crate::git::GitRunner;
@@ -25,21 +26,27 @@ pub(crate) fn changed_paths(
 ) -> Result<Vec<ChangedPath>, InspectionError> {
     queries::changed_paths(runner, base)
 }
-pub(crate) fn branch_diff(runner: &GitRunner, base: &RefName) -> Result<String, InspectionError> {
-    diff::branch_diff(runner, base)
+pub(crate) fn branch_diff(
+    runner: &GitRunner,
+    base: &RefName,
+    compare: model::DiffCompare,
+) -> Result<String, InspectionError> {
+    diff::branch_diff(runner, base, compare)
 }
 pub(crate) fn files_diff(
     runner: &GitRunner,
     base: &RefName,
+    compare: model::DiffCompare,
 ) -> Result<Vec<FileDiff>, InspectionError> {
-    diff::files_diff(runner, base)
+    diff::files_diff(runner, base, compare)
 }
 pub(crate) fn full_file_diff(
     runner: &GitRunner,
     base: &RefName,
     path: &RepoPath,
+    compare: model::DiffCompare,
 ) -> Result<Option<FileDiff>, InspectionError> {
-    diff::full_file_diff(runner, base, path)
+    diff::full_file_diff(runner, base, path, compare)
 }
 pub(crate) fn editable_commits(
     runner: &GitRunner,

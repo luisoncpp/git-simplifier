@@ -15,11 +15,22 @@ pub struct BaseRequest {
     pub base: String,
 }
 
-/// The diff viewer expands one file at a time, which `BaseRequest` cannot say.
+/// Inspection diff requests carry a compare mode; `BaseRequest` stays for Sync
+/// and other actions that only need the ref.
+#[derive(Clone, Debug, Deserialize)]
+pub struct DiffRequest {
+    pub base: String,
+    #[serde(default)]
+    pub compare: git_helper_core::DiffCompare,
+}
+
+/// The diff viewer expands one file at a time, which `DiffRequest` cannot say.
 #[derive(Clone, Debug, Deserialize)]
 pub struct FilePathRequest {
     pub base: String,
     pub path: String,
+    #[serde(default)]
+    pub compare: git_helper_core::DiffCompare,
 }
 
 #[derive(Debug, Deserialize)]

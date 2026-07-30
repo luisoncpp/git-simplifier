@@ -23,7 +23,7 @@ export async function loadFileDiffs(controller: AppController, base: string): Pr
   resetFileDiffs(state);
   if (!base) return;
   const files = await controller.bridge.invoke<FileDiff[]>("generate_files_diff", {
-    request: { base },
+    request: { base, compare: state.diffView.compare },
   });
   state.fileDiffs = files;
   for (const file of files) {
@@ -41,7 +41,7 @@ export async function ensureFullDiff(controller: AppController, path: string): P
   const base = baseRef(state);
   if (!base) return;
   const full = await controller.bridge.invoke<FileDiff | null>("generate_full_file_diff", {
-    request: { base, path },
+    request: { base, path, compare: state.diffView.compare },
   });
   if (!full) return;
   state.fileDiffsFull.set(path, full);

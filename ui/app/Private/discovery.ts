@@ -59,7 +59,9 @@ async function loadBranchDiff(controller: AppController, base: string): Promise<
   state.diffCopied = false;
   state.branchDiff = null;
   if (!base) return;
-  state.branchDiff = await controller.bridge.invoke<string>("generate_branch_diff", { request: { base } });
+  state.branchDiff = await controller.bridge.invoke<string>("generate_branch_diff", {
+    request: { base, compare: state.diffView.compare },
+  });
 }
 
 function adoptSelections(state: AppState): void {

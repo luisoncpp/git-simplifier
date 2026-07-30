@@ -1,14 +1,17 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 import { renderShell } from "../ui/app/index.ts";
+import { setCompare } from "../ui/app/Private/files-diff/index.ts";
 import { controllerWith, snapshotWith } from "./support/controller.mjs";
 
 test("Raw diff loads and renders the current branch patch", async () => {
   const commands = [];
+  const requests = [];
   const patch = "diff --git a/src/app.js b/src/app.js\n+new line\n";
   const controller = controllerWith({
-    async invoke(command) {
+    async invoke(command, args) {
       commands.push(command);
+      requests.push(args);
       if (command === "generate_branch_diff") return patch;
       return [];
     },
@@ -90,4 +93,39 @@ test("the generated diff is copied to the clipboard in one action", async () => 
   assert.deepEqual(writes, ["diff content"]);
   assert.match(renderShell(controller.state), />Copied</);
   assert.match(renderShell(controller.state), /is-copied/);
+});
+
+test("Raw diff shows a HEAD/Local compare toggle", async () => {
+  const controller = controllerWith({
+    async invoke(command) {
+      if (command === "generate_branch_diff") return "patch";
+      return [];
+    },
+  });
+
+  await controller.setView("raw-diff");
+
+  const markup = renderShell(controller.state);
+  assert.match(markup, /aria-label="Diff compare"/);
+  assert.match(markup, /data-event="set-diff-compare"[^>]*data-value="local"/);
+});
+
+test("switching compare reloads Raw diff with the chosen mode", async () => {
+  const commands = [];
+  const requests = [];
+  const controller = controllerWith({
+    async invoke(command, args) {
+      commands.push(command);
+      requests.push(args);
+      if (command === "generate_branch_diff") return "patch";
+      return [];
+    },
+  });
+
+  await controller.setView("raw-diff");
+  await setCompare(controller, "local");
+
+  assert.equal(controller.state.diffView.compare, "local");
+  assert.equal(commands.filter((command) => command === "generate_branch_diff").length, 2);
+  assert.deepEqual(requests.at(-1), { request: { base: "refs/remotes/origin/main", compare: "local" } });
 });
