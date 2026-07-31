@@ -1,4 +1,4 @@
-# Git Helper
+# Git Simplifier
 
 A desktop tool that turns routine-but-awkward git operations into single, safe actions, running alongside the user's existing git clients on the same repository.
 

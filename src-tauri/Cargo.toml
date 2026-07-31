@@ -2,7 +2,7 @@
 name = "git-helper"
 version = "0.1.0"
 description = "A safe control room for awkward Git operations"
-authors = ["Git Helper"]
+authors = ["Git Simplifier"]
 edition = "2021"
 rust-version = "1.77.2"
 

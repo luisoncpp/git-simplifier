@@ -30,7 +30,7 @@ export function renderShell(state: AppState): string {
 
 function rail(state: AppState): string {
   return `<aside class="rail">
-    <div class="brand"><span class="mark" aria-hidden="true">gh</span><strong>Git Helper</strong></div>
+    <div class="brand"><span class="mark" aria-hidden="true">gs</span><strong>Git Simplifier</strong></div>
     ${repoSwitcher(state)}
     <nav aria-label="Sections">
       ${VIEWS.map((entry) => navItem(state, entry)).join("")}
@@ -85,7 +85,7 @@ function pane(state: AppState): string {
 function emptyPane(state: AppState): string {
   return `<div class="pane empty">
     <h1>No repository is open</h1>
-    <p>Git Helper reads every branch, path, and commit from a real repository, so nothing is shown until one
+    <p>Git Simplifier reads every branch, path, and commit from a real repository, so nothing is shown until one
     is open.</p>
     ${state.error ? `<p class="reason"><strong>Last attempt:</strong> ${esc(state.error)}</p>` : ""}
     <button class="primary" data-event="pick-repository">Choose a repository</button>

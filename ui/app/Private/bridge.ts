@@ -1,6 +1,6 @@
 import type { Bridge } from "./types.ts";
 
-const NO_DESKTOP = "Desktop repository access unavailable. Run Git Helper as a Tauri app.";
+const NO_DESKTOP = "Desktop repository access unavailable. Run Git Simplifier as a Tauri app.";
 
 export class TauriBridge implements Bridge {
   async invoke<T = unknown>(command: string, args: Record<string, unknown> = {}): Promise<T> {

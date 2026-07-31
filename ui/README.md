@@ -1,4 +1,4 @@
-# Git Helper UI
+# Git Simplifier UI
 
 A compact dark workbench, not a preview dashboard. Vanilla TypeScript (strict), one deep module: `ui/app/index.ts` is the public interface and everything under `ui/app/Private/` is implementation. Wire shapes mirror the Rust contracts in `ui/app/Private/types.ts`. See [docs/architecture/workbench-ui.md](../docs/architecture/workbench-ui.md) for the state and rendering rules.
 

@@ -52,7 +52,7 @@ pub fn install(app: &App) -> tauri::Result<()> {
 
     let _tray = TrayIconBuilder::with_id("main-tray")
         .icon(icon)
-        .tooltip("Git Helper")
+        .tooltip("Git Simplifier")
         .menu(&menu)
         .show_menu_on_left_click(/*show=*/false)
         .on_menu_event(|app, event| match event.id.as_ref() {

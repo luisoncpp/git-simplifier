@@ -8,7 +8,7 @@ How the shipping artifact is produced. Configuration lives in `src-tauri/tauri.c
 npm run installer
 ```
 
-Output: `src-tauri/target/release/bundle/nsis/Git Helper_<version>_x64-setup.exe` (~2 MB).
+Output: `src-tauri/target/release/bundle/nsis/Git Simplifier_<version>_x64-setup.exe` (~2 MB).
 
 The command chains `vite build` (via `beforeBuildCommand`) → cargo release build → `makensis`. NSIS ships with the Tauri CLI, so no separate installer toolchain is required.
 

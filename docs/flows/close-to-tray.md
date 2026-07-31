@@ -38,7 +38,7 @@ User clicks the main window close button (X), or interacts with the system tray.
 
 ## Side effects
 
-- System tray icon created at startup (tooltip `Git Helper`, menu Show/Quit).
+- System tray icon created at startup (tooltip `Git Simplifier`, menu Show/Quit).
 - No Git or repository I/O.
 
 ## Files to inspect

@@ -1,4 +1,4 @@
-# Git Helper — Design Document
+# Git Simplifier — Design Document
 
 **Status:** Draft — revised 2026-07-27 after a design grilling session
 **Stack:** Tauri (Rust core + web UI), shelling out to the real `git` CLI

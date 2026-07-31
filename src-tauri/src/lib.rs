@@ -38,5 +38,5 @@ pub fn run() {
             commands::actions::cancel_operation
         ])
         .run(tauri::generate_context!())
-        .expect("error while running Git Helper");
+        .expect("error while running Git Simplifier");
 }

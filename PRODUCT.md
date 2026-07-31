@@ -6,11 +6,11 @@ product
 
 ## Users
 
-Team members using Git Helper alongside a terminal, IDE integration, or Git client. They may be Git experts or occasional users, but all need confidence when an operation rewrites history, changes a worktree, installs a hook, or updates a remote.
+Team members using Git Simplifier alongside a terminal, IDE integration, or Git client. They may be Git experts or occasional users, but all need confidence when an operation rewrites history, changes a worktree, installs a hook, or updates a remote.
 
 ## Product Purpose
 
-Git Helper turns a small set of awkward Git operations into explicit, safe workflows. The product should make repository-derived choices visible, show the exact impact before a write, and leave a durable recovery trail. It is not a general Git client.
+Git Simplifier turns a small set of awkward Git operations into explicit, safe workflows. The product should make repository-derived choices visible, show the exact impact before a write, and leave a durable recovery trail. It is not a general Git client.
 
 ## Brand Personality
 
