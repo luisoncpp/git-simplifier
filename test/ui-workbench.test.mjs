@@ -184,13 +184,52 @@ test("quick switch lists remote-only branches for local creation", async () => {
     { name: "feature", head: "a".repeat(40), current: true, saved_work: false },
     { name: "only-remote", head: "c".repeat(40), current: false, saved_work: false, remote: "origin/only-remote" },
   ];
-  const controller = withData({ branches });
+  const controller = withData({ branches }, { base: "refs/remotes/origin/only-remote" });
   await controller.selectOperation("quick_switch");
 
   const markup = renderShell(controller.state);
   assert.match(markup, /origin\/only-remote → only-remote/);
   assert.equal(controller.state.draft.targetBranch, "only-remote");
   assert.equal(controller.state.draft.createFromRemote, "origin/only-remote");
+});
+
+test("quick switch defaults target branch to local Base when on a non-Base branch", async () => {
+  const branches = [
+    { name: "feature", head: "a".repeat(40), current: true, saved_work: false },
+    { name: "alpha", head: "b".repeat(40), current: false, saved_work: false },
+    { name: "main", head: "c".repeat(40), current: false, saved_work: false },
+  ];
+  const controller = withData({ branches }, { base: "refs/remotes/origin/main" });
+  await controller.selectOperation("quick_switch");
+
+  assert.equal(controller.state.draft.targetBranch, "main");
+  assert.equal(controller.state.draft.createFromRemote, "");
+});
+
+test("quick switch defaults target branch to remote Base when local Base does not exist", async () => {
+  const branches = [
+    { name: "feature", head: "a".repeat(40), current: true, saved_work: false },
+    { name: "alpha", head: "b".repeat(40), current: false, saved_work: false },
+    { name: "main", head: "c".repeat(40), current: false, saved_work: false, remote: "origin/main" },
+  ];
+  const controller = withData({ branches }, { base: "refs/remotes/origin/main" });
+  await controller.selectOperation("quick_switch");
+
+  assert.equal(controller.state.draft.targetBranch, "main");
+  assert.equal(controller.state.draft.createFromRemote, "origin/main");
+});
+
+test("quick switch defaults target branch to first available branch when current branch is Base", async () => {
+  const branches = [
+    { name: "main", head: "a".repeat(40), current: true, saved_work: false },
+    { name: "alpha", head: "b".repeat(40), current: false, saved_work: false },
+    { name: "beta", head: "c".repeat(40), current: false, saved_work: false },
+  ];
+  const controller = withData({ branches }, { base: "refs/remotes/origin/main" });
+  await controller.selectOperation("quick_switch");
+
+  assert.equal(controller.state.draft.targetBranch, "alpha");
+  assert.equal(controller.state.draft.createFromRemote, "");
 });
 
 test("an already excluded submodule is labelled instead of looking untouched", async () => {

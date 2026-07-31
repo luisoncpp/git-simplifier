@@ -39,12 +39,16 @@ async function readSnapshot(
 export async function loadOperationData(controller: AppController): Promise<void> {
   const state = controller.state;
   const base = baseRef(state);
-  if (!base) state.baseChoices = await controller.bridge.invoke<BaseChoice[]>("list_base_choices");
+  if (!base) await loadBaseChoices(controller);
   const discovery = discoveryFor(state.operation);
   if (!discovery || (discovery.needsBase && !base)) return;
   const result = await discovery.load(controller.bridge, base);
   Object.assign(state, { [discovery.key]: result });
   adoptSelections(state);
+}
+
+export async function loadBaseChoices(controller: AppController): Promise<void> {
+  controller.state.baseChoices = await controller.bridge.invoke<BaseChoice[]>("list_base_choices");
 }
 
 /// Gated per view, so entering one Inspection section never pays for the other's
@@ -71,5 +75,5 @@ function adoptSelections(state: AppState): void {
   adoptPaths(state.draft, state.paths);
   adoptCommit(state.draft, state.commits);
   adoptSubmodule(state.draft, state.submodules);
-  adoptBranch(state.draft, state.branches);
+  adoptBranch(state.draft, state.branches, baseRef(state));
 }

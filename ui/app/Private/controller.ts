@@ -1,5 +1,5 @@
 import { TauriBridge } from "./bridge.ts";
-import { loadOperationData, loadViewData, reloadState } from "./discovery.ts";
+import { loadBaseChoices, loadOperationData, loadViewData, reloadState } from "./discovery.ts";
 import { focusNode, renderInto } from "./dom.ts";
 import { bindEvents } from "./events.ts";
 import { resetFileDiffs } from "./files-diff/index.ts";
@@ -158,6 +158,14 @@ export class AppController {
       this.state.changingBase = false;
       await this.reload(snapshot);
       this.announce(`Base is now ${value}`);
+    });
+  }
+
+  async editBase(): Promise<void> {
+    if (this.state.busy) return;
+    await this.run(/*loadBaseChoicesAndOpen=*/ async () => {
+      await loadBaseChoices(this);
+      this.state.changingBase = true;
     });
   }
 

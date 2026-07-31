@@ -73,6 +73,25 @@ test("saving Base reuses the snapshot returned by set_base", async () => {
   assert.equal(controller.state.changingBase, false);
 });
 
+test("changing Base loads remote choices before opening the selector", async () => {
+  const commands = [];
+  const controller = controllerWith({
+    async invoke(command) {
+      commands.push(command);
+      if (command === "list_base_choices") {
+        return [{ reference: "refs/remotes/origin/develop", display: "origin/develop", head: "2".repeat(40) }];
+      }
+      return [];
+    },
+  });
+
+  await controller.editBase();
+
+  assert.deepEqual(commands, ["list_base_choices"]);
+  assert.match(renderShell(controller.state), /origin\/develop/);
+  assert.doesNotMatch(renderShell(controller.state), /No remote-tracking ref was found/);
+});
+
 test("a failed sync apply reloads state once and offers the resume action", async () => {
   const paused = snapshotWith({ sync_status: "base-merge-conflict", worktree: { staged: 0, unstaged: 0, untracked: 0, conflicts: 1 } });
   const commands = [];

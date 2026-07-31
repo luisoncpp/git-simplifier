@@ -6,6 +6,7 @@ Backend caller submits another branch name (local, or a remote-tracking ref that
 
 ## Switch sequence
 
+0. When selecting the initial target branch in the UI, if the current branch is not Base, the target defaults to Base (preferring the local branch of the same name, or the remote-tracking ref if the local branch does not exist).
 1. Preflight rejects detached HEAD, an active merge/rebase/cherry-pick/bisect, an invalid target, a missing local target (unless creating from remote), an already-existing local when creating from remote, and an existing Saved work ref for the source branch when changes are not being carried. Nested submodule dirt is excluded from the superproject tracked-change check.
 2. Preflight lists untracked paths and rejects any path that overlaps a tracked path on the target tree (local branch or remote-tracking start point). Non-conflicting untracked files remain in the checkout.
 3. When **pull after switch** is enabled (default), planning records a same-named remote-tracking ref (`origin/<branch>` preferred) as the pull target when one exists.
