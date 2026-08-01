@@ -1,4 +1,4 @@
-import { createDraft } from "./draft.ts";
+import { createDraft } from "./draft/index.ts";
 import { createDiffView } from "./files-diff/index.ts";
 import type { AppState, ViewId } from "./types.ts";
 

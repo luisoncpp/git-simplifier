@@ -10,11 +10,12 @@ The UI is a single deep module written in strict TypeScript (`tsc --noEmit` is t
 | `Private/repository-switcher.ts` | Recent repository menu: filter, open, remove, and persistence refresh |
 | `Private/path-diff-menu.ts` | Path-list context menu and `open_file_diff_window` invoke |
 | `Private/quick-file-diff/` | Nested deep module: secondary-window single-file diff app. Only its `index.ts` may be imported |
-| `Private/events.ts` | Delegated `click`/`change`/`input`/`keydown` dispatch tables keyed by `data-event` |
+| `Private/draft/` | Nested deep module: draft shape and derived reads (visible paths, selected commit, message drafts). Only its `index.ts` may be imported |
+| `Private/operations/` | Nested deep module: operation catalog, request builders, and `submitState`. Only its `index.ts` may be imported |
+| `Private/event-tables.ts` | Delegated event dispatch tables keyed by `data-event` |
+| `Private/events.ts` | Delegated `click`/`change`/`input`/`keydown` binding and handler routing |
 | `Private/selection.ts` | Draft mutations (path selection, message drafts, flags) plus the targeted patches they need |
 | `Private/discovery.ts` | Snapshot reload and per-operation discovery; drops selections that no longer exist |
-| `Private/draft.ts` | Draft shape and the derived reads over it (visible paths, selected commit, message drafts) |
-| `Private/operations.ts` | Operation catalog, request builders, and `submitState` |
 | `Private/snapshot.ts` | Typed reads over the Rust snapshot, including human sync-phase labels |
 | `Private/dom.ts` | HTML escaping and `renderInto`, which preserves caret and scroll across a re-render |
 | `Private/views/repo-menu.ts` | Rail repository picker, filterable recent list, and the reveal-in-explorer context menu |

@@ -1,5 +1,5 @@
 import { esc } from "../dom.ts";
-import { pathSetFor, pathValue, visiblePaths } from "../draft.ts";
+import { pathSetFor, pathValue, visiblePaths } from "../draft/index.ts";
 import type { AppState, ChangedPath } from "../types.ts";
 
 /// Uncommit, Revert, and Split branch share the checklist control; each keeps

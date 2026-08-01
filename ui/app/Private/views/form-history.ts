@@ -1,5 +1,5 @@
 import { esc } from "../dom.ts";
-import { commitValue, messageChanged, messageFor, newestFirst, selectedCommit } from "../draft.ts";
+import { commitValue, messageChanged, messageFor, newestFirst, selectedCommit } from "../draft/index.ts";
 import { baseRef } from "../snapshot.ts";
 import type { AppState, EditableCommit } from "../types.ts";
 import { emptyState, fieldNote, humanTime } from "./parts.ts";

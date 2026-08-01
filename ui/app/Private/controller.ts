@@ -3,7 +3,7 @@ import { loadBaseChoices, loadOperationData, loadViewData, reloadState } from ".
 import { focusNode, renderInto } from "./dom.ts";
 import { bindEvents } from "./events.ts";
 import { resetFileDiffs } from "./files-diff/index.ts";
-import { buildRequest, submitState } from "./operations.ts";
+import { buildRequest, submitState } from "./operations/index.ts";
 import { loadRecentRepositories } from "./repository-switcher.ts";
 import { createState, isInspectionView } from "./state.ts";
 import { renderShell } from "./views/shell.ts";
@@ -73,6 +73,10 @@ export class AppController {
 
   reload(snapshot: RepositorySnapshot | null = null, preservedError = ""): Promise<void> {
     return reloadState(this, snapshot, preservedError);
+  }
+
+  reloadViewData(): Promise<void> {
+    return loadViewData(this);
   }
 
   async selectOperation(operation: OperationId): Promise<void> {

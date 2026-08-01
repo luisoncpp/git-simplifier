@@ -5,8 +5,8 @@
 
 export { expandGap, jumpToFile, setAllFiles, setCompare, setLayout, toggleFile, toggleNavigator } from "./actions.ts";
 export { ensureGrammars, languageFor } from "./highlight.ts";
-export { ensureFullDiff, loadFileDiffs, resetFileDiffs } from "./load.ts";
+export { loadFileDiffs, resetFileDiffs } from "./load.ts";
 export { layoutToggle, singleFileDiff } from "./single.ts";
 export { filesDiffView } from "./view.ts";
 export { createDiffView } from "./wire.ts";
-export type { DiffCompare, DiffHunk, DiffLine, DiffViewState, FileDiff } from "./wire.ts";
+export type { DiffCompare, DiffViewState, FileDiff } from "./wire.ts";

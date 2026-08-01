@@ -3,4 +3,3 @@
 
 export { QuickFileDiffApp } from "./controller.ts";
 export { pathDiffRequest } from "./request.ts";
-export type { FileDiffSession, OpenFileDiffRequest, QuickDiffState } from "./types.ts";

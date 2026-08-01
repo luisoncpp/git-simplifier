@@ -2,7 +2,7 @@ import assert from "node:assert/strict";
 import test from "node:test";
 import { renderShell } from "../ui/app/index.ts";
 import { setCommit, setMessage, setNewBranch, setPathFilter, setRevertTarget, setSplitMessage, togglePath } from "../ui/app/Private/selection.ts";
-import { OPERATIONS } from "../ui/app/Private/operations.ts";
+import { OPERATIONS } from "../ui/app/Private/operations/index.ts";
 import { submitRow } from "../ui/app/Private/views/actions.ts";
 import { controllerWith, snapshotWith } from "./support/controller.mjs";
 

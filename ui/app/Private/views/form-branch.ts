@@ -1,5 +1,5 @@
 import { esc } from "../dom.ts";
-import { pathSetFor, pathValue } from "../draft.ts";
+import { pathSetFor, pathValue } from "../draft/index.ts";
 import { baseRef, currentBranch } from "../snapshot.ts";
 import type { AppState } from "../types.ts";
 import { emptyState, fieldNote } from "./parts.ts";

@@ -1,5 +1,5 @@
 import { esc } from "../dom.ts";
-import { pathValue } from "../draft.ts";
+import { pathValue } from "../draft/index.ts";
 import { baseRef, currentBranch, savedWorkFor, upstreamRef, worktreeCounts } from "../snapshot.ts";
 import type { AppState, SubmoduleChoice } from "../types.ts";
 import { branchPicker, selectedSwitchTarget, switchTargets } from "./branch-picker.ts";

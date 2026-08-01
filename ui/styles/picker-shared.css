@@ -1,0 +1,104 @@
+/* ---------- shared filterable dropdown picker primitives ---------- */
+
+.branch-trigger,
+.repo-picker {
+  display: grid;
+  gap: 3px;
+  width: 100%;
+  padding: 8px 10px;
+  text-align: left;
+  color: var(--text);
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  transition: border-color 160ms cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.branch-trigger:hover:not(:disabled),
+.branch-trigger[aria-expanded="true"],
+.repo-picker:hover:not(:disabled),
+.repo-picker[aria-expanded="true"] {
+  border-color: var(--accent);
+}
+
+.branch-trigger strong,
+.repo-picker strong {
+  font-size: 13px;
+  overflow-wrap: anywhere;
+}
+
+.branch-menu,
+.repo-menu {
+  position: absolute;
+  top: calc(100% + 6px);
+  left: 0;
+  z-index: 30;
+  padding: 8px;
+  background: var(--elevated);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  box-shadow: 0 4px 8px rgb(0 0 0 / 0.4);
+  animation: picker-menu-in 160ms cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.branch-filter input,
+.repo-filter input {
+  width: 100%;
+  min-height: 36px;
+  padding: 6px 10px;
+  color: var(--text);
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+}
+
+.branch-menu-list,
+.repo-menu-list {
+  display: grid;
+  gap: 2px;
+  overflow: auto;
+  min-height: 0;
+}
+
+.branch-empty,
+.repo-empty {
+  margin: 10px 6px;
+  color: var(--muted);
+  font-size: 13px;
+}
+
+.branch-row.current,
+.repo-row.current {
+  background: color-mix(in srgb, var(--accent) 14%, transparent);
+}
+
+.branch-row.active,
+.repo-row.active {
+  background: var(--surface);
+}
+
+.branch-row.current.active,
+.repo-row.current.active {
+  background: color-mix(in srgb, var(--accent) 22%, var(--surface));
+}
+
+@keyframes picker-menu-in {
+  from {
+    opacity: 0;
+    transform: translateY(-4px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .branch-trigger,
+  .branch-menu,
+  .repo-picker,
+  .repo-menu {
+    transition: none;
+    animation: none;
+  }
+}

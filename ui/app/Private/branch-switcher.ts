@@ -35,7 +35,7 @@ export function pickBranch(controller: AppController, name: string, remote = "")
   controller.render();
 }
 
-export function moveBranchHighlight(controller: AppController, step: number): void {
+function moveBranchHighlight(controller: AppController, step: number): void {
   const entries = filteredSwitchTargets(controller.state);
   if (!entries.length) return;
   const draft = controller.state.draft;
@@ -43,7 +43,7 @@ export function moveBranchHighlight(controller: AppController, step: number): vo
   controller.render();
 }
 
-export function activateHighlightedBranch(controller: AppController): void {
+function activateHighlightedBranch(controller: AppController): void {
   const entry = filteredSwitchTargets(controller.state)[controller.state.draft.branchHighlight];
   if (!entry) return;
   pickBranch(controller, entry.name, entry.remote ?? "");

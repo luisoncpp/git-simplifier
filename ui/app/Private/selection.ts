@@ -1,5 +1,5 @@
-import { pathSetFor, pathValue, visiblePaths } from "./draft.ts";
-import { OPERATIONS } from "./operations.ts";
+import { pathSetFor, pathValue, visiblePaths } from "./draft/index.ts";
+import { OPERATIONS } from "./operations/index.ts";
 import { currentBranch } from "./snapshot.ts";
 import { messageTools } from "./views/form-history.ts";
 import { submitRow } from "./views/actions.ts";

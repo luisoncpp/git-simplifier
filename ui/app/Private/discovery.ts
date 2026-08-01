@@ -1,6 +1,6 @@
-import { adoptBranch, adoptCommit, adoptPaths, adoptSubmodule } from "./draft.ts";
+import { adoptBranch, adoptCommit, adoptPaths, adoptSubmodule } from "./draft/index.ts";
 import { loadFileDiffs } from "./files-diff/index.ts";
-import { discoveryFor } from "./operations.ts";
+import { discoveryFor } from "./operations/index.ts";
 import { baseRef, currentBranch, savedWorkFor } from "./snapshot.ts";
 import { isInspectionView } from "./state.ts";
 import type { AppController } from "./controller.ts";

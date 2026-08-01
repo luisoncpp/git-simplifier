@@ -1,4 +1,4 @@
-import { createDraft } from "./draft.ts";
+import { createDraft } from "./draft/index.ts";
 import { focusNode } from "./dom.ts";
 import { overviewOf } from "./snapshot.ts";
 import type { AppController } from "./controller.ts";
@@ -47,7 +47,7 @@ export function setRepoFilter(controller: AppController, node: { value: string }
   controller.render();
 }
 
-export function moveRepoHighlight(controller: AppController, step: number): void {
+function moveRepoHighlight(controller: AppController, step: number): void {
   const total = filteredRecents(controller.state).length;
   if (!total) return;
   const next = (controller.state.repoHighlight + step + total) % total;
@@ -117,7 +117,7 @@ export async function revealRepository(controller: AppController, path: string):
   }
 }
 
-export async function activateHighlightedRepository(controller: AppController): Promise<void> {
+async function activateHighlightedRepository(controller: AppController): Promise<void> {
   const entry = filteredRecents(controller.state)[controller.state.repoHighlight];
   if (!entry) return;
   await openRecentRepository(controller, entry.path);

@@ -1,6 +1,6 @@
 import { esc } from "../dom.ts";
-import { OPERATIONS, submitState } from "../operations.ts";
-import type { OperationDef } from "../operations.ts";
+import { OPERATIONS, submitState } from "../operations/index.ts";
+import type { OperationDef } from "../operations/index.ts";
 import type { AppState } from "../types.ts";
 import { operationForm } from "./forms.ts";
 

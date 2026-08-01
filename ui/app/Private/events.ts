@@ -1,85 +1,12 @@
-import * as edit from "./selection.ts";
-import * as repos from "./repository-switcher.ts";
 import * as branches from "./branch-switcher.ts";
+import * as edit from "./selection.ts";
 import * as pathDiff from "./path-diff-menu.ts";
-import * as diff from "./files-diff/index.ts";
+import * as repos from "./repository-switcher.ts";
+import { CHANGE, CLICK, INPUT, TAB_STEP } from "./event-tables.ts";
 import type { AppController } from "./controller.ts";
-import type { FieldNode, OperationId, ViewId } from "./types.ts";
+import type { FieldNode } from "./types.ts";
 
-type ClickHandler = (controller: AppController, value: string, node?: HTMLElement) => unknown;
-type FieldHandler = (controller: AppController, node: FieldNode) => void;
 type ActionElement = HTMLElement & { disabled?: boolean };
-
-const CLICK: Record<string, ClickHandler> = {
-  "toggle-repo-menu": (controller) => repos.toggleRepoMenu(controller),
-  "pick-repository": (controller) => repos.openPickedRepository(controller),
-  "open-recent": (controller, value) => repos.openRecentRepository(controller, value),
-  "remove-recent": (controller, value) => repos.removeRecentRepository(controller, value),
-  "reveal-repository": (controller, value) => repos.revealRepository(controller, value),
-  "view-path-diff": (controller, value) => pathDiff.openPathDiff(controller, value),
-  "toggle-branch-menu": (controller) => branches.toggleBranchMenu(controller),
-  "pick-branch": (controller, value, node) =>
-    branches.pickBranch(controller, value, node?.dataset.remote ?? ""),
-  refresh: (controller) => controller.refresh(),
-  "set-view": (controller, value) => controller.setView(value as ViewId),
-  "set-operation": (controller, value) => controller.selectOperation(value as OperationId),
-  "submit-operation": (controller) => controller.submitOperation(),
-  "cancel-review": (controller) => controller.cancelReview(),
-  "apply-review": (controller) => controller.applyReview(),
-  "edit-base": (controller) => controller.editBase(),
-  "cancel-base": (controller) => edit.setChangingBase(controller, "false"),
-  "save-base": (controller) => controller.chooseBase(baseChoice()),
-  "force-push": (controller) => controller.prepare({ kind: "force_push" }),
-  "publish-branch": (controller, value) => controller.prepare({ kind: "publish_branch", branch: value }),
-  "resolve-pull-replace": (controller) =>
-    controller.prepare({ kind: "resolve_quick_switch_pull", resolution: "replace_with_remote" }),
-  "resolve-pull-merge": (controller) =>
-    controller.prepare({ kind: "resolve_quick_switch_pull", resolution: "merge_pull" }),
-  "resolve-pull-cancel": (controller) =>
-    controller.prepare({ kind: "resolve_quick_switch_pull", resolution: "cancel" }),
-  "resume-sync": (controller) => controller.prepare({ kind: "resume_sync" }),
-  "restore-saved": (controller) => controller.prepare({ kind: "restore_saved_work" }),
-  "delete-saved": (controller, value) => controller.prepare({ kind: "delete_saved_work", branch: value }),
-  "switch-to": (controller, value) => controller.switchTo(value),
-  "select-paths": (controller, value) => edit.selectPaths(controller, value),
-  "reset-message": (controller) => edit.resetMessage(controller),
-  "dismiss-error": (controller) => edit.dismissError(controller),
-  "dismiss-outcome": (controller) => edit.dismissOutcome(controller),
-  "dismiss-saved-work-notice": (controller) => edit.dismissSavedWorkNotice(controller),
-  "toggle-entry": (controller, value) => edit.toggleEntry(controller, value),
-  copy: (controller, value) => controller.copy(value),
-  "copy-diff": (controller) => controller.copyDiff(),
-  "set-diff-layout": (controller, value) => diff.setLayout(controller, value),
-  "set-diff-compare": (controller, value) => diff.setCompare(controller, value),
-  "toggle-file": (controller, value) => diff.toggleFile(controller, value),
-  "set-all-files": (controller, value) => diff.setAllFiles(controller, value),
-  "expand-gap": (controller, value, node) => diff.expandGap(controller, value, node),
-  "toggle-file-navigator": (controller) => diff.toggleNavigator(controller),
-  "jump-to-file": (controller, value) => diff.jumpToFile(controller, value),
-};
-
-const CHANGE: Record<string, FieldHandler> = {
-  "select-commit": edit.setCommit,
-  "select-submodule": edit.setSubmodule,
-  "select-branch": edit.setTargetBranch,
-  "toggle-path": edit.togglePath,
-  "select-revert-target": edit.setRevertTarget,
-  "toggle-install-hook": edit.setInstallHook,
-  "toggle-disable-recurse": edit.setDisableRecurse,
-  "toggle-carry-changes": edit.setCarryChanges,
-  "toggle-pull-after-switch": branches.setPullAfterSwitch,
-};
-
-const INPUT: Record<string, FieldHandler> = {
-  "path-filter": edit.setPathFilter,
-  "repo-filter": repos.setRepoFilter,
-  "branch-filter": branches.setBranchFilter,
-  "commit-message": edit.setMessage,
-  "split-branch-name": edit.setNewBranch,
-  "split-message": edit.setSplitMessage,
-};
-
-const TAB_STEP: Record<string, number> = { ArrowRight: 1, ArrowLeft: -1 };
 
 export function bindEvents(controller: AppController): void {
   const target = globalThis.document;
@@ -93,6 +20,16 @@ export function bindEvents(controller: AppController): void {
 
 function handleClick(controller: AppController, event: MouseEvent): void {
   const target = event.target as HTMLElement | null;
+  dismissOpenOverlays(controller, target);
+  const node = target?.closest?.("[data-event]") as ActionElement | null;
+  if (!node || node.disabled) return;
+  const action = CLICK[node.dataset.event ?? ""];
+  if (!action) return;
+  event.preventDefault();
+  settle(controller, action(controller, node.dataset.value ?? "", node));
+}
+
+function dismissOpenOverlays(controller: AppController, target: HTMLElement | null): void {
   if (controller.state.repoContextMenu && !target?.closest?.(".repo-context-menu")) {
     repos.closeRepoContextMenu(controller);
   }
@@ -105,12 +42,6 @@ function handleClick(controller: AppController, event: MouseEvent): void {
   if (controller.state.draft.branchMenuOpen && !target?.closest?.(".branch-picker")) {
     branches.closeBranchMenu(controller);
   }
-  const node = target?.closest?.("[data-event]") as ActionElement | null;
-  if (!node || node.disabled) return;
-  const action = CLICK[node.dataset.event ?? ""];
-  if (!action) return;
-  event.preventDefault();
-  settle(controller, action(controller, node.dataset.value ?? "", node));
 }
 
 function handleContextMenu(controller: AppController, event: MouseEvent): void {
@@ -135,7 +66,11 @@ function handleInput(controller: AppController, event: Event): void {
   dispatchNode(controller, event, INPUT);
 }
 
-function dispatchNode(controller: AppController, event: Event, table: Record<string, FieldHandler>): void {
+function dispatchNode(
+  controller: AppController,
+  event: Event,
+  table: Record<string, (controller: AppController, node: FieldNode) => void>,
+): void {
   const node = event.target as FieldNode | null;
   const action = table[node?.dataset?.event ?? ""];
   if (!action || !node) return;
@@ -146,16 +81,7 @@ function dispatchNode(controller: AppController, event: Event, table: Record<str
 /// value — sometimes the promise it started — so `settle` still reports a
 /// rejected activation here rather than in two more places.
 function handleKeys(controller: AppController, event: KeyboardEvent): void {
-  if (controller.state.pathContextMenu && event.key === "Escape") {
-    event.preventDefault();
-    pathDiff.closePathContextMenu(controller);
-    return;
-  }
-  if (controller.state.repoContextMenu && event.key === "Escape") {
-    event.preventDefault();
-    repos.closeRepoContextMenu(controller);
-    return;
-  }
+  if (dismissContextMenusOnEscape(controller, event)) return;
   const handled = repos.handleKeys(controller, event) || branches.handleKeys(controller, event);
   if (handled) {
     settle(controller, handled);
@@ -174,6 +100,21 @@ function handleKeys(controller: AppController, event: KeyboardEvent): void {
   if (!step || !target?.closest?.('[role="tab"]')) return;
   event.preventDefault();
   settle(controller, edit.stepOperation(controller, step));
+}
+
+function dismissContextMenusOnEscape(controller: AppController, event: KeyboardEvent): boolean {
+  if (event.key !== "Escape") return false;
+  if (controller.state.pathContextMenu) {
+    event.preventDefault();
+    pathDiff.closePathContextMenu(controller);
+    return true;
+  }
+  if (controller.state.repoContextMenu) {
+    event.preventDefault();
+    repos.closeRepoContextMenu(controller);
+    return true;
+  }
+  return false;
 }
 
 /// Without a `<form>` element there is no implicit submit, so the two places a
@@ -205,6 +146,3 @@ function settle(controller: AppController, result: unknown): void {
     controller.render();
   });
 }
-
-const baseChoice = (): string =>
-  (globalThis.document?.querySelector("#base-choice") as HTMLSelectElement | null)?.value ?? "";

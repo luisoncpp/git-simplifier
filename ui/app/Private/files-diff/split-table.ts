@@ -17,7 +17,7 @@ export function splitTable(render: FileRender): string {
 /// A context line occupies both sides. Within a run of removals followed by
 /// additions the two are paired by position, and whichever run is shorter leaves
 /// an empty cell opposite the leftovers.
-export function pairRows(lines: DiffLine[]): SplitRow[] {
+function pairRows(lines: DiffLine[]): SplitRow[] {
   const rows: SplitRow[] = [];
   let at = 0;
   while (at < lines.length) {

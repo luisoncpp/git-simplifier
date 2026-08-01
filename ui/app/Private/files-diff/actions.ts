@@ -1,5 +1,4 @@
 import { revealByDataset } from "../dom.ts";
-import { loadViewData } from "../discovery.ts";
 import { ensureFullDiff } from "./load.ts";
 import type { AppController } from "../controller.ts";
 import type { AppState } from "../types.ts";
@@ -23,7 +22,7 @@ export function setCompare(controller: AppController, value: string): Promise<vo
   const compare = value === "local" ? "local" : "head";
   if (controller.state.diffView.compare === compare) return Promise.resolve();
   controller.state.diffView.compare = compare;
-  return controller.run(() => loadViewData(controller));
+  return controller.run(() => controller.reloadViewData());
 }
 
 export function toggleFile(controller: AppController, path: string): void {
