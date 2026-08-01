@@ -136,21 +136,29 @@ pub(crate) fn local_branches(
     Ok(branches)
 }
 
+const WIP_PREFIX: &str = "refs/githelper/wip/";
+
 fn saved_work_branches(runner: &GitRunner) -> Result<Vec<String>, InspectionError> {
     let saved = run(
         runner,
-        &[
-            "for-each-ref",
-            "--format=%(refname:strip=4)",
-            "refs/githelper/wip",
-        ],
+        &["for-each-ref", "--format=%(refname)", "refs/githelper/wip"],
     )?;
-    saved
+    let mut branches = Vec::new();
+    for line in saved
         .split(|byte| *byte == b'\n')
         .filter(|line| !line.is_empty())
-        .map(|line| String::from_utf8(line.to_vec()))
-        .collect::<Result<Vec<_>, _>>()
-        .map_err(|_| InspectionError::Parse("Saved work branch was not UTF-8".to_string()))
+    {
+        let reference = String::from_utf8(line.to_vec())
+            .map_err(|_| InspectionError::Parse("Saved work branch was not UTF-8".to_string()))?;
+        // `%(refname:strip=N)` counts every component including the branch name, so
+        // `strip=4` over this four-component prefix returned an empty string for a
+        // simple name and dropped the first segment of a slashed one.
+        let Some(branch) = reference.strip_prefix(WIP_PREFIX) else {
+            continue;
+        };
+        branches.push(branch.to_string());
+    }
+    Ok(branches)
 }
 
 fn remote_only_branches(

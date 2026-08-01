@@ -1,5 +1,5 @@
 use git_helper_core::{
-    ExcludeSubmodulePlan, ForcePushPlan, ObjectId, PublishBranchPlan, QuickSwitchPlan,
+    CleanupPlan, ExcludeSubmodulePlan, ForcePushPlan, ObjectId, PublishBranchPlan, QuickSwitchPlan,
     QuickSwitchResult, RefName, RevertPlan, RewritePlan, SplitBranchPlan, SyncRequest,
 };
 
@@ -24,6 +24,7 @@ pub(super) fn apply(
             resolve_pull(state, resolution)
         }
         PendingOperation::ForcePush { plan, .. } => force_push(state, plan),
+        PendingOperation::Cleanup { plan, .. } => cleanup(state, plan),
         PendingOperation::Sync { base, head, .. } => sync(state, base, head),
         PendingOperation::Restore { head, .. } => restore(state, head),
         PendingOperation::Delete { branch, head, .. } => delete(state, branch, head),
@@ -222,6 +223,30 @@ fn force_push(state: &AppState, plan: ForcePushPlan) -> Result<OperationOutcome,
             result.branch, result.remote, result.new_head
         )],
     ))
+}
+
+fn cleanup(state: &AppState, plan: CleanupPlan) -> Result<OperationOutcome, String> {
+    let result = with_repository(state, |repo| {
+        repo.apply_cleanup(&plan).map_err(|e| e.to_string())
+    })?;
+    let mut details = vec![format!(
+        "{} local branch(es) deleted",
+        result.deleted_local.len()
+    )];
+    if !result.deleted_remote.is_empty() {
+        details.push(format!(
+            "{} branch(es) deleted on their remotes",
+            result.deleted_remote.len()
+        ));
+    }
+    if !result.kept_remotes.is_empty() {
+        details.push(format!(
+            "{} remote branch(es) were left in place",
+            result.kept_remotes.len()
+        ));
+    }
+    details.push("Local deletions can be restored from the Recovery panel".to_string());
+    Ok(bare("cleanup", "Branches deleted", details))
 }
 
 fn sync(state: &AppState, base: RefName, head: ObjectId) -> Result<OperationOutcome, String> {

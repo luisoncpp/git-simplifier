@@ -1,4 +1,4 @@
-import { adoptBranch, adoptCommit, adoptPaths, adoptSubmodule } from "./draft/index.ts";
+import { adoptBranch, adoptCleanup, adoptCommit, adoptPaths, adoptSubmodule } from "./draft/index.ts";
 import { loadFileDiffs } from "./files-diff/index.ts";
 import { discoveryFor } from "./operations/index.ts";
 import { baseRef, currentBranch, savedWorkFor } from "./snapshot.ts";
@@ -76,4 +76,5 @@ function adoptSelections(state: AppState): void {
   adoptCommit(state.draft, state.commits);
   adoptSubmodule(state.draft, state.submodules);
   adoptBranch(state.draft, state.branches, baseRef(state));
+  adoptCleanup(state.draft, state.cleanupBranches);
 }

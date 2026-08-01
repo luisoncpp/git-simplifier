@@ -37,6 +37,7 @@ const ACTION_WORDS: Record<string, string> = {
   quick_switch: "switch",
   sync: "sync",
   force_push: "force push",
+  cleanup: "cleanup",
 };
 
 const actionWord = (operation: string): string => ACTION_WORDS[operation] ?? operation;

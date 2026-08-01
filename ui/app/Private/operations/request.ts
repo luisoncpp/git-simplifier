@@ -1,4 +1,4 @@
-import { messageFor, pathSetFor } from "../draft/index.ts";
+import { cleanupSelection, messageFor, pathSetFor } from "../draft/index.ts";
 import { baseRef } from "../snapshot.ts";
 import type { AppState, OperationRequest } from "../types.ts";
 
@@ -11,7 +11,17 @@ export function buildRequest(state: AppState): OperationRequest {
   if (kind === "split_branch") return splitBranchRequest(state);
   if (kind === "quick_switch") return quickSwitchRequest(state);
   if (kind === "sync") return { kind, base: baseRef(state) };
+  if (kind === "cleanup") return cleanupRequest(state);
   return { kind: "force_push" };
+}
+
+function cleanupRequest(state: AppState): OperationRequest {
+  return {
+    kind: "cleanup",
+    base: baseRef(state),
+    references: cleanupSelection(state),
+    delete_remotes: state.draft.cleanupRemotes,
+  };
 }
 
 function uncommitRequest(state: AppState): OperationRequest {

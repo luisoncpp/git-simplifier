@@ -1,3 +1,4 @@
+mod cleanup;
 mod exclusion;
 mod git;
 mod inspection;
@@ -10,6 +11,11 @@ mod split;
 mod switch;
 mod sync;
 
+pub use cleanup::{
+    CleanupBranchPlan, CleanupChoice, CleanupDiscovery, CleanupError, CleanupExclusion,
+    CleanupKind, CleanupPlan, CleanupRequest, CleanupResult, ExclusionReason, KeptReason,
+    KeptRemote, LocalDeletion, RemoteCounterpart, RemoteDeletion,
+};
 pub use exclusion::{
     ExcludeSubmodulePlan, ExcludeSubmoduleRequest, ExcludeSubmoduleResult, ExclusionError,
 };

@@ -9,3 +9,4 @@ export {
   selectedCommit,
 } from "./commits.ts";
 export { adoptBranch } from "./branches.ts";
+export { adoptCleanup, cleanupChoices, cleanupSelection, cleanupTicked } from "./cleanup.ts";

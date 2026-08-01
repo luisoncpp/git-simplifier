@@ -21,5 +21,10 @@ export function createDraft(): Draft {
     branchFilter: "",
     branchMenuOpen: false,
     branchHighlight: 0,
+    cleanupOnlyMine: true,
+    cleanupRemotes: true,
+    cleanupAllRemote: false,
+    cleanupOverrides: new Map(),
+    cleanupFilter: "",
   };
 }

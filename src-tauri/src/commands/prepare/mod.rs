@@ -1,4 +1,5 @@
 mod branch;
+mod cleanup;
 mod history;
 mod revert;
 mod saved_work;
@@ -34,6 +35,7 @@ pub(super) fn prepare(
             switch::resolve_pull(state, id, input)
         }
         PrepareOperationRequest::Sync(input) => worktree::sync(state, id, input),
+        PrepareOperationRequest::Cleanup(input) => cleanup::cleanup(state, id, input),
         PrepareOperationRequest::ResumeSync => worktree::resume_sync(state, id),
         PrepareOperationRequest::RestoreSavedWork => saved_work::restore(state, id),
         PrepareOperationRequest::DeleteSavedWork(input) => saved_work::delete(state, id, input),

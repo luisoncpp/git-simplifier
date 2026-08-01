@@ -161,6 +161,21 @@ pub fn list_local_branches(
     })
 }
 
+/// Returns the maximal offerable set once. The three Cleanup toggles filter this
+/// result in the UI, so flipping one never costs another repository scan.
+#[tauri::command(async)]
+pub fn list_cleanup_branches(
+    state: State<'_, AppState>,
+    request: BaseRequest,
+) -> Result<git_helper_core::CleanupDiscovery, String> {
+    let base = RefName::new(request.base).map_err(|error| error.to_string())?;
+    with_repository(state.inner(), |repository| {
+        repository
+            .discover_cleanup(&base)
+            .map_err(|error| error.to_string())
+    })
+}
+
 #[tauri::command(async)]
 pub fn list_submodules(
     state: State<'_, AppState>,

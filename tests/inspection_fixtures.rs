@@ -1,10 +1,11 @@
 mod support;
 
+use std::ffi::OsString;
 use std::sync::mpsc;
 use std::thread;
 use std::time::Duration;
 
-use git_helper_core::{DiffCompare, RefName};
+use git_helper_core::{DiffCompare, GitCommand, LocalBranchChoice, RefName};
 use support::fixture_repo::FixtureRepo;
 
 #[test]
@@ -63,4 +64,37 @@ fn branch_diff_local_includes_worktree_dirt_and_committed_changes() {
 
     assert!(diff.contains("+committed") || diff.contains("working tree only"), "{diff}");
     assert!(diff.contains("working tree only"), "{diff}");
+}
+
+/// `%(refname:strip=N)` counts the branch name as a component, so reading Saved
+/// work names that way returned an empty string for every simple branch and lost
+/// the first segment of a slashed one.
+#[test]
+fn saved_work_is_reported_for_simple_and_slashed_branch_names() {
+    let fixture = FixtureRepo::new();
+    fixture.branch("team/thing");
+    fixture.checkout("feature");
+    let head = fixture.head();
+    write_ref(&fixture, "refs/githelper/wip/feature", &head);
+    write_ref(&fixture, "refs/githelper/wip/team/thing", &head);
+
+    let branches = fixture.repo.list_local_branches().unwrap();
+
+    assert!(has_saved_work(&branches, "feature"));
+    assert!(has_saved_work(&branches, "team/thing"));
+    assert!(!has_saved_work(&branches, "base"));
+}
+
+fn write_ref(fixture: &FixtureRepo, reference: &str, value: &str) {
+    let args = ["update-ref", reference, value]
+        .iter()
+        .map(|value| OsString::from(*value))
+        .collect();
+    fixture.repo.run(GitCommand::write(args)).unwrap();
+}
+
+fn has_saved_work(branches: &[LocalBranchChoice], name: &str) -> bool {
+    branches
+        .iter()
+        .any(|branch| branch.name == name && branch.saved_work)
 }

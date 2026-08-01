@@ -15,4 +15,5 @@ export const OPERATIONS: OperationDef[] = [
   { id: "quick_switch", label: "Quick switch", needsBase: false },
   { id: "sync", label: "Sync with Base", needsBase: true },
   { id: "force_push", label: "Force push", needsBase: false },
+  { id: "cleanup", label: "Cleanup", needsBase: true },
 ];

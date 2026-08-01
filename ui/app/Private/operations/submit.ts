@@ -1,4 +1,11 @@
-import { messageChanged, messageFor, pathSetFor, selectedCommit } from "../draft/index.ts";
+import {
+  cleanupChoices,
+  cleanupSelection,
+  messageChanged,
+  messageFor,
+  pathSetFor,
+  selectedCommit,
+} from "../draft/index.ts";
 import { baseRef, upstreamRef } from "../snapshot.ts";
 import { OPERATIONS } from "./catalog.ts";
 import type { AppState, OperationId } from "../types.ts";
@@ -60,4 +67,10 @@ const SPECIFIC_REASON: Partial<Record<OperationId, (state: AppState) => string>>
     return "";
   },
   force_push: (state) => (upstreamRef(state) ? "" : "The current branch has no upstream to push to."),
+  cleanup: (state) => {
+    if (!state.cleanupBranches?.choices.length) return "No branch is fully merged into Base.";
+    if (!cleanupChoices(state).length) return "No branch matches these filters.";
+    if (!cleanupSelection(state).length) return "Tick at least one branch to delete.";
+    return "";
+  },
 };

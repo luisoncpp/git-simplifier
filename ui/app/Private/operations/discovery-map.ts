@@ -1,8 +1,21 @@
 import { OPERATIONS } from "./catalog.ts";
-import type { Bridge, ChangedPath, EditableCommit, LocalBranch, OperationId, SubmoduleChoice } from "../types.ts";
+import type {
+  Bridge,
+  ChangedPath,
+  CleanupDiscovery,
+  EditableCommit,
+  LocalBranch,
+  OperationId,
+  SubmoduleChoice,
+} from "../types.ts";
 
-type DiscoveryResult = ChangedPath[] | EditableCommit[] | LocalBranch[] | SubmoduleChoice[];
-type DiscoveryKey = "paths" | "commits" | "branches" | "submodules";
+type DiscoveryResult =
+  | ChangedPath[]
+  | EditableCommit[]
+  | LocalBranch[]
+  | SubmoduleChoice[]
+  | CleanupDiscovery;
+type DiscoveryKey = "paths" | "commits" | "branches" | "submodules" | "cleanupBranches";
 type DiscoveryLoad = (bridge: Bridge, base: string) => Promise<DiscoveryResult>;
 
 export interface Discovery {
@@ -18,6 +31,7 @@ const DISCOVERY: Partial<Record<OperationId, DiscoveryLoad>> = {
   split_branch: (bridge, base) => bridge.invoke<ChangedPath[]>("list_changed_paths", { request: { base } }),
   quick_switch: (bridge) => bridge.invoke<LocalBranch[]>("list_local_branches"),
   exclude_submodule: (bridge) => bridge.invoke<SubmoduleChoice[]>("list_submodules"),
+  cleanup: (bridge, base) => bridge.invoke<CleanupDiscovery>("list_cleanup_branches", { request: { base } }),
 };
 
 const RESULT_KEY: Partial<Record<OperationId, DiscoveryKey>> = {
@@ -27,6 +41,7 @@ const RESULT_KEY: Partial<Record<OperationId, DiscoveryKey>> = {
   split_branch: "paths",
   quick_switch: "branches",
   exclude_submodule: "submodules",
+  cleanup: "cleanupBranches",
 };
 
 export function discoveryFor(operation: OperationId): Discovery | null {

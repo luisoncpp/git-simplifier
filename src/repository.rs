@@ -21,6 +21,7 @@ use crate::switch::{
 };
 use crate::sync::{self, SyncError, SyncRequest, SyncResult, SyncStatus};
 
+mod cleanup;
 mod read;
 
 pub struct GitRepository {

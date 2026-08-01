@@ -105,6 +105,16 @@ pub struct DeleteSavedWorkInput {
     pub branch: String,
 }
 
+#[derive(Clone, Debug, Deserialize)]
+pub struct CleanupInput {
+    pub base: String,
+    /// Full ref names of the rows the user left ticked. The planner re-derives
+    /// eligibility from these rather than trusting any metadata sent with them.
+    pub references: Vec<String>,
+    #[serde(default = "default_true")]
+    pub delete_remotes: bool,
+}
+
 /// Newtype variants keep the JSON payload flat (`{"kind": "uncommit", …}`)
 /// while giving each prepare step a single typed input argument.
 #[derive(Clone, Debug, Deserialize)]
@@ -119,6 +129,7 @@ pub enum PrepareOperationRequest {
     QuickSwitch(QuickSwitchInput),
     ResolveQuickSwitchPull(ResolvePullInput),
     Sync(BaseRequest),
+    Cleanup(CleanupInput),
     RestoreSavedWork,
     DeleteSavedWork(DeleteSavedWorkInput),
     ResumeSync,
@@ -190,6 +201,10 @@ pub enum PendingOperation {
         id: String,
         plan: git_helper_core::ForcePushPlan,
     },
+    Cleanup {
+        id: String,
+        plan: git_helper_core::CleanupPlan,
+    },
     Sync {
         id: String,
         base: RefName,
@@ -222,6 +237,7 @@ impl PendingOperation {
             | Self::QuickSwitch { id, .. }
             | Self::ResolveQuickSwitchPull { id, .. }
             | Self::ForcePush { id, .. }
+            | Self::Cleanup { id, .. }
             | Self::Sync { id, .. }
             | Self::Restore { id, .. }
             | Self::Delete { id, .. }
@@ -248,6 +264,7 @@ mod tests {
             r#"{"kind":"quick_switch","target_branch":"develop"}"#,
             r#"{"kind":"resolve_quick_switch_pull","resolution":"cancel"}"#,
             r#"{"kind":"sync","base":"refs/remotes/origin/main"}"#,
+            r#"{"kind":"cleanup","base":"refs/remotes/origin/main","references":["refs/heads/spike"],"delete_remotes":true}"#,
             r#"{"kind":"restore_saved_work"}"#,
             r#"{"kind":"delete_saved_work","branch":"feature"}"#,
             r#"{"kind":"resume_sync"}"#,

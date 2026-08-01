@@ -75,6 +75,44 @@ export interface LocalBranch {
 
 export interface SubmoduleChoice { path: string; object: string; excluded: boolean }
 
+export interface CleanupRemote {
+  remote: string;
+  tracking_ref: string;
+  remote_ref: string;
+  head: string;
+  merged: boolean;
+}
+
+export interface CleanupBranch {
+  branch: string;
+  reference: string;
+  head: string;
+  kind: "local" | "remote_only";
+  author_email: string;
+  mine: boolean;
+  /// A well-known shared name. Offered, but never ticked by default.
+  protected: boolean;
+  remote?: CleanupRemote | null;
+}
+
+export type CleanupExclusionReason =
+  | "current_branch"
+  | "checked_out_in_worktree"
+  | "base_branch"
+  | "saved_work";
+
+export interface CleanupExclusion { branch: string; reason: CleanupExclusionReason }
+
+/// The maximal offerable set. The three Cleanup toggles filter this one result,
+/// so flipping a toggle never costs another repository scan.
+export interface CleanupDiscovery {
+  base: string;
+  base_head: string;
+  identity: string | null;
+  choices: CleanupBranch[];
+  excluded: CleanupExclusion[];
+}
+
 export interface RecentRepository { name: string; path: string }
 
 export interface RepoContextMenu { path: string; x: number; y: number }
@@ -114,6 +152,7 @@ export type OperationRequest =
   | { kind: "quick_switch"; target_branch: string; carry_changes?: boolean; pull_after_switch?: boolean; create_from_remote?: string | null }
   | { kind: "resolve_quick_switch_pull"; resolution: "replace_with_remote" | "merge_pull" | "cancel" }
   | { kind: "sync"; base: string }
+  | { kind: "cleanup"; base: string; references: string[]; delete_remotes: boolean }
   | { kind: "restore_saved_work" }
   | { kind: "delete_saved_work"; branch: string }
   | { kind: "resume_sync" }
@@ -132,7 +171,8 @@ export type OperationId =
   | "split_branch"
   | "quick_switch"
   | "sync"
-  | "force_push";
+  | "force_push"
+  | "cleanup";
 
 export interface Draft {
   pathFilter: string;
@@ -154,6 +194,14 @@ export interface Draft {
   branchFilter: string;
   branchMenuOpen: boolean;
   branchHighlight: number;
+  cleanupOnlyMine: boolean;
+  cleanupRemotes: boolean;
+  cleanupAllRemote: boolean;
+  /// Explicit ticks and unticks only. A row's default follows `protected`, so
+  /// one map expresses both "everything pre-ticked" and "shared names are not",
+  /// and the three filters can change the visible set without reseeding.
+  cleanupOverrides: Map<string, boolean>;
+  cleanupFilter: string;
 }
 
 export interface AppState {
@@ -165,6 +213,7 @@ export interface AppState {
   commits: EditableCommit[];
   branches: LocalBranch[];
   submodules: SubmoduleChoice[];
+  cleanupBranches: CleanupDiscovery | null;
   saved: SavedWork[];
   operations: RecoveryEntry[];
   branchDiff: string | null;

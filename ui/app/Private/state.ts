@@ -18,6 +18,7 @@ export function createState(): AppState {
     commits: [],
     branches: [],
     submodules: [],
+    cleanupBranches: null,
     saved: [],
     operations: [],
     branchDiff: null,

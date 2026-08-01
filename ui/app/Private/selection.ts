@@ -87,6 +87,34 @@ export function setCarryChanges(controller: AppController, node: FieldNode): voi
   controller.render();
 }
 
+export function setCleanupOnlyMine(controller: AppController, node: FieldNode): void {
+  controller.state.draft.cleanupOnlyMine = (node as HTMLInputElement).checked;
+  controller.render();
+}
+
+export function setCleanupRemotes(controller: AppController, node: FieldNode): void {
+  controller.state.draft.cleanupRemotes = (node as HTMLInputElement).checked;
+  controller.render();
+}
+
+export function setCleanupAllRemote(controller: AppController, node: FieldNode): void {
+  controller.state.draft.cleanupAllRemote = (node as HTMLInputElement).checked;
+  controller.render();
+}
+
+export function setCleanupFilter(controller: AppController, node: FieldNode): void {
+  controller.state.draft.cleanupFilter = node.value;
+  controller.render();
+}
+
+/// Records an explicit choice. The map holds only what the user changed, so the
+/// default — ticked unless the name is a shared one — survives every filter change.
+export function toggleCleanupBranch(controller: AppController, node: FieldNode): void {
+  const checked = (node as HTMLInputElement).checked;
+  controller.state.draft.cleanupOverrides.set(node.value, checked);
+  controller.render();
+}
+
 export function setRevertTarget(controller: AppController, node: FieldNode): void {
   const value = node.value;
   if (value !== "head" && value !== "base") return;

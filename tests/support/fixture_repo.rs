@@ -101,6 +101,16 @@ impl FixtureRepo {
         remote
     }
 
+    /// A second worktree holding `branch`, so a test can prove a branch checked
+    /// out elsewhere is never offered for deletion.
+    pub fn add_worktree(&self, branch: &str) -> TempDir {
+        let holder = tempfile::tempdir().unwrap();
+        let path = holder.path().join("tree");
+        let path = path.to_str().unwrap().to_string();
+        run_owned(&self.repo, vec!["worktree", "add", &path, branch]);
+        holder
+    }
+
     pub fn configure_origin_to_self(&self) {
         let path = self.root.path().to_str().unwrap();
         run(&self.repo, &["config", "remote.origin.url", path]);

@@ -36,6 +36,7 @@ pub fn run() {
             file_diff_window::file_diff_session,
             commands::actions::list_editable_commits,
             commands::actions::list_local_branches,
+            commands::actions::list_cleanup_branches,
             commands::actions::list_submodules,
             commands::actions::prepare_operation,
             commands::actions::apply_operation,

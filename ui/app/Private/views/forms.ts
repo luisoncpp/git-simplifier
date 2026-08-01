@@ -1,5 +1,6 @@
 import type { AppState, OperationId } from "../types.ts";
 import { splitBranchForm } from "./form-branch.ts";
+import { cleanupForm } from "./form-cleanup.ts";
 import { editMessageForm, uncommitForm } from "./form-history.ts";
 import { excludeForm, forcePushForm, quickSwitchForm, revertForm, syncForm } from "./form-worktree.ts";
 
@@ -12,6 +13,7 @@ const FORMS: Partial<Record<OperationId, (state: AppState) => string>> = {
   quick_switch: quickSwitchForm,
   sync: syncForm,
   force_push: forcePushForm,
+  cleanup: cleanupForm,
 };
 
 export function operationForm(state: AppState): string {

@@ -71,6 +71,10 @@ export const CHANGE: Record<string, FieldHandler> = {
   "toggle-disable-recurse": edit.setDisableRecurse,
   "toggle-carry-changes": edit.setCarryChanges,
   "toggle-pull-after-switch": branches.setPullAfterSwitch,
+  "toggle-cleanup-only-mine": edit.setCleanupOnlyMine,
+  "toggle-cleanup-remotes": edit.setCleanupRemotes,
+  "toggle-cleanup-all-remote": edit.setCleanupAllRemote,
+  "toggle-cleanup-branch": edit.toggleCleanupBranch,
 };
 
 export const INPUT: Record<string, FieldHandler> = {
@@ -80,6 +84,7 @@ export const INPUT: Record<string, FieldHandler> = {
   "commit-message": edit.setMessage,
   "split-branch-name": edit.setNewBranch,
   "split-message": edit.setSplitMessage,
+  "cleanup-filter": edit.setCleanupFilter,
 };
 
 export const TAB_STEP: Record<string, number> = { ArrowRight: 1, ArrowLeft: -1 };
