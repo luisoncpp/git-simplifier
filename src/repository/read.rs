@@ -119,4 +119,9 @@ impl GitRepository {
     pub fn set_base(&self, base: RefName) -> Result<(), InspectionError> {
         inspection::set_base(&self.runner, base)
     }
+
+    pub fn fetch_remotes(&self) -> Result<(), InspectionError> {
+        self.runner
+            .with_write_lock(|| inspection::fetch_remotes(&self.runner))
+    }
 }

@@ -78,6 +78,13 @@ pub fn load_snapshot(state: State<'_, AppState>) -> Result<RepositorySnapshot, S
 }
 
 #[tauri::command(async)]
+pub fn fetch_remotes(state: State<'_, AppState>) -> Result<(), String> {
+    with_repository(state.inner(), |repository| {
+        repository.fetch_remotes().map_err(|error| error.to_string())
+    })
+}
+
+#[tauri::command(async)]
 pub fn list_operations(
     state: State<'_, AppState>,
 ) -> Result<Vec<git_helper_core::RecoveryEntry>, String> {

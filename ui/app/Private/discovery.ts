@@ -6,6 +6,22 @@ import { isInspectionView } from "./state.ts";
 import type { AppController } from "./controller.ts";
 import type { AppState, BaseChoice, RepositorySnapshot } from "./types.ts";
 
+const invokeError = (error: unknown): string => {
+  const message = (error as { message?: unknown } | null | undefined)?.message;
+  return message == null ? String(error) : String(message);
+};
+
+/// Refresh fetches every configured remote before reloading local discovery
+/// data. A failed fetch is surfaced as a warning, not a blocking error.
+export async function fetchRemotes(controller: AppController): Promise<string> {
+  try {
+    await controller.bridge.invoke("fetch_remotes");
+    return "";
+  } catch (error) {
+    return invokeError(error);
+  }
+}
+
 /// A failed snapshot load closes the repository, but a failed discovery call
 /// must not: the overview is still valid and the operation panel says why.
 export async function reloadState(

@@ -1,5 +1,6 @@
 mod diff;
 mod errors;
+mod fetch;
 mod model;
 mod patch;
 mod queries;
@@ -79,4 +80,7 @@ pub(crate) fn submodules(runner: &GitRunner) -> Result<Vec<SubmoduleChoice>, Ins
 }
 pub(crate) fn set_base(runner: &GitRunner, base: RefName) -> Result<(), InspectionError> {
     queries::set_base(runner, base)
+}
+pub(crate) fn fetch_remotes(runner: &GitRunner) -> Result<(), InspectionError> {
+    fetch::fetch_remotes(runner)
 }

@@ -51,6 +51,7 @@ export const CLICK: Record<string, ClickHandler> = {
   "select-paths": (controller, value) => edit.selectPaths(controller, value),
   "reset-message": (controller) => edit.resetMessage(controller),
   "dismiss-error": (controller) => edit.dismissError(controller),
+  "dismiss-warning": (controller) => edit.dismissWarning(controller),
   "dismiss-outcome": (controller) => edit.dismissOutcome(controller),
   "dismiss-saved-work-notice": (controller) => edit.dismissSavedWorkNotice(controller),
   "toggle-entry": (controller, value) => edit.toggleEntry(controller, value),

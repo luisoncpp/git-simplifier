@@ -40,6 +40,7 @@ export function createState(): AppState {
     changingBase: false,
     busy: false,
     error: "",
+    warning: "",
     dismissedSavedWorkBranch: null,
     skipReview: false,
   };

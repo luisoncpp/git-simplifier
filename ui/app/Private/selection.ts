@@ -132,6 +132,11 @@ export function dismissError(controller: AppController): void {
   controller.render();
 }
 
+export function dismissWarning(controller: AppController): void {
+  controller.state.warning = "";
+  controller.render();
+}
+
 export function dismissOutcome(controller: AppController): void {
   controller.state.outcome = null;
   controller.render();

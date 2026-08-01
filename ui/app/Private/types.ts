@@ -236,6 +236,8 @@ export interface AppState {
   changingBase: boolean;
   busy: boolean;
   error: string;
+  /// Non-blocking warning from the latest refresh fetch attempt.
+  warning: string;
   /// Branch whose persistent Saved work notice the user dismissed for this visit.
   dismissedSavedWorkBranch: string | null;
   skipReview: boolean;

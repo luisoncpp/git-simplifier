@@ -1,5 +1,5 @@
 import { TauriBridge } from "./bridge.ts";
-import { loadBaseChoices, loadOperationData, loadViewData, reloadState } from "./discovery.ts";
+import { fetchRemotes, loadBaseChoices, loadOperationData, loadViewData, reloadState } from "./discovery.ts";
 import { focusNode, renderInto } from "./dom.ts";
 import { bindEvents } from "./events.ts";
 import { resetFileDiffs } from "./files-diff/index.ts";
@@ -70,7 +70,11 @@ export class AppController {
   }
 
   refresh(snapshot: RepositorySnapshot | null = null): Promise<void> {
-    return this.run(() => this.reload(snapshot));
+    return this.run(async () => {
+      this.state.warning = await fetchRemotes(this);
+      if (this.state.warning) this.announce(this.state.warning);
+      await this.reload(snapshot);
+    });
   }
 
   reload(snapshot: RepositorySnapshot | null = null, preservedError = ""): Promise<void> {

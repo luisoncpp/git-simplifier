@@ -85,6 +85,50 @@ fn saved_work_is_reported_for_simple_and_slashed_branch_names() {
     assert!(!has_saved_work(&branches, "base"));
 }
 
+#[test]
+fn fetch_remotes_succeeds_when_no_remotes_are_configured() {
+    let fixture = FixtureRepo::new();
+    fixture.repo.fetch_remotes().unwrap();
+}
+
+#[test]
+fn fetch_remotes_picks_up_new_refs_on_a_configured_remote() {
+    let fixture = FixtureRepo::new();
+    let remote = fixture.add_bare_origin();
+    let commit = fixture.head();
+    let git_dir = remote.path().to_str().unwrap();
+    std::process::Command::new("git")
+        .args([
+            "--git-dir",
+            git_dir,
+            "update-ref",
+            "refs/heads/extra",
+            &commit,
+        ])
+        .status()
+        .expect("failed to seed remote ref");
+
+    let missing = fixture
+        .repo
+        .run(GitCommand::read(args(&["rev-parse", "--verify", "refs/remotes/origin/extra"])));
+    assert!(missing.is_err());
+
+    fixture.repo.fetch_remotes().unwrap();
+
+    let fetched = fixture
+        .repo
+        .run(GitCommand::read(args(&["rev-parse", "refs/remotes/origin/extra"])))
+        .unwrap();
+    assert_eq!(
+        String::from_utf8(fetched.stdout).unwrap().trim(),
+        commit
+    );
+}
+
+fn args(values: &[&str]) -> Vec<OsString> {
+    values.iter().map(|value| OsString::from(*value)).collect()
+}
+
 fn write_ref(fixture: &FixtureRepo, reference: &str, value: &str) {
     let args = ["update-ref", reference, value]
         .iter()

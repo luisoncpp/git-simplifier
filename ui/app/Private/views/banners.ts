@@ -5,7 +5,7 @@ import type { SyncPause } from "../snapshot.ts";
 import type { AppState, OperationOutcome } from "../types.ts";
 
 export function banners(state: AppState): string {
-  return `${syncBanner(state)}${quickSwitchBanner(state)}${savedWorkBanner(state)}${errorBanner(state)}${outcomeBanner(state)}`;
+  return `${syncBanner(state)}${quickSwitchBanner(state)}${savedWorkBanner(state)}${warningBanner(state)}${errorBanner(state)}${outcomeBanner(state)}`;
 }
 
 function syncBanner(state: AppState): string {
@@ -84,6 +84,16 @@ function followUp(state: AppState, outcome: OperationOutcome): string {
     </div>`;
   }
   return "";
+}
+
+/// With no repository open the empty pane already carries the reason, so the
+/// banner would only repeat it.
+function warningBanner(state: AppState): string {
+  if (!state.warning || !state.snapshot) return "";
+  return `<div class="banner warn" role="alert">
+    <div><strong>Fetch failed</strong><p>${esc(state.warning)}</p></div>
+    <button class="ghost small" data-event="dismiss-warning" aria-label="Dismiss warning">Dismiss</button>
+  </div>`;
 }
 
 /// With no repository open the empty pane already carries the reason, so the

@@ -134,3 +134,25 @@ test("repository identity is reused instead of queried on every refresh", async 
   assert.match(runner, /git_dir: OnceLock<PathBuf>/);
   assert.match(inspection, /runner\.git_version\(\)/);
 });
+
+test("refresh fetches remotes first and warns without blocking when fetch fails", async () => {
+  const commands = [];
+  const controller = controllerWith({
+    async invoke(command) {
+      commands.push(command);
+      if (command === "fetch_remotes") throw new Error("network down");
+      if (command === "load_snapshot") return snapshotWith({ branch: "refreshed" });
+      return [];
+    },
+  });
+
+  await controller.refresh();
+
+  assert.equal(commands[0], "fetch_remotes");
+  assert.ok(commands.includes("load_snapshot"));
+  assert.equal(controller.state.warning, "network down");
+  assert.equal(controller.state.error, "");
+  assert.equal(controller.state.snapshot.overview.branch, "refreshed");
+  assert.match(renderShell(controller.state), /Fetch failed/);
+  assert.match(renderShell(controller.state), /network down/);
+});
