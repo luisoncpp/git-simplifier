@@ -28,6 +28,7 @@ Avoid: "bug description + fix". Prefer: "what I learned that applies to future w
 | [write-lock-owners-must-not-relock.md](./write-lock-owners-must-not-relock.md) | A standalone write deadlocks if an outer transaction lock wraps `GitRunner::run` | 2026-07-27 |
 | [returned-snapshots-must-be-reused.md](./returned-snapshots-must-be-reused.md) | Re-fetching after a mutation already returned fresh state repeats expensive Git scans | 2026-07-27 |
 | [tauri-sync-commands-block-window-thread.md](./tauri-sync-commands-block-window-thread.md) | Awaiting a synchronous Tauri command does not keep Git work off the desktop window thread | 2026-07-27 |
+| [webview-window-build-needs-async-command.md](./webview-window-build-needs-async-command.md) | Building a `WebviewWindow` from a sync command deadlocks WebView2 (blank, unclosable) | 2026-07-31 |
 | [stdin-git-output-must-be-piped.md](./stdin-git-output-must-be-piped.md) | Git commands fed through stdin need explicit stdout/stderr pipes or their successful output escapes the runner | 2026-07-27 |
 | [submodule-ignore-all-hides-changes-from-diff-cached.md](./submodule-ignore-all-hides-changes-from-diff-cached.md) | `submodule.<name>.ignore = all` hides the submodule from `git diff --cached` too, so the obvious pre-commit guard silently never fires | 2026-07-27 |
 | [path-limited-index-reset-preserves-staged-work.md](./path-limited-index-reset-preserves-staged-work.md) | A path-limited index reset is required after a no-worktree rewrite so unrelated staged changes survive | 2026-07-27 |

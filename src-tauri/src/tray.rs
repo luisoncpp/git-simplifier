@@ -71,17 +71,24 @@ pub fn install(app: &App) -> tauri::Result<()> {
 }
 
 pub fn on_window_event(window: &Window, event: &WindowEvent) {
-    let WindowEvent::CloseRequested { api, .. } = event else {
-        return;
-    };
-    let allowed = window
-        .state::<ExitAllowed>()
-        .is_allowed();
-    if allowed {
-        return;
+    match event {
+        WindowEvent::Destroyed => {
+            crate::file_diff_window::forget(window.app_handle(), window.label());
+        }
+        WindowEvent::CloseRequested { api, .. } => {
+            // Secondary windows (quick file diff) close for real; only main hides.
+            if window.label() != MAIN_WINDOW {
+                return;
+            }
+            let allowed = window.state::<ExitAllowed>().is_allowed();
+            if allowed {
+                return;
+            }
+            let _ = window.hide();
+            api.prevent_close();
+        }
+        _ => {}
     }
-    let _ = window.hide();
-    api.prevent_close();
 }
 
 fn show_main(app: &AppHandle) {

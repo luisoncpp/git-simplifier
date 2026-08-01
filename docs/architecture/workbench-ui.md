@@ -1,6 +1,6 @@
 # Workbench UI
 
-The UI is a single deep module written in strict TypeScript (`tsc --noEmit` is the lint). `ui/app/index.ts` is the only public interface (`AppController`, `renderShell`, the bridges); everything else lives under `ui/app/Private/` and must not be imported from outside it. Imports carry explicit `.ts` extensions and type-only imports use `import type`, so Node's type stripping can run the sources directly in tests without a build step.
+The UI is a single deep module written in strict TypeScript (`tsc --noEmit` is the lint). `ui/app/index.ts` is the only public interface (`AppController`, `QuickFileDiffApp`, `renderShell`, the bridges); everything else lives under `ui/app/Private/` and must not be imported from outside it. Imports carry explicit `.ts` extensions and type-only imports use `import type`, so Node's type stripping can run the sources directly in tests without a build step.
 
 | File | Responsibility |
 |------|----------------|
@@ -8,6 +8,8 @@ The UI is a single deep module written in strict TypeScript (`tsc --noEmit` is t
 | `Private/state.ts` | `createState`: the initial `AppState` (mirrors `createDraft`) |
 | `Private/controller.ts` | `AppController`: owns state, busy/error handling, and the prepare → apply → cancel boundary |
 | `Private/repository-switcher.ts` | Recent repository menu: filter, open, remove, and persistence refresh |
+| `Private/path-diff-menu.ts` | Path-list context menu and `open_file_diff_window` invoke |
+| `Private/quick-file-diff/` | Nested deep module: secondary-window single-file diff app. Only its `index.ts` may be imported |
 | `Private/events.ts` | Delegated `click`/`change`/`input`/`keydown` dispatch tables keyed by `data-event` |
 | `Private/selection.ts` | Draft mutations (path selection, message drafts, flags) plus the targeted patches they need |
 | `Private/discovery.ts` | Snapshot reload and per-operation discovery; drops selections that no longer exist |
@@ -19,7 +21,7 @@ The UI is a single deep module written in strict TypeScript (`tsc --noEmit` is t
 | `Private/views/branch-picker.ts` | Searchable Quick switch branch menu (local + remote-only) |
 | `Private/branch-switcher.ts` | Branch menu open/filter/pick keyboard handlers |
 | `Private/views/inspection.ts` | Shared Inspection chrome, Raw diff presentation, and the clipboard action |
-| `Private/files-diff/` | Nested deep module: the structured per-file diff surface (unified/side-by-side, gap expansion, file navigator, Prism adapter). Only its `index.ts` may be imported |
+| `Private/files-diff/` | Nested deep module: the structured per-file diff surface (unified/side-by-side, gap expansion, file navigator, Prism adapter, `singleFileDiff`). Only its `index.ts` may be imported |
 | `Private/views/path-list.ts` | The changed-path checklist, shared by Uncommit, Revert, and Split branch |
 | `Private/views/*` | Pure functions from state to markup |
 
@@ -40,6 +42,8 @@ The UI is a single deep module written in strict TypeScript (`tsc --noEmit` is t
 - **Layout, compare, and navigator state are session preference.** `resetFileDiffs` clears the diffs, the cache, the collapsed set, and the reveals, but never the layout, compare mode, or navigator — a refresh or a Base change must not silently undo a choice the user made, the same reasoning that keeps `draft.pullAfterSwitch` sticky.
 - **Files diff keeps its own `collapsed` set** instead of sharing `state.expanded` with Recovery. Every file starts open, so default-open maps naturally onto an empty set, whereas `state.expanded` is keyed by oplog id and defaults closed. Consolidating the two would need prefixed keys and inverted defaults for no gain.
 - A wholly added or wholly deleted file has no gaps: its patch already contains every line, so it must not offer an expander.
+- **Quick file diff does not share Inspection diff state.** The secondary window owns its own `DiffViewState` and loads via `generate_full_file_diff`; `state.fileDiffs` / `fileDiffsFull` / `diffView.reveals` stay Inspection-only so a quick view cannot disturb the multi-file surface. Rendering is shared through `singleFileDiff` / `fileContent`.
+- **Path context menus are operation-scoped.** Right-click on a path row only offers **View diff** for Uncommit, Revert, and Split branch (`pathDiffRequest`); other operations keep the browser default.
 
 ## Rendering
 

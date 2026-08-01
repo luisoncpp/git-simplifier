@@ -95,6 +95,7 @@ export function openRepoContextMenu(
   y: number,
 ): void {
   if (!path || controller.state.busy) return;
+  controller.state.pathContextMenu = null;
   controller.state.repoContextMenu = { path, x, y };
   controller.render();
 }

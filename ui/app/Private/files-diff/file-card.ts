@@ -50,15 +50,19 @@ function cardHead(file: FileDiff, open: { open: boolean; bodyId: string }): stri
 }
 
 function cardBody(state: AppState, file: FileDiff): string {
-  if (file.binary) return hint("Binary file not shown. Raw diff carries its patch header.");
-  if (!file.hunks.length) return hint(modeNote(file));
-  const render: FileRender = {
+  return fileContent({
     file,
     full: fullFor(state, file.path),
     view: state.diffView,
     language: languageFor(file.path),
-  };
-  return state.diffView.layout === "split" ? splitTable(render) : unifiedTable(render);
+  });
+}
+
+/// Shared by the Inspection file list and the quick single-file window.
+export function fileContent(render: FileRender): string {
+  if (render.file.binary) return hint("Binary file not shown. Raw diff carries its patch header.");
+  if (!render.file.hunks.length) return hint(modeNote(render.file));
+  return render.view.layout === "split" ? splitTable(render) : unifiedTable(render);
 }
 
 function modeNote(file: FileDiff): string {

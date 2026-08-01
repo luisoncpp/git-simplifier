@@ -1,6 +1,7 @@
 #![cfg_attr(not(debug_assertions), windows_subsystem = "windows")]
 
 mod commands;
+mod file_diff_window;
 mod tray;
 
 pub fn run() {
@@ -8,6 +9,7 @@ pub fn run() {
         .plugin(tauri_plugin_dialog::init())
         .plugin(tauri_plugin_opener::init())
         .manage(commands::AppState::new())
+        .manage(file_diff_window::FileDiffSessions::new())
         .manage(tray::ExitAllowed::new())
         .setup(|app| {
             tray::install(app)?;
@@ -30,6 +32,8 @@ pub fn run() {
             commands::diffs::generate_branch_diff,
             commands::diffs::generate_files_diff,
             commands::diffs::generate_full_file_diff,
+            file_diff_window::open_file_diff_window,
+            file_diff_window::file_diff_session,
             commands::actions::list_editable_commits,
             commands::actions::list_local_branches,
             commands::actions::list_submodules,

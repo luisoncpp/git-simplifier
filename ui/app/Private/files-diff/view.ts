@@ -1,17 +1,12 @@
-import { esc } from "../dom.ts";
 import { baseRef } from "../snapshot.ts";
 import { compareToggle, diffCompareNote, diffEmptyState, missingBaseGuidance } from "../views/inspection.ts";
 import { emptyState } from "../views/parts.ts";
 import { fileCard } from "./file-card.ts";
 import { fileNavigator } from "./navigator.ts";
 import { addedCount, removedCount } from "./reads.ts";
+import { layoutToggle } from "./single.ts";
 import type { AppState } from "../types.ts";
-import type { DiffLayout, DiffViewState, FileDiff } from "./wire.ts";
-
-const LAYOUTS: [DiffLayout, string][] = [
-  ["unified", "Unified"],
-  ["split", "Side by side"],
-];
+import type { DiffViewState, FileDiff } from "./wire.ts";
 
 export function filesDiffView(state: AppState): string {
   if (!baseRef(state)) return missingBaseGuidance("Files diff");
@@ -54,20 +49,11 @@ function tools(view: DiffViewState, total: number): string {
   const idle = total ? "" : "disabled";
   return `<div class="diff-tools">
     ${compareToggle(view)}
-    <div class="layout-toggle" role="group" aria-label="Diff layout">
-      ${LAYOUTS.map((layout) => layoutButton(view, layout)).join("")}
-    </div>
+    ${layoutToggle(view)}
     <button class="ghost small" data-event="set-all-files" data-value="${allClosed ? "expanded" : "collapsed"}"
       ${idle}>${allClosed ? "Expand all" : "Collapse all"}</button>
     <button class="ghost small${view.navigatorOpen ? " active" : ""}" data-event="toggle-file-navigator"
       data-focus="diff-navigator" aria-expanded="${view.navigatorOpen}" aria-controls="file-navigator"
       ${idle}>Files (${total})</button>
   </div>`;
-}
-
-function layoutButton(view: DiffViewState, [layout, label]: [DiffLayout, string]): string {
-  const current = view.layout === layout;
-  return `<button class="ghost small${current ? " active" : ""}" data-event="set-diff-layout"
-    data-value="${layout}" data-focus="diff-layout:${layout}"
-    aria-pressed="${current}">${esc(label)}</button>`;
 }

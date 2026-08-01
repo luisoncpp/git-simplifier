@@ -79,6 +79,8 @@ export interface RecentRepository { name: string; path: string }
 
 export interface RepoContextMenu { path: string; x: number; y: number }
 
+export interface PathContextMenu { path: string; x: number; y: number }
+
 export interface OperationReview {
   plan_id: string;
   kind: string;
@@ -176,6 +178,7 @@ export interface AppState {
   repoHighlight: number;
   repoOpeningPath: string;
   repoContextMenu: RepoContextMenu | null;
+  pathContextMenu: PathContextMenu | null;
   draft: Draft;
   expanded: Set<string>;
   review: OperationReview | null;
@@ -197,6 +200,9 @@ export type FieldNode = HTMLInputElement | HTMLSelectElement | HTMLTextAreaEleme
 interface TauriGlobal {
   core?: { invoke?: (command: string, args?: Record<string, unknown>) => Promise<unknown> };
   dialog?: { open?: (options?: Record<string, unknown>) => Promise<unknown> };
+  event?: {
+    listen?: (event: string, handler: (event: unknown) => void) => Promise<unknown>;
+  };
 }
 
 declare global {

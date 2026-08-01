@@ -15,6 +15,8 @@ test('closing the window hides to tray instead of exiting', async () => {
   assert.match(lib, /on_window_event\(tray::on_window_event\)/, 'lib must install the close handler');
   assert.match(tray, /api\.prevent_close\(\)/, 'CloseRequested must prevent destruction');
   assert.match(tray, /window\.hide\(\)/, 'CloseRequested must hide the window');
+  assert.match(tray, /MAIN_WINDOW/, 'hide-to-tray must be scoped to the main window');
+  assert.match(tray, /label\(\)\s*!=\s*MAIN_WINDOW/, 'secondary windows must close for real');
   assert.match(tray, /QUIT_ID\s*=>\s*quit_app/, 'tray Quit must be the exit path');
   assert.match(tray, /ExitAllowed/, 'Quit must arm ExitAllowed so close can finish');
 });

@@ -1,5 +1,6 @@
 import { esc } from "../dom.ts";
 import { filesDiffView } from "../files-diff/index.ts";
+import { pathContextMenuMarkup } from "../path-diff-menu.ts";
 import { baseRef, currentBranch, overviewOf, refValue, upstreamRef, worktreeCounts } from "../snapshot.ts";
 import { isInspectionView } from "../state.ts";
 import type { AppState, ViewId } from "../types.ts";
@@ -25,7 +26,8 @@ const INSPECTION_VIEWS: NavEntry[] = [
 ];
 
 export function renderShell(state: AppState): string {
-  return `<div class="shell">${rail(state)}${main(state)}</div>`;
+  return `<div class="shell">${rail(state)}${main(state)}</div>
+    ${pathContextMenuMarkup(state.pathContextMenu)}`;
 }
 
 function rail(state: AppState): string {

@@ -31,6 +31,7 @@ export function createState(): AppState {
     repoHighlight: 0,
     repoOpeningPath: "",
     repoContextMenu: null,
+    pathContextMenu: null,
     draft: createDraft(),
     expanded: new Set(),
     review: null,

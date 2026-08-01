@@ -14,8 +14,13 @@ User clicks the main window close button (X), or interacts with the system tray.
 ### Close (X)
 
 1. Tauri emits `WindowEvent::CloseRequested`.
-2. If `ExitAllowed` is false: `window.hide()`, then `api.prevent_close()`.
-3. Process stays alive; tray icon remains.
+2. If the window label is not `"main"`: allow close (secondary windows destroy).
+3. If `ExitAllowed` is false on main: `window.hide()`, then `api.prevent_close()`.
+4. Process stays alive; tray icon remains.
+
+### Destroyed
+
+1. `WindowEvent::Destroyed` on a `file-diff-*` label drops its `FileDiffSessions` entry.
 
 ### Restore
 
@@ -33,8 +38,8 @@ User clicks the main window close button (X), or interacts with the system tray.
 
 | Kind | What |
 |------|------|
-| Read | `ExitAllowed`, webview window `"main"` |
-| Write | `ExitAllowed` on Quit; window visibility |
+| Read | `ExitAllowed`, webview window `"main"`, secondary labels |
+| Write | `ExitAllowed` on Quit; main visibility; file-diff session cleanup |
 
 ## Side effects
 
@@ -56,3 +61,4 @@ User clicks the main window close button (X), or interacts with the system tray.
 | Quit does nothing / hangs | `ExitAllowed` not set before `app.exit` |
 | Left-click opens menu only | `show_menu_on_left_click` left at default true |
 | No tray icon | Missing `tray-icon` feature or `default_window_icon` |
+| File-diff X hides instead of closing | Hide-to-tray not gated on `MAIN_WINDOW` |

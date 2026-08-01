@@ -1,6 +1,7 @@
 import * as edit from "./selection.ts";
 import * as repos from "./repository-switcher.ts";
 import * as branches from "./branch-switcher.ts";
+import * as pathDiff from "./path-diff-menu.ts";
 import * as diff from "./files-diff/index.ts";
 import type { AppController } from "./controller.ts";
 import type { FieldNode, OperationId, ViewId } from "./types.ts";
@@ -15,6 +16,7 @@ const CLICK: Record<string, ClickHandler> = {
   "open-recent": (controller, value) => repos.openRecentRepository(controller, value),
   "remove-recent": (controller, value) => repos.removeRecentRepository(controller, value),
   "reveal-repository": (controller, value) => repos.revealRepository(controller, value),
+  "view-path-diff": (controller, value) => pathDiff.openPathDiff(controller, value),
   "toggle-branch-menu": (controller) => branches.toggleBranchMenu(controller),
   "pick-branch": (controller, value, node) =>
     branches.pickBranch(controller, value, node?.dataset.remote ?? ""),
@@ -94,6 +96,9 @@ function handleClick(controller: AppController, event: MouseEvent): void {
   if (controller.state.repoContextMenu && !target?.closest?.(".repo-context-menu")) {
     repos.closeRepoContextMenu(controller);
   }
+  if (controller.state.pathContextMenu && !target?.closest?.(".path-context-menu")) {
+    pathDiff.closePathContextMenu(controller);
+  }
   if (controller.state.repoMenuOpen && !target?.closest?.(".repo-switcher")) {
     repos.closeRepoMenu(controller);
   }
@@ -110,12 +115,19 @@ function handleClick(controller: AppController, event: MouseEvent): void {
 
 function handleContextMenu(controller: AppController, event: MouseEvent): void {
   const target = event.target as HTMLElement | null;
+  const pathRow = target?.closest?.("[data-path-context]") as HTMLElement | null;
+  const path = pathRow?.dataset?.pathContext ?? "";
+  if (path) {
+    event.preventDefault();
+    pathDiff.openPathContextMenu(controller, path, event.clientX, event.clientY);
+    return;
+  }
   const row = target?.closest?.(".repo-row") as HTMLElement | null;
   const picker = target?.closest?.(".repo-picker") as HTMLElement | null;
-  const path = row?.dataset?.contextPath ?? picker?.dataset?.contextPath ?? "";
-  if (!path) return;
+  const repoPath = row?.dataset?.contextPath ?? picker?.dataset?.contextPath ?? "";
+  if (!repoPath) return;
   event.preventDefault();
-  repos.openRepoContextMenu(controller, path, event.clientX, event.clientY);
+  repos.openRepoContextMenu(controller, repoPath, event.clientX, event.clientY);
 }
 
 function handleInput(controller: AppController, event: Event): void {
@@ -134,6 +146,11 @@ function dispatchNode(controller: AppController, event: Event, table: Record<str
 /// value — sometimes the promise it started — so `settle` still reports a
 /// rejected activation here rather than in two more places.
 function handleKeys(controller: AppController, event: KeyboardEvent): void {
+  if (controller.state.pathContextMenu && event.key === "Escape") {
+    event.preventDefault();
+    pathDiff.closePathContextMenu(controller);
+    return;
+  }
   if (controller.state.repoContextMenu && event.key === "Escape") {
     event.preventDefault();
     repos.closeRepoContextMenu(controller);

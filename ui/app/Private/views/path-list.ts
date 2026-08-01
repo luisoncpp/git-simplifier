@@ -21,7 +21,7 @@ function pathRow(state: AppState, entry: ChangedPath): string {
   const path = pathValue(entry);
   const checked = pathSetFor(state).has(path) ? " checked" : "";
   const previous = entry.previous_path ? `<span class="was">was ${esc(pathValue({ path: entry.previous_path }))}</span>` : "";
-  return `<label class="check-row">
+  return `<label class="check-row" data-path-context="${esc(path)}">
     <input type="checkbox" data-event="toggle-path" data-focus="path:${esc(path)}" value="${esc(path)}"${checked} />
     <span class="status-tag" title="${esc(statusTitle(entry.status))}">${esc(entry.status)}</span>
     <code>${esc(path)}</code>${previous}

@@ -13,6 +13,7 @@
     "withGlobalTauri": true,
     "windows": [
       {
+        "label": "main",
         "title": "Git Simplifier",
         "width": 1360,
         "height": 900,

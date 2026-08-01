@@ -2,6 +2,6 @@
   "$schema": "../gen/schemas/desktop-schema.json",
   "identifier": "default",
   "description": "Default desktop permissions for Git Simplifier",
-  "windows": ["main"],
+  "windows": ["main", "file-diff-*"],
   "permissions": ["core:default", "dialog:default", "opener:allow-reveal-item-in-dir"]
 }

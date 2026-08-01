@@ -1,0 +1,44 @@
+/* Quick single-file diff window: full-viewport pane, no workbench rail. */
+
+.quick-file-diff-body {
+  height: 100vh;
+  overflow: hidden;
+}
+
+.quick-file-diff-body #app {
+  height: 100%;
+}
+
+.quick-file-diff {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  min-height: 0;
+  margin: 0;
+  border: 0;
+  border-radius: 0;
+}
+
+.quick-file-diff .inspection-head {
+  flex: 0 0 auto;
+  padding: 16px 20px 12px;
+}
+
+.quick-file-diff .inspection-head h1 {
+  font-size: 18px;
+  overflow-wrap: anywhere;
+}
+
+.quick-file-diff .files-diff-body {
+  flex: 1;
+  min-height: 0;
+  padding: 0 12px 12px;
+}
+
+.quick-file-diff .file-list {
+  min-height: 0;
+}
+
+.file-toggle.static {
+  cursor: default;
+}

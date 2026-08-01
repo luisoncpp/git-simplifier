@@ -34,7 +34,7 @@ The user opens **Inspection → Files diff**, refreshes while it is open, change
 
 ## Files to inspect
 
-- `ui/app/Private/files-diff/` (`reads.ts` for the gap arithmetic, `rows.ts` for what both layouts share, `highlight.ts` for Prism)
+- `ui/app/Private/files-diff/` (`reads.ts` for the gap arithmetic, `rows.ts` for what both layouts share, `highlight.ts` for Prism, `single.ts` for the one-file pane reused by quick diff)
 - `ui/app/Private/discovery.ts`, `ui/app/Private/events.ts`, `ui/app/Private/dom.ts`
 - `ui/styles/files-diff.css`
 - `src/inspection/patch/`, `src/inspection/diff.rs`
