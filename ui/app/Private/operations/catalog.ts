@@ -7,13 +7,13 @@ export interface OperationDef {
 }
 
 export const OPERATIONS: OperationDef[] = [
-  { id: "uncommit", label: "Uncommit", needsBase: true },
+  { id: "sync", label: "Sync with Base", needsBase: true },
+  { id: "quick_switch", label: "Quick switch", needsBase: false },
   { id: "revert", label: "Revert", needsBase: true },
+  { id: "uncommit", label: "Uncommit", needsBase: true },
   { id: "edit_message", label: "Edit message", needsBase: true },
   { id: "exclude_submodule", label: "Exclude submodule", needsBase: false },
   { id: "split_branch", label: "Split branch", needsBase: true },
-  { id: "quick_switch", label: "Quick switch", needsBase: false },
-  { id: "sync", label: "Sync with Base", needsBase: true },
   { id: "force_push", label: "Force push", needsBase: false },
   { id: "cleanup", label: "Cleanup", needsBase: true },
 ];
