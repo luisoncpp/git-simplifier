@@ -51,6 +51,7 @@ Keep these docs operational. Prefer short tables, explicit file names, and seque
 | [force-push.md](./force-push.md) | Backend explicit force-push after a rewrite |
 | [recovery-panel.md](./recovery-panel.md) | Backend operation history and ref-only recovery guidance |
 | [quick-switch.md](./quick-switch.md) | Backend Quick branch switch and Saved work restoration |
+| [saved-work-diff.md](./saved-work-diff.md) | Saved work restore apply preview in a secondary window |
 | [switch-repository.md](./switch-repository.md) | Recent repository menu, persistence, and open/prune |
 | [split-branch.md](./split-branch.md) | Backend Split branch copy of selected paths onto a new branch |
 | [sync.md](./sync.md) | Backend Sync with Base, Saved work reapply, and resumable conflicts |

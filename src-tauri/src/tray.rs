@@ -74,6 +74,7 @@ pub fn on_window_event(window: &Window, event: &WindowEvent) {
     match event {
         WindowEvent::Destroyed => {
             crate::file_diff_window::forget(window.app_handle(), window.label());
+            crate::saved_work_diff_window::forget(window.app_handle(), window.label());
         }
         WindowEvent::CloseRequested { api, .. } => {
             // Secondary windows (quick file diff) close for real; only main hides.

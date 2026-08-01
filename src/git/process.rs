@@ -7,6 +7,15 @@ use super::command::{AccessMode, GitCommand, GitOutput};
 use super::error::GitError;
 
 pub(crate) fn execute(git: &Path, repo: &Path, command: GitCommand) -> Result<GitOutput, GitError> {
+    execute_with_allowed_exits(git, repo, command, &[])
+}
+
+pub(crate) fn execute_with_allowed_exits(
+    git: &Path,
+    repo: &Path,
+    command: GitCommand,
+    allowed_exits: &[i32],
+) -> Result<GitOutput, GitError> {
     let mut process = Command::new(git);
     process.current_dir(repo).args(&command.args);
     hide_console(&mut process);
@@ -21,14 +30,20 @@ pub(crate) fn execute(git: &Path, repo: &Path, command: GitCommand) -> Result<Gi
         stderr: output.stderr,
         exit_code: output.status.code(),
     };
-    if !output.status.success() {
-        return Err(GitError::Command {
-            args: command.args,
-            exit_code: result.exit_code,
-            stderr: result.stderr,
-        });
+    if output.status.success() {
+        return Ok(result);
     }
-    Ok(result)
+    if result
+        .exit_code
+        .is_some_and(|code| allowed_exits.contains(&code))
+    {
+        return Ok(result);
+    }
+    Err(GitError::Command {
+        args: command.args,
+        exit_code: result.exit_code,
+        stderr: result.stderr,
+    })
 }
 
 /// `CREATE_NO_WINDOW`: without it a windowless GUI build flashes a console for

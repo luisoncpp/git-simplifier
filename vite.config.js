@@ -18,6 +18,7 @@ export default defineConfig({
       input: {
         main: resolve(rootDir, "ui/index.html"),
         fileDiff: resolve(rootDir, "ui/file-diff.html"),
+        savedWorkDiff: resolve(rootDir, "ui/saved-work-diff.html"),
       },
     },
   },

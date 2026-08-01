@@ -49,3 +49,33 @@ pub fn generate_full_file_diff(
             .map_err(|error| error.to_string())
     })
 }
+
+#[tauri::command(async)]
+pub fn generate_saved_work_files_diff(
+    state: State<'_, AppState>,
+    window: tauri::WebviewWindow,
+    sessions: State<'_, crate::saved_work_diff_window::SavedWorkDiffSessions>,
+) -> Result<Vec<git_helper_core::FileDiff>, String> {
+    let session = crate::saved_work_diff_window::session_for(&window, &sessions)?;
+    with_repository(state.inner(), |repository| {
+        repository
+            .saved_work_apply_files_diff(session.before_tree, session.after_tree)
+            .map_err(|error| error.to_string())
+    })
+}
+
+#[tauri::command(async)]
+pub fn generate_saved_work_full_file_diff(
+    state: State<'_, AppState>,
+    window: tauri::WebviewWindow,
+    sessions: State<'_, crate::saved_work_diff_window::SavedWorkDiffSessions>,
+    request: super::data::SavedWorkFilePathInput,
+) -> Result<Option<git_helper_core::FileDiff>, String> {
+    let session = crate::saved_work_diff_window::session_for(&window, &sessions)?;
+    let path = RepoPath::new(request.path).map_err(|error| error.to_string())?;
+    with_repository(state.inner(), |repository| {
+        repository
+            .saved_work_apply_full_file_diff(session.before_tree, session.after_tree, path)
+            .map_err(|error| error.to_string())
+    })
+}

@@ -1,4 +1,4 @@
-import type { AppState } from "../types.ts";
+import type { FileDiffPaneState } from "./wire.ts";
 import type { DiffLine, DiffLineKind, DiffViewState, FileDiff, GapReveal } from "./wire.ts";
 
 /// A run of unchanged lines the loaded diff does not show. `index` is the index
@@ -38,7 +38,7 @@ const NO_REVEAL: GapReveal = { down: 0, up: 0, all: false };
 export const addedCount = (file: FileDiff): number => countKind(file, "add");
 export const removedCount = (file: FileDiff): number => countKind(file, "del");
 export const gapSize = (gap: Gap): number => (gap.end < gap.start ? 0 : gap.end - gap.start + 1);
-export const fullFor = (state: AppState, path: string): FileDiff | null =>
+export const fullFor = (state: FileDiffPaneState, path: string): FileDiff | null =>
   state.fileDiffsFull.get(path) ?? null;
 
 export const renderedRows = (file: FileDiff): number =>

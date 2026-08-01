@@ -20,13 +20,17 @@ Implementation: `src-tauri/src/tray.rs`, wired from `lib.rs` via `.setup` and `.
 
 `src-tauri/src/file_diff_window.rs` creates labeled `WebviewWindow`s (`file-diff-<hash>`) loading `file-diff.html`. Session args live in managed `FileDiffSessions`; the window reads them via `file_diff_session` (Tauri injects the calling window). Re-opening the same path focuses the existing window and emits `file-diff-reload`. Capabilities include `file-diff-*` alongside `main`. `open_file_diff_window` is `#[tauri::command(async)]` — a sync build deadlocks WebView2 on Windows (blank, unclosable window).
 
+## Saved work apply-diff windows
+
+`src-tauri/src/saved_work_diff_window.rs` mirrors the quick file-diff shell for multi-file previews (`saved-work-diff-<hash>` → `saved-work-diff.html`). `open_saved_work_diff_window` computes the merge-tree preview up front, stores tree OIDs and conflict flags in `SavedWorkDiffSessions`, and reuses the same destroy-on-close / reload-on-focus rules. Capabilities include `saved-work-diff-*`.
+
 ## Constraints to preserve
 
 - The tray icon is visible for the whole process lifetime, not only while hidden.
 - There is no in-UI Quit; users must use the tray menu.
 - Left-click must not open the menu (`show_menu_on_left_click(false)`); the menu is for right-click.
 - Tray icon comes from `default_window_icon()` (bundled `icons/`), not a separate asset.
-- Only the main window hides on close; secondary windows must destroy and drop their session.
+- Only the main window hides on close; secondary windows must destroy and drop their session (`file-diff-*`, `saved-work-diff-*`).
 
 ## Recent repositories
 

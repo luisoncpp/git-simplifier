@@ -146,7 +146,7 @@ A single mutex per repository serializes all write operations. Read operations m
 - `-z` (NUL-separated) on every command that lists paths
 - `git log --format=` with explicit, unambiguous separators
 - Never parse human-readable output
-- Minimum git version: **2.38** (for `rebase --update-refs`, used later by §9; also gives `zdiff3`, `restore`, and modern `worktree`)
+- Minimum git version: **2.39** (for `merge-tree --write-tree --merge-base` on trees, used by Saved work apply preview; also covers `rebase --update-refs`, `zdiff3`, `restore`, and modern `worktree`)
 
 ---
 

@@ -4,6 +4,7 @@ mod errors;
 mod model;
 mod plan;
 mod preflight;
+mod preview;
 mod pull;
 mod record;
 mod resolve;
@@ -15,6 +16,7 @@ pub use errors::SwitchError;
 pub use model::{
     DeleteSavedWorkResult, PullResolution, QuickSwitchPhase, QuickSwitchPlan, QuickSwitchRequest,
     QuickSwitchResult, QuickSwitchStatus, RestoreSavedWorkResult, SavedWork,
+    SavedWorkApplyPreview,
 };
 
 use crate::git::GitRunner;
@@ -57,4 +59,11 @@ pub(crate) fn delete(
     branch: &str,
 ) -> Result<DeleteSavedWorkResult, SwitchError> {
     apply::delete(runner, branch)
+}
+
+pub(crate) fn preview_apply(
+    runner: &GitRunner,
+    branch: &str,
+) -> Result<SavedWorkApplyPreview, SwitchError> {
+    preview::preview(runner, branch)
 }

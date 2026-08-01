@@ -22,6 +22,8 @@ function savedRow(state: AppState, item: SavedWork): string {
       <code>${esc(item.reference)}</code>
       <code class="muted">snapshot ${esc(String(item.snapshot).slice(0, 12))}</code></div>
     <div class="row-actions">
+      <button class="ghost small" data-event="saved-work-diff" data-value="${esc(item.branch)}"
+        ${state.busy ? "disabled" : ""}>Diff</button>
       ${here
         ? `<button class="primary small" data-event="restore-saved" ${state.busy ? "disabled" : ""}>${actionVerb(state.skipReview)} restore</button>`
         : `<button class="ghost small" data-event="switch-to" data-value="${esc(item.branch)}" ${state.busy ? "disabled" : ""}>Switch to ${esc(item.branch)}</button>`}

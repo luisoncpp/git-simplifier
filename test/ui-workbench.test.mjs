@@ -255,6 +255,8 @@ test("Saved work on another branch offers the switch instead of a dead Restore b
   const markup = renderShell(controller.state);
   assert.match(markup, /data-event="restore-saved"/);
   assert.match(markup, /data-event="switch-to" data-value="other"/);
+  assert.match(markup, /data-event="saved-work-diff" data-value="feature"/);
+  assert.match(markup, /data-event="saved-work-diff" data-value="other"/);
   assert.doesNotMatch(markup, /Arrive on branch/);
 });
 

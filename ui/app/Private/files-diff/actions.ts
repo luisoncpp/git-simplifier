@@ -1,17 +1,7 @@
 import { revealByDataset } from "../dom.ts";
+import { gapTarget, widenReveal } from "./gap.ts";
 import { ensureFullDiff } from "./load.ts";
 import type { AppController } from "../controller.ts";
-import type { AppState } from "../types.ts";
-import type { GapReveal } from "./wire.ts";
-
-const EXPAND_STEP = 20;
-const NO_REVEAL: GapReveal = { down: 0, up: 0, all: false };
-
-interface GapTarget {
-  path: string;
-  index: number;
-  direction: string;
-}
 
 export function setLayout(controller: AppController, value: string): void {
   controller.state.diffView.layout = value === "split" ? "split" : "unified";
@@ -66,31 +56,6 @@ export function expandGap(
   if (!target) return Promise.resolve();
   return controller.run(/*revealGapLines=*/ async () => {
     await ensureFullDiff(controller, target.path);
-    widenReveal(controller.state, target);
+    widenReveal(controller.state.diffView.reveals, target);
   });
-}
-
-function gapTarget(path: string, node?: HTMLElement): GapTarget | null {
-  const index = Number(node?.dataset.gap ?? "");
-  const direction = node?.dataset.dir ?? "";
-  if (!Number.isInteger(index) || !direction) return null;
-  return { path, index, direction };
-}
-
-function widenReveal(state: AppState, target: GapTarget): void {
-  const reveals = state.diffView.reveals;
-  let byIndex = reveals.get(target.path);
-  if (!byIndex) {
-    byIndex = new Map();
-    reveals.set(target.path, byIndex);
-  }
-  byIndex.set(target.index, widened(byIndex.get(target.index) ?? NO_REVEAL, target.direction));
-}
-
-/// Overshoot needs no clamp: once the two blocks cover the gap, `gapWindow`
-/// renders it whole and drops the expander.
-function widened(reveal: GapReveal, direction: string): GapReveal {
-  if (direction === "all") return { ...reveal, all: true };
-  if (direction === "up") return { ...reveal, up: reveal.up + EXPAND_STEP };
-  return { ...reveal, down: reveal.down + EXPAND_STEP };
 }

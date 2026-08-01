@@ -1,13 +1,12 @@
 import { baseRef } from "../snapshot.ts";
+import { collapseOversizedFiles } from "./collapse-large.ts";
 import { ensureGrammars, languageFor } from "./highlight.ts";
-import { renderedRows } from "./reads.ts";
 import type { AppController } from "../controller.ts";
 import type { AppState } from "../types.ts";
 import type { FileDiff } from "./wire.ts";
 
 /// Every mutation re-renders the whole shell, so a file past this many rows opens
 /// collapsed and its header says why. Raw diff remains the way to read it whole.
-const MAX_ROWS_PER_FILE = 2000;
 
 /// The layout choice and the navigator survive: they are session preference, not
 /// discovery data, so a refresh or a Base change must not undo them.
@@ -26,9 +25,7 @@ export async function loadFileDiffs(controller: AppController, base: string): Pr
     request: { base, compare: state.diffView.compare },
   });
   state.fileDiffs = files;
-  for (const file of files) {
-    if (renderedRows(file) > MAX_ROWS_PER_FILE) state.diffView.collapsed.add(file.path);
-  }
+  collapseOversizedFiles(files, state.diffView.collapsed);
   await ensureGrammars(files.map(/*languageOf=*/ (file) => languageFor(file.path)));
 }
 

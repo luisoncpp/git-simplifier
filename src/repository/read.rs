@@ -2,7 +2,8 @@ use crate::inspection::{
     self, ChangedPath, DiffCompare, EditableCommit, FileDiff, InspectionError, LocalBranchChoice,
     RemoteBaseChoice, RepositoryOverview, SubmoduleChoice,
 };
-use crate::rewrite::{RefName, RepoPath};
+use crate::rewrite::{ObjectId, RefName, RepoPath};
+use crate::switch;
 
 use super::{GitRepository, RepositoryState};
 
@@ -74,6 +75,30 @@ impl GitRepository {
         compare: DiffCompare,
     ) -> Result<Option<FileDiff>, InspectionError> {
         inspection::full_file_diff(&self.runner, &base, &path, compare)
+    }
+
+    pub fn preview_saved_work_apply(
+        &self,
+        branch: String,
+    ) -> Result<crate::switch::SavedWorkApplyPreview, crate::switch::SwitchError> {
+        switch::preview_apply(&self.runner, &branch)
+    }
+
+    pub fn saved_work_apply_files_diff(
+        &self,
+        before: ObjectId,
+        after: ObjectId,
+    ) -> Result<Vec<FileDiff>, InspectionError> {
+        inspection::tree_files_diff(&self.runner, &before, &after)
+    }
+
+    pub fn saved_work_apply_full_file_diff(
+        &self,
+        before: ObjectId,
+        after: ObjectId,
+        path: RepoPath,
+    ) -> Result<Option<FileDiff>, InspectionError> {
+        inspection::tree_full_file_diff(&self.runner, &before, &after, &path)
     }
 
     pub fn list_editable_commits(

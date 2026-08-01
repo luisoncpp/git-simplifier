@@ -54,6 +54,85 @@ pub(crate) fn full_file_diff(
     Ok(Some(file))
 }
 
+pub(crate) fn tree_files_diff(
+    runner: &GitRunner,
+    before: &ObjectId,
+    after: &ObjectId,
+) -> Result<Vec<FileDiff>, InspectionError> {
+    super::patch::parse_patch(&tree_patch_text(
+        runner,
+        before,
+        after,
+        LOAD_CONTEXT,
+        /*pathspec=*/ None,
+    )?)
+}
+
+pub(crate) fn tree_full_file_diff(
+    runner: &GitRunner,
+    before: &ObjectId,
+    after: &ObjectId,
+    path: &RepoPath,
+) -> Result<Option<FileDiff>, InspectionError> {
+    let pathspec = format!(":(top,literal){}", path.as_str());
+    let text = tree_patch_text(
+        runner,
+        before,
+        after,
+        FULL_CONTEXT,
+        Some(&pathspec),
+    )?;
+    let Some(mut file) = super::patch::parse_patch(&text)?.pop() else {
+        return Ok(None);
+    };
+    file.complete = true;
+    Ok(Some(file))
+}
+
+fn tree_patch_text(
+    runner: &GitRunner,
+    before: &ObjectId,
+    after: &ObjectId,
+    context: &str,
+    pathspec: Option<&str>,
+) -> Result<String, InspectionError> {
+    patch_text(
+        runner,
+        tree_diff_args(before.as_str(), after.as_str(), context, pathspec),
+    )
+}
+
+fn tree_diff_args(
+    before: &str,
+    after: &str,
+    context: &str,
+    pathspec: Option<&str>,
+) -> Vec<OsString> {
+    let unified = format!("--unified={context}");
+    let mut args = vec![
+        "-c",
+        "diff.noprefix=false",
+        "diff",
+        "--binary",
+        "--no-color",
+        "--no-ext-diff",
+        "--no-textconv",
+        "--no-relative",
+        "--no-renames",
+        "--ignore-submodules=none",
+        "--src-prefix=a/",
+        "--dst-prefix=b/",
+        unified.as_str(),
+        before,
+        after,
+        "--",
+    ];
+    if let Some(pathspec) = pathspec {
+        args.push(pathspec);
+    }
+    args.into_iter().map(Into::into).collect()
+}
+
 fn diff_tip(
     runner: &GitRunner,
     base: &RefName,

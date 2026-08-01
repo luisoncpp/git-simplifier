@@ -48,6 +48,21 @@ pub(crate) fn full_file_diff(
 ) -> Result<Option<FileDiff>, InspectionError> {
     diff::full_file_diff(runner, base, path, compare)
 }
+pub(crate) fn tree_files_diff(
+    runner: &GitRunner,
+    before: &crate::rewrite::ObjectId,
+    after: &crate::rewrite::ObjectId,
+) -> Result<Vec<FileDiff>, InspectionError> {
+    diff::tree_files_diff(runner, before, after)
+}
+pub(crate) fn tree_full_file_diff(
+    runner: &GitRunner,
+    before: &crate::rewrite::ObjectId,
+    after: &crate::rewrite::ObjectId,
+    path: &RepoPath,
+) -> Result<Option<FileDiff>, InspectionError> {
+    diff::tree_full_file_diff(runner, before, after, path)
+}
 pub(crate) fn editable_commits(
     runner: &GitRunner,
     base: &RefName,

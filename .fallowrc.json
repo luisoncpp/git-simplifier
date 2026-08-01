@@ -1,15 +1,16 @@
 {
   "$schema": "./node_modules/fallow/schema.json",
-  "entry": ["ui/app.ts", "ui/file-diff-app.ts"],
+  "entry": ["ui/app.ts", "ui/file-diff-app.ts", "ui/saved-work-diff-app.ts"],
   "framework": [
     {
       "name": "git-simplifier-html-shells",
       "detection": { "type": "fileExists", "pattern": "ui/index.html" },
-      "entryPoints": ["ui/app.ts", "ui/file-diff-app.ts"],
+      "entryPoints": ["ui/app.ts", "ui/file-diff-app.ts", "ui/saved-work-diff-app.ts"],
       "entryPointRole": "runtime",
       "alwaysUsed": [
         "ui/index.html",
         "ui/file-diff.html",
+        "ui/saved-work-diff.html",
         "ui/styles/**/*.css"
       ]
     }

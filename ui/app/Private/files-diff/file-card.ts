@@ -3,7 +3,7 @@ import { languageFor } from "./highlight.ts";
 import { addedCount, fullFor, removedCount } from "./reads.ts";
 import { splitTable } from "./split-table.ts";
 import { unifiedTable } from "./unified-table.ts";
-import type { AppState } from "../types.ts";
+import type { FileDiffPaneState } from "./wire.ts";
 import type { FileRender } from "./reads.ts";
 import type { FileDiff, FileDiffStatus } from "./wire.ts";
 
@@ -17,7 +17,7 @@ const STATUS_TAGS: Record<FileDiffStatus, [string, string]> = {
 /// The anchor id is the array index, never the path: paths carry slashes, spaces,
 /// quotes, and non-ASCII. The path rides along as `data-file` so the navigator can
 /// still find the card by dataset value.
-export function fileCard(state: AppState, file: FileDiff, index: number): string {
+export function fileCard(state: FileDiffPaneState, file: FileDiff, index: number): string {
   const open = !state.diffView.collapsed.has(file.path);
   const bodyId = `file-body-${index}`;
   const body = open ? `<div class="file-body" id="${bodyId}">${cardBody(state, file)}</div>` : "";
@@ -49,7 +49,7 @@ function cardHead(file: FileDiff, open: { open: boolean; bodyId: string }): stri
   </header>`;
 }
 
-function cardBody(state: AppState, file: FileDiff): string {
+function cardBody(state: FileDiffPaneState, file: FileDiff): string {
   return fileContent({
     file,
     full: fullFor(state, file.path),

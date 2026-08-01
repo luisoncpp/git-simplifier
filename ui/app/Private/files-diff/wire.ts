@@ -61,6 +61,12 @@ export interface DiffViewState {
   navigatorOpen: boolean;
 }
 
+/// Shared by Inspection Files diff and the Saved work apply preview window.
+export interface FileDiffPaneState {
+  diffView: DiffViewState;
+  fileDiffsFull: Map<string, FileDiff>;
+}
+
 export function createDiffView(): DiffViewState {
   return {
     layout: "unified",

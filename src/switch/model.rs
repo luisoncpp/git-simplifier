@@ -105,3 +105,13 @@ pub struct DeleteSavedWorkResult {
     pub branch: String,
     pub reference: String,
 }
+
+#[derive(Clone, Debug, Eq, PartialEq, Serialize, Deserialize)]
+pub struct SavedWorkApplyPreview {
+    pub branch: String,
+    pub on_current_branch: bool,
+    pub before_tree: ObjectId,
+    pub after_tree: ObjectId,
+    pub worktree_conflicts: bool,
+    pub index_conflicts: bool,
+}

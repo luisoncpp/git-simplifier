@@ -2,6 +2,7 @@ import * as branches from "./branch-switcher.ts";
 import * as diff from "./files-diff/index.ts";
 import * as edit from "./selection.ts";
 import * as pathDiff from "./path-diff-menu.ts";
+import * as savedDiff from "./saved-work-diff/index.ts";
 import * as prefs from "./preferences.ts";
 import * as repos from "./repository-switcher.ts";
 import type { AppController } from "./controller.ts";
@@ -46,6 +47,7 @@ export const CLICK: Record<string, ClickHandler> = {
   "restore-saved": (controller) => controller.prepare({ kind: "restore_saved_work" }),
   "delete-saved": (controller, value) => controller.prepare({ kind: "delete_saved_work", branch: value }),
   "switch-to": (controller, value) => controller.switchTo(value),
+  "saved-work-diff": (controller, value) => savedDiff.openSavedWorkDiff(controller, value),
   "select-paths": (controller, value) => edit.selectPaths(controller, value),
   "reset-message": (controller) => edit.resetMessage(controller),
   "dismiss-error": (controller) => edit.dismissError(controller),

@@ -1,5 +1,5 @@
 import { TauriBridge } from "../bridge.ts";
-import { renderInto } from "../dom.ts";
+import { bindClickEvents, listenForReload, renderApp, runBusy } from "../secondary-diff/shell.ts";
 import { ensureGrammars, languageFor } from "../files-diff/index.ts";
 import type { Bridge } from "../types.ts";
 import type { DiffCompare, FileDiff } from "../files-diff/index.ts";
@@ -14,11 +14,6 @@ const CLICK: Record<string, ClickHandler> = {
   "set-diff-compare": (app, value) => app.setCompare(value),
 };
 
-const errorMessage = (error: unknown): string => {
-  const message = (error as { message?: unknown } | null | undefined)?.message;
-  return message == null ? String(error) : String(message);
-};
-
 export class QuickFileDiffApp {
   readonly bridge: Bridge;
   readonly state: QuickDiffState;
@@ -29,14 +24,13 @@ export class QuickFileDiffApp {
   }
 
   async start(): Promise<void> {
-    bindEvents(this);
-    listenForReload(this);
+    bindClickEvents(this, CLICK);
+    listenForReload(this, "file-diff-reload", /*reload=*/ () => this.reload());
     await this.reload();
   }
 
   render(): void {
-    const root = globalThis.document?.querySelector("#app");
-    if (root) renderInto(root, quickDiffView(this.state));
+    renderApp("#app", quickDiffView(this.state));
   }
 
   setLayout(value: string): void {
@@ -60,18 +54,8 @@ export class QuickFileDiffApp {
     });
   }
 
-  async run(work: () => void | Promise<void>): Promise<void> {
-    this.state.busy = true;
-    this.state.error = "";
-    this.render();
-    try {
-      await work();
-    } catch (error) {
-      this.state.error = errorMessage(error);
-    } finally {
-      this.state.busy = false;
-      this.render();
-    }
+  run(work: () => void | Promise<void>): Promise<void> {
+    return runBusy(this, work);
   }
 
   private async loadFile(): Promise<void> {
@@ -83,35 +67,4 @@ export class QuickFileDiffApp {
     this.state.file = file;
     if (file) await ensureGrammars([languageFor(file.path)]);
   }
-}
-
-function bindEvents(app: QuickFileDiffApp): void {
-  const target = globalThis.document;
-  if (!target) return;
-  target.addEventListener("click", /*handleClick=*/ (event) => {
-    const node = (event.target as HTMLElement | null)?.closest?.("[data-event]") as
-      | (HTMLElement & { disabled?: boolean })
-      | null;
-    if (!node || node.disabled) return;
-    const action = CLICK[node.dataset.event ?? ""];
-    if (!action) return;
-    event.preventDefault();
-    settle(app, action(app, node.dataset.value ?? ""));
-  });
-}
-
-function listenForReload(app: QuickFileDiffApp): void {
-  const listen = globalThis.__TAURI__?.event?.listen;
-  if (typeof listen !== "function") return;
-  void listen("file-diff-reload", /*reloadSession=*/ () => {
-    settle(app, app.reload());
-  });
-}
-
-function settle(app: QuickFileDiffApp, result: unknown): void {
-  if (!result || typeof (result as { catch?: unknown }).catch !== "function") return;
-  (result as Promise<unknown>).catch((error: unknown) => {
-    app.state.error = errorMessage(error);
-    app.render();
-  });
 }

@@ -45,6 +45,7 @@ The UI is a single deep module written in strict TypeScript (`tsc --noEmit` is t
 - **Files diff keeps its own `collapsed` set** instead of sharing `state.expanded` with Recovery. Every file starts open, so default-open maps naturally onto an empty set, whereas `state.expanded` is keyed by oplog id and defaults closed. Consolidating the two would need prefixed keys and inverted defaults for no gain.
 - A wholly added or wholly deleted file has no gaps: its patch already contains every line, so it must not offer an expander.
 - **Quick file diff does not share Inspection diff state.** The secondary window owns its own `DiffViewState` and loads via `generate_full_file_diff`; `state.fileDiffs` / `fileDiffsFull` / `diffView.reveals` stay Inspection-only so a quick view cannot disturb the multi-file surface. Rendering is shared through `singleFileDiff` / `fileContent`.
+- **Saved work apply diff reuses the multi-file pane, not Inspection state.** `files-diff/pane.ts` renders the file list for both Inspection and the `saved-work-diff` secondary window. That window loads tree-to-tree diffs from session-held `before_tree` / `after_tree` OIDs; gap expand calls `generate_saved_work_full_file_diff`.
 - **Cleanup's three toggles are display filters, not queries.** `list_cleanup_branches` returns the maximal eligible set once, annotated with `mine`, `kind`, `protected`, and the remote counterpart; `cleanupChoices` narrows it in the browser. That keeps the `discoveryFor` contract — which loads once on operation select and only knows `(bridge, base)` — and makes flipping a toggle free. A remote-only row needs *both* "check all remote branches" and "also delete on its remote", because deleting one is itself a remote deletion.
 - **Cleanup selection is `draft.cleanupOverrides`, a `Map` of explicit choices only.** A row is ticked when `overrides.get(ref) ?? !choice.protected`. One field expresses both "everything pre-ticked" and "shared names start unticked", and the filters can change the visible set with no reseeding and no "has the user touched this yet" flag — a positive `Set` would need reseeding on every filter change, and an inverted one could not express the protected exception. It is deliberately outside `pathSetFor`, which is for positive path sets.
 - **Path context menus are operation-scoped.** Right-click on a path row only offers **View diff** for Uncommit, Revert, and Split branch (`pathDiffRequest`); other operations keep the browser default.
@@ -75,6 +76,8 @@ A result banner may offer exactly one follow-up. `offer_force_push` is a flag be
 ## Saved work notice
 
 When the current branch has Saved work and no result banner already offers restore (and no pull decision is pending), a persistent banner offers **Review restore**. That covers repo open, refresh, and dismissing the switch result. Restoration is never automatic.
+
+Each Saved work row also offers **Diff**, which opens a secondary multi-file window previewing the net worktree change restore would apply (merge-tree simulation, conflict-aware). Other-branch rows preview apply onto that branch's tip tree, not onto the current checkout.
 
 ## Review surface
 

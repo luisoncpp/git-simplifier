@@ -106,6 +106,11 @@ pub struct DeleteSavedWorkInput {
 }
 
 #[derive(Clone, Debug, Deserialize)]
+pub struct SavedWorkFilePathInput {
+    pub path: String,
+}
+
+#[derive(Clone, Debug, Deserialize)]
 pub struct CleanupInput {
     pub base: String,
     /// Full ref names of the rows the user left ticked. The planner re-derives

@@ -348,6 +348,71 @@ fn fixture_with_target(target: &str) -> FixtureRepo {
     fixture
 }
 
+#[test]
+fn preview_saved_work_lists_apply_delta_on_current_branch() {
+    let fixture = fixture_with_target("other");
+    fixture.write_worktree_file("README.md", "saved edit\n");
+    fixture
+        .repo
+        .apply_quick_switch(&fixture.repo.plan_quick_switch(request("other")).unwrap())
+        .unwrap();
+    fixture.checkout("feature");
+
+    let preview = fixture
+        .repo
+        .preview_saved_work_apply("feature".to_string())
+        .unwrap();
+    assert!(preview.on_current_branch);
+    let files = fixture
+        .repo
+        .saved_work_apply_files_diff(preview.before_tree, preview.after_tree)
+        .unwrap();
+    assert!(files
+        .iter()
+        .any(|file| file.path.as_str() == "README.md"));
+}
+
+#[test]
+fn preview_saved_work_on_other_branch_uses_that_tip() {
+    let fixture = fixture_with_target("other");
+    fixture.write_worktree_file("README.md", "saved edit\n");
+    fixture
+        .repo
+        .apply_quick_switch(&fixture.repo.plan_quick_switch(request("other")).unwrap())
+        .unwrap();
+
+    let preview = fixture
+        .repo
+        .preview_saved_work_apply("feature".to_string())
+        .unwrap();
+    assert!(!preview.on_current_branch);
+    let files = fixture
+        .repo
+        .saved_work_apply_files_diff(preview.before_tree, preview.after_tree)
+        .unwrap();
+    assert!(files
+        .iter()
+        .any(|file| file.path.as_str() == "README.md"));
+}
+
+#[test]
+fn preview_saved_work_flags_worktree_conflicts() {
+    let fixture = fixture_with_target("other");
+    fixture.write_worktree_file("README.md", "saved edit\n");
+    fixture
+        .repo
+        .apply_quick_switch(&fixture.repo.plan_quick_switch(request("other")).unwrap())
+        .unwrap();
+    fixture.checkout("feature");
+    fixture.commit_file("README.md", "upstream edit\n", "change readme");
+
+    let preview = fixture
+        .repo
+        .preview_saved_work_apply("feature".to_string())
+        .unwrap();
+    assert!(preview.worktree_conflicts);
+}
+
 fn request(target_branch: &str) -> QuickSwitchRequest {
     QuickSwitchRequest {
         target_branch: target_branch.to_string(),

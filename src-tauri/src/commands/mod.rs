@@ -5,7 +5,7 @@ pub mod diffs;
 mod prepare;
 mod prefs;
 mod recents;
-mod repository;
+pub(crate) mod repository;
 mod review_commands;
 mod state;
 

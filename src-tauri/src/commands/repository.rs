@@ -13,7 +13,7 @@ pub(super) fn snapshot(state: &AppState) -> Result<RepositorySnapshot, String> {
     })
 }
 
-pub(super) fn with_repository<T>(
+pub(crate) fn with_repository<T>(
     state: &AppState,
     action: impl FnOnce(&GitRepository) -> Result<T, String>,
 ) -> Result<T, String> {
