@@ -4,6 +4,7 @@
   "framework": [
     {
       "name": "git-simplifier-html-shells",
+      "detection": { "type": "fileExists", "pattern": "ui/index.html" },
       "entryPoints": ["ui/app.ts", "ui/file-diff-app.ts"],
       "entryPointRole": "runtime",
       "alwaysUsed": [
@@ -11,6 +12,16 @@
         "ui/file-diff.html",
         "ui/styles/**/*.css"
       ]
+    }
+  ],
+  "ignoreExports": [
+    {
+      "file": "ui/app/Private/branch-switcher.ts",
+      "exports": ["handleKeys"]
+    },
+    {
+      "file": "ui/app/Private/repository-switcher.ts",
+      "exports": ["handleKeys"]
     }
   ]
 }

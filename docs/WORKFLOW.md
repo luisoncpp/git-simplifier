@@ -8,7 +8,7 @@ Before trying to implement any feature or fix any bug, add the following to your
 
 * Run tests and lint to make sure it's still passing.
 
-* Add tests for the new feature or 
+* Run fallow to make sure the code quality of the new code is good.
 
 # Implementing new features
 
@@ -18,13 +18,17 @@ Before writing any code or reading any file, add this to your tasks list:
 
 * Ask the user about anything that it's not clear about the new feature.
 
-* Suggest a plan, and ask the user if proceed with the implementation.
+* If multiple files are going to be needed, consider creating a deep module.
+
+* Suggest a plan, and ask the user if proceed with the implementation, consider how testing is going to be handled.
 
 * Implement the plan.
 
+* Add tests for the new feature.
+
 * Check again if you followed the guidelines or if what you just written could be done in a simpler way with no trade-offs.
 
-* If multiple files are going to be needed, consider creating a deep module.
+* Run `npx fallow audit`, and address any new issue present there.
 
 * After implementing a new feature, documenting the architecture is mandatory. Be concise in the documentation, maximizing the information / token ratio (as it will probably be read by future agents and we don't like to waste their context)
 

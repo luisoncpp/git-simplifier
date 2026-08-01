@@ -16,6 +16,7 @@ export class TauriBridge implements Bridge {
   }
 }
 
+/** @public Test-only bridge; fixtures supply command responses. */
 export class FixtureBridge implements Bridge {
   private readonly data: Record<string, unknown>;
 
