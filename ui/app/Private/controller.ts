@@ -4,6 +4,7 @@ import { focusNode, renderInto } from "./dom.ts";
 import { bindEvents } from "./events.ts";
 import { resetFileDiffs } from "./files-diff/index.ts";
 import { buildRequest, submitState } from "./operations/index.ts";
+import { loadUiPreferences } from "./preferences.ts";
 import { loadRecentRepositories } from "./repository-switcher.ts";
 import { createState, isInspectionView } from "./state.ts";
 import { renderShell } from "./views/shell.ts";
@@ -36,6 +37,7 @@ export class AppController {
   async start(): Promise<void> {
     bindEvents(this);
     await loadRecentRepositories(this);
+    await loadUiPreferences(this);
     await this.refresh();
   }
 
@@ -107,8 +109,13 @@ export class AppController {
     await this.run(async () => {
       this.state.outcome = null;
       this.state.error = "";
-      this.state.review = await this.bridge.invoke<OperationReview>("prepare_operation", { request });
-      this.announce(`${this.state.review.title}. Review the plan, then apply it.`);
+      const review = await this.bridge.invoke<OperationReview>("prepare_operation", { request });
+      if (this.state.skipReview) {
+        await this.applyPlan(review.plan_id);
+        return;
+      }
+      this.state.review = review;
+      this.announce(`${review.title}. Review the plan, then apply it.`);
     });
     if (this.state.review) focusNode("#review-title");
   }

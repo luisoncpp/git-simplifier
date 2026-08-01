@@ -21,6 +21,8 @@ pub fn run() {
             commands::actions::open_repository,
             commands::actions::list_recent_repositories,
             commands::actions::remove_recent_repository,
+            commands::actions::get_ui_preferences,
+            commands::actions::set_skip_review,
             commands::actions::reveal_in_explorer,
             commands::actions::load_snapshot,
             commands::actions::list_operations,

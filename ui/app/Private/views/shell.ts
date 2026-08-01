@@ -102,6 +102,7 @@ function repoBar(state: AppState): string {
     <div class="fact"><span class="eyebrow">Base</span>${baseControl(state)}</div>
     ${upstreamRef(state) ? `<div class="fact"><span class="eyebrow">Upstream</span><code>${esc(upstreamRef(state))}</code></div>` : ""}
     <div class="fact worktree"><span class="eyebrow">Working tree</span>${worktreeChips(state)}</div>
+    ${skipReviewToggle(state)}
     <button class="ghost" data-event="refresh" ${state.busy ? "disabled" : ""}>Refresh</button>
   </header>`;
 }
@@ -138,6 +139,25 @@ function worktreeChips(state: AppState): string {
   return counts
     .map(([label, count]) => `<span class="chip${label === "conflicts" ? " bad" : ""}">${count} ${label}</span>`)
     .join("");
+}
+
+const SKIP_MODES: [boolean, string][] = [
+  [false, "Review"],
+  [true, "Skip"],
+];
+
+function skipReviewToggle(state: AppState): string {
+  return `<div class="layout-toggle skip-toggle" role="group" aria-label="Review mode">
+    ${SKIP_MODES.map(([skip, label]) => skipModeButton(state, skip, label)).join("")}
+  </div>`;
+}
+
+function skipModeButton(state: AppState, skip: boolean, label: string): string {
+  const current = state.skipReview === skip;
+  const skipActive = skip && current ? " skip-active" : "";
+  return `<button class="ghost small${current ? " active" : ""}${skipActive}" data-event="set-skip-review"
+    data-value="${skip}" data-focus="skip-review:${skip}" aria-pressed="${current}"
+    ${state.busy ? "disabled" : ""}>${esc(label)}</button>`;
 }
 
 function status(state: AppState): string {

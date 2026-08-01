@@ -21,12 +21,12 @@ Fast, compact, precise, and transparent. The interface should disappear into the
 - Demo dashboards with fabricated repository health, activity, dates, or Saved work.
 - Inert controls that imply settings, accounts, command palettes, or focus modes.
 - Prompt-driven workflows that require users to remember or type repository paths, branches, files, or commits.
-- Visual polish that hides the actual Git effect or replaces a reviewable plan with an immediate mutation.
+- Visual polish that hides the actual Git effect or replaces a reviewable plan with an immediate mutation without an explicit, user-opted **Skip** mode (orange toggle in the repo bar; default remains **Review**).
 
 ## Design Principles
 
 1. Let the repository provide the choices.
-2. Review the consequence before applying it.
+2. Review the consequence before applying it — unless the user has turned on **Skip**, in which case prepare still runs but apply follows immediately in one click.
 3. Keep risky work reversible and explain the recovery boundary.
 4. Use literal Git language where precision matters.
 5. Prefer compact density over decorative dashboard theater.

@@ -196,6 +196,16 @@ h4 {
   margin-left: auto;
 }
 
+.repo-bar .skip-toggle .ghost.active:not(.skip-active) {
+  color: var(--text);
+  background: var(--elevated);
+}
+
+.repo-bar .skip-toggle .ghost.active.skip-active {
+  color: #0c0e11;
+  background: var(--accent);
+}
+
 .base-set,
 .base-edit {
   display: flex;

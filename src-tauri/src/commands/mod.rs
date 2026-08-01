@@ -3,6 +3,7 @@ mod apply;
 mod data;
 pub mod diffs;
 mod prepare;
+mod prefs;
 mod recents;
 mod repository;
 mod review_commands;

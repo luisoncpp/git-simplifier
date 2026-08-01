@@ -237,6 +237,7 @@ export interface AppState {
   error: string;
   /// Branch whose persistent Saved work notice the user dismissed for this visit.
   dismissedSavedWorkBranch: string | null;
+  skipReview: boolean;
 }
 
 export interface Bridge {

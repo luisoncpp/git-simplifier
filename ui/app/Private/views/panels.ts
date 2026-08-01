@@ -1,4 +1,5 @@
 import { esc } from "../dom.ts";
+import { actionVerb } from "../review-mode.ts";
 import { currentBranch } from "../snapshot.ts";
 import type { AppState, RecoveryEntry, SavedWork } from "../types.ts";
 import { copyButton, emptyState, humanTime } from "./parts.ts";
@@ -22,7 +23,7 @@ function savedRow(state: AppState, item: SavedWork): string {
       <code class="muted">snapshot ${esc(String(item.snapshot).slice(0, 12))}</code></div>
     <div class="row-actions">
       ${here
-        ? `<button class="primary small" data-event="restore-saved" ${state.busy ? "disabled" : ""}>Review restore</button>`
+        ? `<button class="primary small" data-event="restore-saved" ${state.busy ? "disabled" : ""}>${actionVerb(state.skipReview)} restore</button>`
         : `<button class="ghost small" data-event="switch-to" data-value="${esc(item.branch)}" ${state.busy ? "disabled" : ""}>Switch to ${esc(item.branch)}</button>`}
       <button class="danger small" data-event="delete-saved" data-value="${esc(item.branch)}" ${state.busy ? "disabled" : ""}>Delete</button>
     </div>

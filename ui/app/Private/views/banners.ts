@@ -1,4 +1,5 @@
 import { esc } from "../dom.ts";
+import { actionVerb } from "../review-mode.ts";
 import { currentBranch, quickSwitchPause, savedWorkFor, syncPause } from "../snapshot.ts";
 import type { SyncPause } from "../snapshot.ts";
 import type { AppState, OperationOutcome } from "../types.ts";
@@ -14,7 +15,7 @@ function syncBanner(state: AppState): string {
     <div><strong>${esc(pause.label)}</strong>
       <p>${pause.resumable ? resumeHint(pause) : "This phase is not resumable from here."}</p></div>
     ${pause.resumable
-      ? `<button class="primary small" data-event="resume-sync" ${state.busy ? "disabled" : ""}>Review ${pause.retry ? "retry" : "resume"}</button>`
+      ? `<button class="primary small" data-event="resume-sync" ${state.busy ? "disabled" : ""}>${actionVerb(state.skipReview)} ${pause.retry ? "retry" : "resume"}</button>`
       : `<button class="ghost small" data-event="set-view" data-value="recovery">Inspect recovery</button>`}
   </div>`;
 }
@@ -47,7 +48,7 @@ function savedWorkBanner(state: AppState): string {
     <div><strong>Saved work is waiting</strong>
       <p>This branch has a snapshot from a previous visit. Restore it when you are ready.</p></div>
     <div class="banner-actions">
-      <button class="primary small" data-event="restore-saved" ${disabled}>Review restore</button>
+      <button class="primary small" data-event="restore-saved" ${disabled}>${actionVerb(state.skipReview)} restore</button>
       <button class="ghost small" data-event="dismiss-saved-work-notice" ${disabled}>Dismiss</button>
     </div>
   </div>`;
@@ -70,15 +71,15 @@ function followUp(state: AppState, outcome: OperationOutcome): string {
     </div>`;
   }
   if (outcome.offer_force_push) {
-    return `<button class="primary small" data-event="force-push" ${disabled}>Review force push</button>`;
+    return `<button class="primary small" data-event="force-push" ${disabled}>${actionVerb(state.skipReview)} force push</button>`;
   }
   if (outcome.offer_publish_branch) {
     return `<button class="primary small" data-event="publish-branch"
-      data-value="${esc(outcome.offer_publish_branch)}" ${disabled}>Review push of ${esc(outcome.offer_publish_branch)}</button>`;
+      data-value="${esc(outcome.offer_publish_branch)}" ${disabled}>${actionVerb(state.skipReview)} push of ${esc(outcome.offer_publish_branch)}</button>`;
   }
   if (outcome.offer_restore_saved_work) {
     return `<div class="banner-actions">
-      <button class="primary small" data-event="restore-saved" ${disabled}>Review restore</button>
+      <button class="primary small" data-event="restore-saved" ${disabled}>${actionVerb(state.skipReview)} restore</button>
       <button class="ghost small" data-event="dismiss-outcome" ${disabled}>Dismiss</button>
     </div>`;
   }

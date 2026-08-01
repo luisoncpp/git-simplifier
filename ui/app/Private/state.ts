@@ -41,5 +41,6 @@ export function createState(): AppState {
     busy: false,
     error: "",
     dismissedSavedWorkBranch: null,
+    skipReview: false,
   };
 }

@@ -2,6 +2,7 @@ import * as branches from "./branch-switcher.ts";
 import * as diff from "./files-diff/index.ts";
 import * as edit from "./selection.ts";
 import * as pathDiff from "./path-diff-menu.ts";
+import * as prefs from "./preferences.ts";
 import * as repos from "./repository-switcher.ts";
 import type { AppController } from "./controller.ts";
 import type { FieldNode, OperationId, ViewId } from "./types.ts";
@@ -24,6 +25,7 @@ export const CLICK: Record<string, ClickHandler> = {
   "pick-branch": (controller, value, node) =>
     branches.pickBranch(controller, value, node?.dataset.remote ?? ""),
   refresh: (controller) => controller.refresh(),
+  "set-skip-review": (controller, value) => prefs.setSkipReview(controller, value === "true"),
   "set-view": (controller, value) => controller.setView(value as ViewId),
   "set-operation": (controller, value) => controller.selectOperation(value as OperationId),
   "submit-operation": (controller) => controller.submitOperation(),

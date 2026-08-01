@@ -31,6 +31,7 @@ The UI is a single deep module written in strict TypeScript (`tsc --noEmit` is t
 - **Discovery data is never mixed with user intent.** `state.paths`, `state.commits`, `state.branches`, and `state.submodules` come from Rust; `state.draft` holds what the user picked. A refresh replaces the former and reconciles the latter, so a selection that disappeared from the repository cannot be sent back. Quick switch draft fields include `pullAfterSwitch` (default on) and `createFromRemote` when the chosen row is remote-only.
 - **Base choices are loaded when the chooser opens.** Initial discovery loads `state.baseChoices` only when the repository has no configured Base; changing an existing Base therefore explicitly refreshes the remote-tracking choices before rendering the selector. The chooser never treats an empty, not-yet-loaded list as proof that no remote exists.
 - **Recent repositories are app preference, not Git state.** `state.recentRepositories` is a list of paths loaded from the desktop app data file; it is never written into `.git`. Opening a repository promotes its path; remove only drops the preference entry.
+- **Skip review is app preference, not Git state.** `state.skipReview` is loaded from `ui-preferences.json` on start and persisted when the repo-bar **Review | Skip** toggle changes. Default is **Review**. In **Skip**, primary actions read **Apply …** and `prepare` chains straight into `apply_operation` without rendering the review pane; prepare still runs so validation and the pending plan boundary stay intact.
 - **An in-flight repository choice is visible intent.** `state.repoOpeningPath` temporarily supplies the repository picker's name and path after the menu closes and before the new snapshot arrives. It is cleared after success or failure, so a successful snapshot takes over and a failed open visibly returns to the previous repository.
 - **Every form control is state-backed.** Re-rendering therefore cannot lose a typed message, a filter query, or a path selection, and cancelling a review returns the user to the exact selection they had.
 - **A message draft is per commit** (`draft.messages` keyed by commit id). Changing the selected commit shows that commit's message; it never carries text from another commit into a rewrite.
@@ -65,7 +66,7 @@ Two rendering rules the Files diff depends on:
 
 ## Disabled controls always say why
 
-`submitState` returns a reason, and the submit row renders it. The submit label comes from a per-operation word list whose fallback is the operation id, so a new operation that forgets its entry shows `Review split_branch` instead of `Review split`; a test asserts no label contains an underscore. A base-dependent operation with no Base, an unchanged message, an empty path selection, and a branch without an upstream each explain themselves instead of showing an inert primary button.
+`submitState` returns a reason, and the submit row renders it. The submit label uses **Review** or **Apply** from `review-mode.ts` according to `skipReview`, then a per-operation word list whose fallback is the operation id, so a new operation that forgets its entry shows `Review split_branch` instead of `Review split`; a test asserts no label contains an underscore. A base-dependent operation with no Base, an unchanged message, an empty path selection, and a branch without an upstream each explain themselves instead of showing an inert primary button.
 
 ## Follow-up offers
 
@@ -77,4 +78,4 @@ When the current branch has Saved work and no result banner already offers resto
 
 ## Review surface
 
-A pending review renders as a second column beside the form (stacked below 860 CSS pixels) rather than replacing it. Focus moves to the review title when it opens; Escape cancels it, which also releases the plan held in `AppState`. Switching operation or section cancels a pending review instead of abandoning it.
+A pending review renders as a second column beside the form (stacked below 860 CSS pixels) rather than replacing it. Focus moves to the review title when it opens; Escape cancels it, which also releases the plan held in `AppState`. Switching operation or section cancels a pending review instead of abandoning it. **Skip** mode never opens this pane: the same prepare boundary runs, then apply consumes the plan immediately.

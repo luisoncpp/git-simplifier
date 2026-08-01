@@ -1,4 +1,5 @@
 import { esc } from "../dom.ts";
+import { actionVerb, submitHint } from "../review-mode.ts";
 import { OPERATIONS, submitState } from "../operations/index.ts";
 import type { OperationDef } from "../operations/index.ts";
 import type { AppState } from "../types.ts";
@@ -22,9 +23,10 @@ function tab(state: AppState, operation: OperationDef): string {
 
 export function submitRow(state: AppState): string {
   const { disabled, reason } = submitState(state);
+  const verb = actionVerb(state.skipReview);
   return `<div class="submit-row" id="submit-row">
-    <button class="primary" data-event="submit-operation" ${disabled ? "disabled" : ""}>Review ${esc(actionWord(state.operation))}</button>
-    <p class="hint">${esc(reason || "Nothing is written until you apply the review.")}</p>
+    <button class="primary" data-event="submit-operation" ${disabled ? "disabled" : ""}>${verb} ${esc(actionWord(state.operation))}</button>
+    <p class="hint">${esc(submitHint(state.skipReview, reason))}</p>
   </div>`;
 }
 
