@@ -28,7 +28,7 @@ The UI is a single deep module written in strict TypeScript (`tsc --noEmit` is t
 
 ## State rules
 
-- **Discovery data is never mixed with user intent.** `state.paths`, `state.commits`, `state.branches`, and `state.submodules` come from Rust; `state.draft` holds what the user picked. A refresh replaces the former and reconciles the latter, so a selection that disappeared from the repository cannot be sent back. Quick switch draft fields include `pullAfterSwitch` (default on) and `createFromRemote` when the chosen row is remote-only.
+- **Discovery data is never mixed with user intent.** `state.paths`, `state.commits`, `state.branches`, and `state.submodules` come from Rust; `state.draft` holds what the user picked. A refresh replaces the former and reconciles the latter, so a selection that disappeared from the repository cannot be sent back. Quick switch draft fields include `pullAfterSwitch` (default on), `carryChanges` (default on), and `createFromRemote` when the chosen row is remote-only.
 - **Base choices are loaded when the chooser opens.** Initial discovery loads `state.baseChoices` only when the repository has no configured Base; changing an existing Base therefore explicitly refreshes the remote-tracking choices before rendering the selector. The chooser never treats an empty, not-yet-loaded list as proof that no remote exists.
 - **Recent repositories are app preference, not Git state.** `state.recentRepositories` is a list of paths loaded from the desktop app data file; it is never written into `.git`. Opening a repository promotes its path; remove only drops the preference entry.
 - **Skip review is app preference, not Git state.** `state.skipReview` is loaded from `ui-preferences.json` on start and persisted when the repo-bar **Review | Skip** toggle changes. Default is **Review**. In **Skip**, primary actions read **Apply …** and `prepare` chains straight into `apply_operation` without rendering the review pane; prepare still runs so validation and the pending plan boundary stay intact.
@@ -70,7 +70,7 @@ Two rendering rules the Files diff depends on:
 
 ## Follow-up offers
 
-A result banner may offer exactly one follow-up. `offer_force_push` is a flag because it always means the current branch; `offer_publish_branch` carries the branch name, because a newly created branch is not checked out and a boolean could not say which one to push. The two are different operations with different risk, so the banner never shows force-push wording for a first push. `offer_restore_saved_work` is also a flag for the current branch: Quick switch (and a finished pull resolution) sets it when that branch already has Saved work, and the button opens the existing restore review — never auto-applies.
+A result banner may offer exactly one follow-up. `offer_force_push` is a flag because it always means the current branch; `offer_publish_branch` carries the branch name, because a newly created branch is not checked out and a boolean could not say which one to push. The two are different operations with different risk, so the banner never shows force-push wording for a first push. `offer_restore_saved_work` is also a flag for the current branch: Quick switch (and a finished pull resolution) sets it when that branch already has Saved work, and the button opens the existing restore review — never auto-applies. `has_warning` forces a warn-tone result banner when carry or pull resolution left conflict details, so the headline and tone do not read as success.
 
 ## Saved work notice
 

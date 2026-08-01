@@ -138,6 +138,7 @@ export interface OperationOutcome {
   offer_publish_branch: string | null;
   offer_resolve_pull?: boolean;
   offer_restore_saved_work?: boolean;
+  has_warning?: boolean;
 }
 
 /// Flat payloads matching PrepareOperationRequest's tagged enum on the Rust

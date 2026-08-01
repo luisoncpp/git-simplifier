@@ -17,7 +17,7 @@ export function createDraft(): Draft {
     targetBranch: "",
     createFromRemote: "",
     pullAfterSwitch: true,
-    carryChanges: false,
+    carryChanges: true,
     branchFilter: "",
     branchMenuOpen: false,
     branchHighlight: 0,

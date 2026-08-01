@@ -100,7 +100,7 @@ function outcomeBanner(state: AppState): string {
   const outcome = state.outcome;
   if (!outcome) return "";
   const details = outcome.details.map((detail) => `<li>${esc(detail)}</li>`).join("");
-  const tone = outcome.offer_resolve_pull ? "warn" : "good";
+  const tone = outcome.offer_resolve_pull || outcome.has_warning ? "warn" : "good";
   return `<div class="banner ${tone}">
     <div><strong>${esc(outcome.headline)}</strong><ul>${details}</ul></div>
     ${followUp(state, outcome)}

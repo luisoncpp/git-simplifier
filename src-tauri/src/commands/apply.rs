@@ -123,14 +123,19 @@ fn quick_switch(state: &AppState, plan: QuickSwitchPlan) -> Result<OperationOutc
         repo.apply_quick_switch(&plan).map_err(|e| e.to_string())
     })?;
     let offer_restore = result.target_saved_work.is_some() && !result.pull_decision_needed;
+    let has_warning =
+        result.carry_warning.is_some() || result.pull_warning.is_some();
     let headline = if result.pull_decision_needed {
         "Pull needs a decision"
+    } else if has_warning {
+        "Branch switched with conflicts"
     } else {
         "Branch switched"
     };
     let mut outcome = bare("quick_switch", headline, switch_details(&result));
     outcome.offer_resolve_pull = result.pull_decision_needed;
     outcome.offer_restore_saved_work = offer_restore;
+    outcome.has_warning = has_warning;
     Ok(outcome)
 }
 
@@ -156,8 +161,16 @@ fn resolve_pull(
             result.target_branch
         ));
     }
-    let mut outcome = bare("resolve_quick_switch_pull", "Pull decision applied", details);
+    let has_warning =
+        result.carry_warning.is_some() || result.pull_warning.is_some();
+    let headline = if has_warning {
+        "Pull decision applied with conflicts"
+    } else {
+        "Pull decision applied"
+    };
+    let mut outcome = bare("resolve_quick_switch_pull", headline, details);
     outcome.offer_restore_saved_work = offer_restore;
+    outcome.has_warning = has_warning;
     Ok(outcome)
 }
 
@@ -322,5 +335,6 @@ fn bare(kind: &str, headline: &str, details: Vec<String>) -> OperationOutcome {
         offer_publish_branch: None,
         offer_resolve_pull: false,
         offer_restore_saved_work: false,
+        has_warning: false,
     }
 }

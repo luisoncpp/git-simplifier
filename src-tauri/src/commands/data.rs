@@ -161,6 +161,8 @@ pub struct OperationOutcome {
     pub offer_resolve_pull: bool,
     /// When set, the current branch has Saved work ready for the restore review.
     pub offer_restore_saved_work: bool,
+    /// Conflict or warning details are present; the result banner should not look like success.
+    pub has_warning: bool,
 }
 
 #[derive(Clone, Debug)]

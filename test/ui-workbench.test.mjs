@@ -156,11 +156,11 @@ test("quick switch offers carry changes when the worktree is dirty", async () =>
 
   const markup = renderShell(controller.state);
   assert.match(markup, /Carry tracked changes to the target branch/);
-  assert.match(markup, /will be saved before the switch/);
+  assert.match(markup, /will be stashed/);
+  assert.match(markup, /Conflicts are reported afterwards/);
 
-  controller.state.draft.carryChanges = true;
-  assert.match(renderShell(controller.state), /will be stashed/);
-  assert.match(renderShell(controller.state), /Conflicts are reported afterwards/);
+  controller.state.draft.carryChanges = false;
+  assert.match(renderShell(controller.state), /will be saved before the switch/);
 });
 
 test("quick switch never offers the branch that is already checked out", async () => {
@@ -412,6 +412,26 @@ test("switching onto Saved work offers a restore review from the result banner",
   assert.match(banner, /data-event="restore-saved"/);
   assert.match(banner, /Review restore/);
   assert.doesNotMatch(renderShell(controller.state), /Saved work is waiting/);
+});
+
+test("carry conflicts after switch use a warn-tone result banner", () => {
+  const controller = controllerWith({});
+  controller.state.outcome = {
+    kind: "quick_switch",
+    headline: "Branch switched with conflicts",
+    details: [
+      "Now on other",
+      "Carried changes could not be popped cleanly. Resolve any conflict markers in the working tree, then run git stash drop if an entry is still listed.",
+    ],
+    offer_force_push: false,
+    offer_publish_branch: null,
+    has_warning: true,
+  };
+
+  const markup = renderShell(controller.state);
+  assert.match(markup, /banner warn/);
+  assert.match(markup, /Branch switched with conflicts/);
+  assert.doesNotMatch(markup, /<div class="banner good">[\s\S]*Branch switched with conflicts/);
 });
 
 test("Saved work on the current branch shows a persistent restore offer", () => {
