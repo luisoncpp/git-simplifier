@@ -3,7 +3,8 @@
 /// tables, the gap arithmetic, the Prism adapter, and the render context stay
 /// private to it.
 
-export { expandGap, jumpToFile, setAllFiles, setCompare, setLayout, toggleFile, toggleNavigator } from "./actions.ts";
+export { expandGap, jumpToFile, setAllFiles, setCompare, setLayout, toggleFile, toggleNavigator, toggleUntrackedFilter, toggleUntrackedFilters, closeUntrackedFilters } from "./actions.ts";
+export { visibleFileDiffs } from "./filters.ts";
 export { ensureGrammars, languageFor } from "./highlight.ts";
 export { loadFileDiffs, resetFileDiffs } from "./load.ts";
 export { layoutToggle, singleFileDiff } from "./single.ts";

@@ -30,6 +30,7 @@ export function pickBranch(controller: AppController, name: string, remote = "")
   const draft = controller.state.draft;
   draft.targetBranch = name;
   draft.createFromRemote = remote;
+  draft.branchPicked = true;
   draft.branchMenuOpen = false;
   draft.branchFilter = "";
   controller.render();

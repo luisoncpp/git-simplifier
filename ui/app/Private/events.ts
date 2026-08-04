@@ -1,4 +1,5 @@
 import * as branches from "./branch-switcher.ts";
+import * as diff from "./files-diff/index.ts";
 import * as edit from "./selection.ts";
 import * as pathDiff from "./path-diff-menu.ts";
 import * as repos from "./repository-switcher.ts";
@@ -42,6 +43,9 @@ function dismissOpenOverlays(controller: AppController, target: HTMLElement | nu
   if (controller.state.draft.branchMenuOpen && !target?.closest?.(".branch-picker")) {
     branches.closeBranchMenu(controller);
   }
+  if (controller.state.diffView.untrackedFiltersOpen && !target?.closest?.(".untracked-filters")) {
+    diff.closeUntrackedFilters(controller);
+  }
 }
 
 function handleContextMenu(controller: AppController, event: MouseEvent): void {
@@ -69,7 +73,7 @@ function handleInput(controller: AppController, event: Event): void {
 function dispatchNode(
   controller: AppController,
   event: Event,
-  table: Record<string, (controller: AppController, node: FieldNode) => void>,
+  table: Record<string, (controller: AppController, node: FieldNode) => unknown>,
 ): void {
   const node = event.target as FieldNode | null;
   const action = table[node?.dataset?.event ?? ""];

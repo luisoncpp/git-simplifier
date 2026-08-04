@@ -24,6 +24,7 @@ pub(super) fn start(new_path: String) -> Result<FileDiff, InspectionError> {
         binary: false,
         complete: false,
         hunks: Vec::new(),
+        untracked: None,
     })
 }
 

@@ -1,7 +1,10 @@
 import { revealByDataset } from "../dom.ts";
+import { visibleFileDiffs } from "./filters.ts";
 import { gapTarget, widenReveal } from "./gap.ts";
 import { ensureFullDiff } from "./load.ts";
+import type { UntrackedFilters } from "./wire.ts";
 import type { AppController } from "../controller.ts";
+import type { FieldNode } from "../types.ts";
 
 export function setLayout(controller: AppController, value: string): void {
   controller.state.diffView.layout = value === "split" ? "split" : "unified";
@@ -23,11 +26,44 @@ export function toggleFile(controller: AppController, path: string): void {
 
 export function setAllFiles(controller: AppController, mode: string): void {
   const state = controller.state;
+  const files = visibleFileDiffs(state.fileDiffs ?? [], state.diffView);
   state.diffView.collapsed.clear();
   if (mode === "collapsed") {
-    for (const file of state.fileDiffs ?? []) state.diffView.collapsed.add(file.path);
+    for (const file of files) state.diffView.collapsed.add(file.path);
   }
   controller.render();
+}
+
+export function toggleUntrackedFilters(controller: AppController): void {
+  controller.state.diffView.untrackedFiltersOpen = !controller.state.diffView.untrackedFiltersOpen;
+  controller.render();
+}
+
+export function closeUntrackedFilters(controller: AppController): void {
+  if (!controller.state.diffView.untrackedFiltersOpen) return;
+  controller.state.diffView.untrackedFiltersOpen = false;
+  controller.render();
+}
+
+export function toggleUntrackedFilter(controller: AppController, node: FieldNode): Promise<void> {
+  const key = node.dataset.value as keyof UntrackedFilters;
+  const filters = controller.state.diffView.untrackedFilters;
+  if (Object.hasOwn(filters, key)) filters[key] = (node as HTMLInputElement).checked;
+  controller.render();
+  return hydrateVisibleStubs(controller);
+}
+
+/// Gitignored / node_modules list entries arrive as empty stubs. When a filter
+/// reveals them, fetch bodies the same way gap expansion does.
+function hydrateVisibleStubs(controller: AppController): Promise<void> {
+  const state = controller.state;
+  const stubs = visibleFileDiffs(state.fileDiffs ?? [], state.diffView).filter(
+    (file) => file.untracked && !file.complete && !file.hunks.length,
+  );
+  if (!stubs.length) return Promise.resolve();
+  return controller.run(/*loadStubBodies=*/ async () => {
+    for (const file of stubs) await ensureFullDiff(controller, file.path);
+  });
 }
 
 export function toggleNavigator(controller: AppController): void {

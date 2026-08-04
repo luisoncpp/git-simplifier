@@ -10,6 +10,8 @@ import {
   setLayout,
   toggleFile,
   toggleNavigator,
+  toggleUntrackedFilters,
+  visibleFileDiffs,
 } from "../ui/app/Private/files-diff/index.ts";
 import { controllerWith, snapshotWith } from "./support/controller.mjs";
 
@@ -376,4 +378,57 @@ test("switching compare reloads with the chosen mode and keeps it across refresh
 
   assert.equal(controller.state.diffView.compare, "local");
   assert.deepEqual(requests.at(-1), { request: { base: "refs/remotes/origin/main", compare: "local" } });
+});
+
+test("Local compare shows untracked filter controls", async () => {
+  const { controller } = diffController();
+  await controller.setView("files-diff");
+
+  await setCompare(controller, "local");
+
+  const markup = renderShell(controller.state);
+  assert.match(markup, /data-event="toggle-untracked-filters"/);
+  assert.doesNotMatch(renderShell(controller.state), /id="untracked-filters-menu"/);
+
+  toggleUntrackedFilters(controller);
+
+  assert.match(renderShell(controller.state), /id="untracked-filters-menu"/);
+  assert.match(renderShell(controller.state), /data-event="toggle-untracked-filter"/);
+});
+
+test("untracked filters hide annotated files but never tracked changes", async () => {
+  const { controller } = diffController();
+  await controller.setView("files-diff");
+  await setCompare(controller, "local");
+
+  controller.state.fileDiffs = [
+    appDiff(),
+    {
+      path: "fresh.ts",
+      status: "added",
+      new_mode: "100644",
+      binary: false,
+      complete: true,
+      hunks: [{ old_start: 0, old_lines: 0, new_start: 1, new_lines: 1, heading: "", lines: [{ kind: "add", new_line: 1, text: "x" }] }],
+      untracked: { older_than_or_at_head: true, root_dot: false, in_node_modules: false, gitignored: false },
+    },
+    {
+      path: "notes.ts",
+      status: "added",
+      new_mode: "100644",
+      binary: false,
+      complete: true,
+      hunks: [],
+      untracked: { older_than_or_at_head: false, root_dot: true, in_node_modules: false, gitignored: false },
+    },
+  ];
+
+  const visible = visibleFileDiffs(controller.state.fileDiffs, controller.state.diffView);
+  assert.equal(visible.length, 1);
+  assert.equal(visible[0].path, APP);
+
+  controller.state.diffView.untrackedFilters.excludeOlderThanHead = false;
+  controller.state.diffView.untrackedFilters.excludeRootDot = false;
+  controller.state.diffView.untrackedFilters.excludeUnknownTypes = false;
+  assert.equal(visibleFileDiffs(controller.state.fileDiffs, controller.state.diffView).length, 3);
 });

@@ -13,7 +13,7 @@ export type ClickHandler = (
   value: string,
   node?: HTMLElement,
 ) => unknown;
-export type FieldHandler = (controller: AppController, node: FieldNode) => void;
+export type FieldHandler = (controller: AppController, node: FieldNode) => unknown;
 
 export const CLICK: Record<string, ClickHandler> = {
   "toggle-repo-menu": (controller) => repos.toggleRepoMenu(controller),
@@ -64,6 +64,7 @@ export const CLICK: Record<string, ClickHandler> = {
   "expand-gap": (controller, value, node) => diff.expandGap(controller, value, node),
   "toggle-file-navigator": (controller) => diff.toggleNavigator(controller),
   "jump-to-file": (controller, value) => diff.jumpToFile(controller, value),
+  "toggle-untracked-filters": (controller) => diff.toggleUntrackedFilters(controller),
 };
 
 export const CHANGE: Record<string, FieldHandler> = {
@@ -80,6 +81,7 @@ export const CHANGE: Record<string, FieldHandler> = {
   "toggle-cleanup-remotes": edit.setCleanupRemotes,
   "toggle-cleanup-all-remote": edit.setCleanupAllRemote,
   "toggle-cleanup-branch": edit.toggleCleanupBranch,
+  "toggle-untracked-filter": diff.toggleUntrackedFilter,
 };
 
 export const INPUT: Record<string, FieldHandler> = {

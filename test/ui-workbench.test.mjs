@@ -16,17 +16,25 @@ const PATHS = [
   { path: "src/app.js", previous_path: null, status: "M" },
 ];
 
-function withData(data) {
-  return controllerWith({
-    async invoke(command) {
-      if (command === "list_editable_commits") return COMMITS;
-      if (command === "list_changed_paths" || command === "list_revert_paths") return PATHS;
-      if (command === "list_local_branches") return data.branches ?? [];
-      if (command === "list_submodules") return data.submodules ?? [];
-      if (command === "load_snapshot") return snapshotWith({});
-      return [];
+function withData(data, overview = {}) {
+  const snapshot = snapshotWith(overview);
+  const replies = {
+    list_editable_commits: COMMITS,
+    list_changed_paths: PATHS,
+    list_revert_paths: PATHS,
+    list_local_branches: data.branches ?? [],
+    list_submodules: data.submodules ?? [],
+    list_cleanup_branches: data.cleanup ?? { choices: [], excluded: [] },
+    load_snapshot: snapshot,
+  };
+  return controllerWith(
+    {
+      async invoke(command) {
+        return replies[command] ?? [];
+      },
     },
-  });
+    overview,
+  );
 }
 
 test("the editor opens on the newest commit and follows the selection", async () => {
@@ -206,6 +214,54 @@ test("quick switch defaults target branch to local Base when on a non-Base branc
   assert.equal(controller.state.draft.createFromRemote, "");
 });
 
+test("quick switch defaults to Base even when an earlier alphabetical branch exists", async () => {
+  const branches = [
+    { name: "experimental", head: "a".repeat(40), current: true, saved_work: false },
+    { name: "fix-image-center", head: "b".repeat(40), current: false, saved_work: false },
+    { name: "master", head: "c".repeat(40), current: false, saved_work: false },
+    { name: "website", head: "d".repeat(40), current: false, saved_work: false },
+  ];
+  const controller = withData({ branches }, { base: "refs/remotes/origin/master", branch: "experimental" });
+  await controller.selectOperation("quick_switch");
+
+  assert.equal(controller.state.draft.targetBranch, "master");
+  assert.notEqual(controller.state.draft.targetBranch, "fix-image-center");
+});
+
+test("quick switch re-defaults to Base after Base is set over a prior alphabetical fallback", async () => {
+  const branches = [
+    { name: "feature", head: "a".repeat(40), current: true, saved_work: false },
+    { name: "alpha", head: "b".repeat(40), current: false, saved_work: false },
+    { name: "master", head: "c".repeat(40), current: false, saved_work: false },
+  ];
+  const controller = withData({ branches }, { base: null, branch: "feature" });
+  await controller.selectOperation("quick_switch");
+  assert.equal(controller.state.draft.targetBranch, "alpha");
+
+  controller.state.snapshot = snapshotWith({ base: "refs/remotes/origin/master", branch: "feature" });
+  controller.state.branches = branches;
+  const { adoptBranch } = await import("../ui/app/Private/draft/index.ts");
+  adoptBranch(controller.state.draft, branches, "refs/remotes/origin/master");
+  assert.equal(controller.state.draft.targetBranch, "master");
+});
+
+test("quick switch keeps a user-picked branch across discovery refresh", async () => {
+  const branches = [
+    { name: "feature", head: "a".repeat(40), current: true, saved_work: false },
+    { name: "alpha", head: "b".repeat(40), current: false, saved_work: false },
+    { name: "master", head: "c".repeat(40), current: false, saved_work: false },
+  ];
+  const controller = withData({ branches }, { base: "refs/remotes/origin/master", branch: "feature" });
+  await controller.selectOperation("quick_switch");
+  assert.equal(controller.state.draft.targetBranch, "master");
+
+  const { pickBranch } = await import("../ui/app/Private/branch-switcher.ts");
+  pickBranch(controller, "alpha");
+  const { adoptBranch } = await import("../ui/app/Private/draft/index.ts");
+  adoptBranch(controller.state.draft, branches, "refs/remotes/origin/master");
+  assert.equal(controller.state.draft.targetBranch, "alpha");
+});
+
 test("quick switch defaults target branch to remote Base when local Base does not exist", async () => {
   const branches = [
     { name: "feature", head: "a".repeat(40), current: true, saved_work: false },
@@ -225,7 +281,7 @@ test("quick switch defaults target branch to first available branch when current
     { name: "alpha", head: "b".repeat(40), current: false, saved_work: false },
     { name: "beta", head: "c".repeat(40), current: false, saved_work: false },
   ];
-  const controller = withData({ branches }, { base: "refs/remotes/origin/main" });
+  const controller = withData({ branches }, { base: "refs/remotes/origin/main", branch: "main" });
   await controller.selectOperation("quick_switch");
 
   assert.equal(controller.state.draft.targetBranch, "alpha");

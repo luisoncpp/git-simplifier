@@ -1,5 +1,6 @@
 import { baseRef } from "../snapshot.ts";
 import { compareToggle, diffCompareNote, diffEmptyState, missingBaseGuidance } from "../views/inspection.ts";
+import { visibleFileDiffs } from "./filters.ts";
 import { fileDiffCounts, multiFileDiffBody, multiFileDiffTools } from "./pane.ts";
 import { addedCount, removedCount } from "./reads.ts";
 import type { AppState } from "../types.ts";
@@ -7,7 +8,7 @@ import type { FileDiff } from "./wire.ts";
 
 export function filesDiffView(state: AppState): string {
   if (!baseRef(state)) return missingBaseGuidance("Files diff");
-  const files = state.fileDiffs ?? [];
+  const files = visibleFileDiffs(state.fileDiffs ?? [], state.diffView);
   const pane = { diffView: state.diffView, fileDiffsFull: state.fileDiffsFull };
   return `<div class="pane inspection-pane files-diff-pane">
     ${head(state, files)}${body(pane, files, state.diffView.compare)}

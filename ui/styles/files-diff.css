@@ -27,6 +27,29 @@
   background: var(--accent);
 }
 
+.untracked-filters {
+  position: relative;
+}
+
+.untracked-filters-menu {
+  position: absolute;
+  top: calc(100% + 6px);
+  right: 0;
+  z-index: 30;
+  display: grid;
+  gap: 2px;
+  min-width: 220px;
+  padding: 8px;
+  background: var(--elevated);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  box-shadow: 0 4px 8px rgb(0 0 0 / 0.4);
+}
+
+.untracked-filters-menu .check-row {
+  margin: 0;
+}
+
 /* `min-height: 0` is required on every ancestor of the scroller, or the sticky
    file headers stop sticking inside the flex column. */
 .files-diff-body {

@@ -54,3 +54,5 @@ Avoid: "bug description + fix". Prefer: "what I learned that applies to future w
 | [base-chooser-must-refresh-when-editing.md](./base-chooser-must-refresh-when-editing.md) | A configured Base skips initial choice discovery, so editing Base must reload remote-tracking choices before rendering the selector | 2026-07-30 |
 | [merged-branches-have-no-unique-commits.md](./merged-branches-have-no-unique-commits.md) | `Base..branch` is empty for exactly the branches a cleanup targets, so "who authored its commits" is vacuous | 2026-08-01 |
 | [strip-n-counts-the-whole-refname.md](./strip-n-counts-the-whole-refname.md) | `%(refname:strip=N)` counts the branch name as a component, and the usual empty-line filter then hides the damage | 2026-08-01 |
+| [untracked-file-birth-time-fallback.md](./untracked-file-birth-time-fallback.md) | Untracked Local diff uses birth-or-mtime vs HEAD `%ct`; maximal untracked via ls-files union | 2026-08-04 |
+| [local-untracked-list-must-not-read-ignore-tree-bodies.md](./local-untracked-list-must-not-read-ignore-tree-bodies.md) | Local untracked list stubs gitignored/`node_modules` bodies or ignore trees empty the view | 2026-08-04 |

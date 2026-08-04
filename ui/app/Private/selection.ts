@@ -69,6 +69,7 @@ export function setSubmodule(controller: AppController, node: FieldNode): void {
 
 export function setTargetBranch(controller: AppController, node: FieldNode): void {
   controller.state.draft.targetBranch = node.value;
+  controller.state.draft.branchPicked = true;
   controller.render();
 }
 

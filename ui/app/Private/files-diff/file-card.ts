@@ -60,9 +60,18 @@ function cardBody(state: FileDiffPaneState, file: FileDiff): string {
 
 /// Shared by the Inspection file list and the quick single-file window.
 export function fileContent(render: FileRender): string {
-  if (render.file.binary) return hint("Binary file not shown. Raw diff carries its patch header.");
-  if (!render.file.hunks.length) return hint(modeNote(render.file));
-  return render.view.layout === "split" ? splitTable(render) : unifiedTable(render);
+  const file = bodyFile(render);
+  if (file.binary) return hint("Binary file not shown. Raw diff carries its patch header.");
+  if (!file.hunks.length) return hint(modeNote(file));
+  const drawn = { ...render, file };
+  return render.view.layout === "split" ? splitTable(drawn) : unifiedTable(drawn);
+}
+
+/// Stubbed untracked entries store bodies in `full` after hydration. Ordinary
+/// tracked diffs keep using the context-3 `file` so gap windows stay intact.
+function bodyFile(render: FileRender): FileDiff {
+  if (!render.file.untracked || render.file.hunks.length) return render.file;
+  return render.full?.hunks.length ? render.full : render.file;
 }
 
 function modeNote(file: FileDiff): string {

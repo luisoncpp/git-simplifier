@@ -25,6 +25,21 @@ export interface DiffHunk {
   lines: DiffLine[];
 }
 
+export interface UntrackedAnnotations {
+  older_than_or_at_head: boolean;
+  root_dot: boolean;
+  in_node_modules: boolean;
+  gitignored: boolean;
+}
+
+export interface UntrackedFilters {
+  excludeOlderThanHead: boolean;
+  excludeRootDot: boolean;
+  excludeNodeModules: boolean;
+  respectGitignore: boolean;
+  excludeUnknownTypes: boolean;
+}
+
 export interface FileDiff {
   path: string;
   previous_path?: string;
@@ -36,6 +51,7 @@ export interface FileDiff {
   /// file, so nothing is left to fetch.
   complete: boolean;
   hunks: DiffHunk[];
+  untracked?: UntrackedAnnotations;
 }
 
 /// A gap's reveals are two blocks growing inward from its edges: `down` from the
@@ -59,12 +75,24 @@ export interface DiffViewState {
   /// repository path may contain any character.
   reveals: Map<string, Map<number, GapReveal>>;
   navigatorOpen: boolean;
+  untrackedFilters: UntrackedFilters;
+  untrackedFiltersOpen: boolean;
 }
 
 /// Shared by Inspection Files diff and the Saved work apply preview window.
 export interface FileDiffPaneState {
   diffView: DiffViewState;
   fileDiffsFull: Map<string, FileDiff>;
+}
+
+function createUntrackedFilters(): UntrackedFilters {
+  return {
+    excludeOlderThanHead: true,
+    excludeRootDot: true,
+    excludeNodeModules: true,
+    respectGitignore: true,
+    excludeUnknownTypes: true,
+  };
 }
 
 export function createDiffView(): DiffViewState {
@@ -74,5 +102,7 @@ export function createDiffView(): DiffViewState {
     collapsed: new Set(),
     reveals: new Map(),
     navigatorOpen: false,
+    untrackedFilters: createUntrackedFilters(),
+    untrackedFiltersOpen: false,
   };
 }

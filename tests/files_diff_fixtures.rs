@@ -362,3 +362,160 @@ fn files_diff_rejects_a_base_that_is_not_remote_tracking() {
         "{expanded}"
     );
 }
+
+#[test]
+fn local_files_diff_includes_untracked_text_files_as_complete_added_diffs() {
+    let fixture = FixtureRepo::new();
+    fixture.write_worktree_file("fresh.ts", "export const x = 1;\n");
+    let base = base();
+
+    let files = fixture.repo.files_diff(base, DiffCompare::Local).unwrap();
+    let fresh = files
+        .iter()
+        .find(|file| file.path.as_str() == "fresh.ts")
+        .expect("fresh untracked file");
+
+    assert_eq!(fresh.status, FileDiffStatus::Added);
+    assert!(fresh.complete);
+    assert!(!fresh.binary);
+    let untracked = fresh.untracked.as_ref().expect("untracked annotations");
+    assert!(!untracked.older_than_or_at_head);
+    assert!(!untracked.root_dot);
+    assert!(!untracked.in_node_modules);
+    assert!(!untracked.gitignored);
+}
+
+#[test]
+fn local_files_diff_annotates_gitignored_untracked_paths() {
+    let fixture = FixtureRepo::new();
+    fixture.write_worktree_file(".gitignore", "ignored.txt\n");
+    fixture.write_worktree_file("ignored.txt", "secret\n");
+
+    let files = fixture.repo.files_diff(base(), DiffCompare::Local).unwrap();
+    let ignored = files
+        .iter()
+        .find(|file| file.path.as_str() == "ignored.txt")
+        .expect("ignored untracked file");
+
+    assert_eq!(ignored.untracked.as_ref().unwrap().gitignored, true);
+}
+
+/// Build dirs often hold tens of thousands of ignored files. Reading every body
+/// into the list payload OOMs or times out, so Files diff Local looks empty even
+/// when tracked dirt is present. Gitignored list entries must be content stubs.
+#[test]
+fn local_files_diff_stubs_gitignored_bodies_and_keeps_tracked_dirt() {
+    let fixture = FixtureRepo::new();
+    fixture.write_worktree_file(".gitignore", "build/\n");
+    fixture.write_worktree_file("README.md", "local tracked edit\n");
+    std::fs::create_dir_all(fixture.root.path().join("build")).unwrap();
+    let line = "ignored line that must not be embedded in the list payload\n";
+    for index in 0..80 {
+        let path = format!("build/note-{index}.txt");
+        std::fs::write(fixture.root.path().join(&path), line.repeat(200)).unwrap();
+    }
+
+    let files = fixture.repo.files_diff(base(), DiffCompare::Local).unwrap();
+
+    let tracked = files
+        .iter()
+        .find(|file| file.path.as_str() == "README.md" && file.untracked.is_none())
+        .expect("tracked local change must survive ignored bulk");
+    assert_eq!(tracked.status, FileDiffStatus::Modified);
+    let ignored = files
+        .iter()
+        .find(|file| file.path.as_str() == "build/note-0.txt")
+        .expect("ignored path stays in the maximal set");
+    assert!(ignored.untracked.as_ref().unwrap().gitignored);
+    assert!(
+        ignored.hunks.is_empty(),
+        "gitignored list entries must not embed file bodies: {ignored:?}"
+    );
+}
+
+#[test]
+fn local_files_diff_annotates_root_dot_and_node_modules_paths() {
+    let fixture = FixtureRepo::new();
+    fixture.write_worktree_file(".hidden/secret.txt", "hidden\n");
+    fixture.write_worktree_file("pkg/node_modules/lib/index.js", "lib\n");
+
+    let files = fixture.repo.files_diff(base(), DiffCompare::Local).unwrap();
+    let hidden = files
+        .iter()
+        .find(|file| file.path.as_str() == ".hidden/secret.txt")
+        .unwrap();
+    let nested = files
+        .iter()
+        .find(|file| file.path.as_str() == "pkg/node_modules/lib/index.js")
+        .unwrap();
+
+    assert!(hidden.untracked.as_ref().unwrap().root_dot);
+    assert!(nested.untracked.as_ref().unwrap().in_node_modules);
+}
+
+#[test]
+fn local_files_diff_marks_untracked_files_older_than_head() {
+    let fixture = FixtureRepo::new();
+    fixture.write_worktree_file("old-untracked.txt", "old\n");
+    std::thread::sleep(std::time::Duration::from_secs(2));
+    fixture.commit_file("other.txt", "other\n", "bump head");
+
+    let files = fixture.repo.files_diff(base(), DiffCompare::Local).unwrap();
+    let old = files
+        .iter()
+        .find(|file| file.path.as_str() == "old-untracked.txt")
+        .expect("old untracked file");
+
+    assert!(old.untracked.as_ref().unwrap().older_than_or_at_head);
+}
+
+#[test]
+fn head_files_diff_never_carries_untracked_annotations() {
+    let fixture = FixtureRepo::new();
+    fixture.write_worktree_file("fresh.ts", "export const x = 1;\n");
+
+    let files = fixture.repo.files_diff(base(), DiffCompare::Head).unwrap();
+
+    assert!(files.iter().all(|file| file.untracked.is_none()));
+}
+
+#[test]
+fn full_file_diff_synthesizes_a_local_untracked_path() {
+    let fixture = FixtureRepo::new();
+    fixture.write_worktree_file("fresh.ts", "export const x = 1;\n");
+    let path = RepoPath::new("fresh.ts".to_string()).unwrap();
+
+    let file = fixture
+        .repo
+        .full_file_diff(base(), path, DiffCompare::Local)
+        .unwrap()
+        .expect("untracked full diff");
+
+    assert!(file.complete);
+    assert_eq!(file.status, FileDiffStatus::Added);
+    assert!(file.untracked.is_some());
+}
+
+#[test]
+fn full_file_diff_loads_body_for_a_gitignored_untracked_stub() {
+    let fixture = FixtureRepo::new();
+    fixture.write_worktree_file(".gitignore", "secret.txt\n");
+    fixture.write_worktree_file("secret.txt", "hidden body\n");
+    let path = RepoPath::new("secret.txt".to_string()).unwrap();
+
+    let listed = fixture.repo.files_diff(base(), DiffCompare::Local).unwrap();
+    let stub = listed
+        .iter()
+        .find(|file| file.path.as_str() == "secret.txt")
+        .expect("stubbed ignored path");
+    assert!(stub.hunks.is_empty());
+    assert!(!stub.complete);
+
+    let full = fixture
+        .repo
+        .full_file_diff(base(), path, DiffCompare::Local)
+        .unwrap()
+        .expect("ignored full diff");
+    assert!(full.complete);
+    assert_eq!(full.hunks[0].lines[0].text, "hidden body");
+}

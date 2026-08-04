@@ -30,7 +30,11 @@ pub(crate) fn files_diff(
     base: &RefName,
     compare: DiffCompare,
 ) -> Result<Vec<FileDiff>, InspectionError> {
-    super::patch::parse_patch(&branch_diff(runner, base, compare)?)
+    let mut files = super::patch::parse_patch(&branch_diff(runner, base, compare)?)?;
+    if compare == DiffCompare::Local {
+        super::untracked::append_untracked(runner, &mut files)?;
+    }
+    Ok(files)
 }
 
 /// One file at full context, so a viewer can reveal any window of it without
@@ -47,11 +51,14 @@ pub(crate) fn full_file_diff(
     // Pinned so the pathspec and the names Git prints agree below the Git root.
     let pathspec = format!(":(top,literal){}", path.as_str());
     let text = patch_text(runner, diff_args(&range, FULL_CONTEXT, Some(&pathspec)))?;
-    let Some(mut file) = super::patch::parse_patch(&text)?.pop() else {
-        return Ok(None);
-    };
-    file.complete = true;
-    Ok(Some(file))
+    if let Some(mut file) = super::patch::parse_patch(&text)?.pop() {
+        file.complete = true;
+        return Ok(Some(file));
+    }
+    if compare == DiffCompare::Local {
+        return super::untracked::synthesized_if_untracked(runner, path);
+    }
+    Ok(None)
 }
 
 pub(crate) fn tree_files_diff(

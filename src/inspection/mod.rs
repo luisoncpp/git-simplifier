@@ -4,12 +4,13 @@ mod fetch;
 mod model;
 mod patch;
 mod queries;
+mod untracked;
 
 pub use errors::InspectionError;
 pub use model::{
     ChangedPath, DiffCompare, DiffHunk, DiffLine, DiffLineKind, EditableCommit, FileDiff,
     FileDiffStatus, LocalBranchChoice, RemoteBaseChoice, RepositoryOverview, SubmoduleChoice,
-    WorktreeSummary,
+    UntrackedAnnotations, WorktreeSummary,
 };
 
 use crate::git::GitRunner;

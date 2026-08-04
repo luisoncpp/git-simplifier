@@ -23,7 +23,7 @@ pub use git::{AccessMode, GitCommand, GitError, GitOutput, RepositoryConfig};
 pub use inspection::{
     ChangedPath, DiffCompare, DiffHunk, DiffLine, DiffLineKind, EditableCommit, FileDiff,
     FileDiffStatus, InspectionError, LocalBranchChoice, RemoteBaseChoice, RepositoryOverview,
-    SubmoduleChoice, WorktreeSummary,
+    SubmoduleChoice, UntrackedAnnotations, WorktreeSummary,
 };
 pub use push::{
     ForcePushError, ForcePushPlan, ForcePushResult, PublishBranchPlan, PublishBranchResult,

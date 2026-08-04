@@ -190,6 +190,8 @@ export interface Draft {
   disableRecurse: boolean;
   targetBranch: string;
   createFromRemote: string;
+  /// True only after the user picks a row; auto-defaults stay eligible to refresh.
+  branchPicked: boolean;
   pullAfterSwitch: boolean;
   carryChanges: boolean;
   branchFilter: string;

@@ -188,6 +188,7 @@ export class AppController {
     this.state.operation = "quick_switch";
     this.state.draft.targetBranch = branch;
     this.state.draft.createFromRemote = "";
+    this.state.draft.branchPicked = true;
     this.state.view = "actions";
     await this.prepare({ kind: "quick_switch", target_branch: branch });
   }

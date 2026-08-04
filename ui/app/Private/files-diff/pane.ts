@@ -1,3 +1,4 @@
+import { untrackedFiltersMenu } from "./untracked-filters.ts";
 import { emptyState } from "../views/parts.ts";
 import { fileCard } from "./file-card.ts";
 import { fileNavigator } from "./navigator.ts";
@@ -34,6 +35,7 @@ export function multiFileDiffTools(
   const idle = total ? "" : "disabled";
   return `<div class="diff-tools">
     ${compareToggleMarkup}
+    ${untrackedFiltersMenu(view)}
     ${layoutToggle(view)}
     <button class="ghost small" data-event="set-all-files" data-value="${allClosed ? "expanded" : "collapsed"}"
       ${idle}>${allClosed ? "Expand all" : "Collapse all"}</button>

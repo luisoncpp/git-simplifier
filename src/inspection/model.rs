@@ -93,6 +93,16 @@ pub enum FileDiffStatus {
     Renamed,
 }
 
+/// Filter facts for an untracked Local diff entry. Tracked files never carry this.
+#[derive(Clone, Debug, Eq, PartialEq, Serialize, Deserialize)]
+pub struct UntrackedAnnotations {
+    /// Birth or mtime is strictly before HEAD's commit time.
+    pub older_than_or_at_head: bool,
+    pub root_dot: bool,
+    pub in_node_modules: bool,
+    pub gitignored: bool,
+}
+
 #[derive(Clone, Copy, Debug, Eq, PartialEq, Serialize, Deserialize)]
 #[serde(rename_all = "snake_case")]
 pub enum DiffLineKind {
@@ -124,6 +134,8 @@ pub struct FileDiff {
     pub binary: bool,
     pub complete: bool,
     pub hunks: Vec<DiffHunk>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub untracked: Option<UntrackedAnnotations>,
 }
 
 #[derive(Clone, Debug, Eq, PartialEq, Serialize, Deserialize)]
