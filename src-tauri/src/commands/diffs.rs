@@ -27,9 +27,13 @@ pub fn generate_files_diff(
     request: DiffRequest,
 ) -> Result<Vec<git_helper_core::FileDiff>, String> {
     let base = RefName::new(request.base).map_err(|error| error.to_string())?;
+    let query = git_helper_core::FilesDiffQuery {
+        compare: request.compare,
+        untracked: request.untracked_filters,
+    };
     with_repository(state.inner(), |repository| {
         repository
-            .files_diff(base, request.compare)
+            .files_diff(base, query)
             .map_err(|error| error.to_string())
     })
 }

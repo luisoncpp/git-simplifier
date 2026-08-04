@@ -49,21 +49,25 @@ export function toggleUntrackedFilter(controller: AppController, node: FieldNode
   const key = node.dataset.value as keyof UntrackedFilters;
   const filters = controller.state.diffView.untrackedFilters;
   if (Object.hasOwn(filters, key)) filters[key] = (node as HTMLInputElement).checked;
-  controller.render();
-  return hydrateVisibleStubs(controller);
+  if (controller.state.diffView.compare !== "local") {
+    controller.render();
+    return Promise.resolve();
+  }
+  // Filters constrain discovery in Git; revealing a wider set needs a fresh list.
+  return controller.run(/*reloadConstrainedUntracked=*/ async () => {
+    await controller.reloadViewData();
+    await hydrateVisibleStubsInPlace(controller);
+  });
 }
 
 /// Gitignored / node_modules list entries arrive as empty stubs. When a filter
-/// reveals them, fetch bodies the same way gap expansion does.
-function hydrateVisibleStubs(controller: AppController): Promise<void> {
+/// reveal leaves them visible, fetch bodies the same way gap expansion does.
+async function hydrateVisibleStubsInPlace(controller: AppController): Promise<void> {
   const state = controller.state;
   const stubs = visibleFileDiffs(state.fileDiffs ?? [], state.diffView).filter(
     (file) => file.untracked && !file.complete && !file.hunks.length,
   );
-  if (!stubs.length) return Promise.resolve();
-  return controller.run(/*loadStubBodies=*/ async () => {
-    for (const file of stubs) await ensureFullDiff(controller, file.path);
-  });
+  for (const file of stubs) await ensureFullDiff(controller, file.path);
 }
 
 export function toggleNavigator(controller: AppController): void {

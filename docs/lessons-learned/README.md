@@ -56,3 +56,4 @@ Avoid: "bug description + fix". Prefer: "what I learned that applies to future w
 | [strip-n-counts-the-whole-refname.md](./strip-n-counts-the-whole-refname.md) | `%(refname:strip=N)` counts the branch name as a component, and the usual empty-line filter then hides the damage | 2026-08-01 |
 | [untracked-file-birth-time-fallback.md](./untracked-file-birth-time-fallback.md) | Untracked Local diff uses birth-or-mtime vs HEAD `%ct`; maximal untracked via ls-files union | 2026-08-04 |
 | [local-untracked-list-must-not-read-ignore-tree-bodies.md](./local-untracked-list-must-not-read-ignore-tree-bodies.md) | Local untracked list stubs gitignored/`node_modules` bodies or ignore trees empty the view | 2026-08-04 |
+| [untracked-filters-must-constrain-ls-files.md](./untracked-filters-must-constrain-ls-files.md) | Untracked filters must constrain `ls-files`, not post-filter a maximal ignored walk | 2026-08-04 |

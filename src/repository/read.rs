@@ -1,6 +1,6 @@
 use crate::inspection::{
-    self, ChangedPath, DiffCompare, EditableCommit, FileDiff, InspectionError, LocalBranchChoice,
-    RemoteBaseChoice, RepositoryOverview, SubmoduleChoice,
+    self, ChangedPath, DiffCompare, EditableCommit, FileDiff, FilesDiffQuery, InspectionError,
+    LocalBranchChoice, RemoteBaseChoice, RepositoryOverview, SubmoduleChoice,
 };
 use crate::rewrite::{ObjectId, RefName, RepoPath};
 use crate::switch;
@@ -63,9 +63,9 @@ impl GitRepository {
     pub fn files_diff(
         &self,
         base: RefName,
-        compare: DiffCompare,
+        query: FilesDiffQuery,
     ) -> Result<Vec<FileDiff>, InspectionError> {
-        inspection::files_diff(&self.runner, &base, compare)
+        inspection::files_diff(&self.runner, &base, query)
     }
 
     pub fn full_file_diff(

@@ -1,7 +1,25 @@
 mod support;
 
-use git_helper_core::{DiffCompare, DiffLineKind, FileDiff, FileDiffStatus, RefName, RepoPath};
+use git_helper_core::{
+    DiffCompare, DiffLineKind, FileDiff, FileDiffStatus, FilesDiffQuery, RefName, RepoPath,
+    UntrackedFilters,
+};
 use support::fixture_repo::FixtureRepo;
+
+fn head_query() -> FilesDiffQuery {
+    FilesDiffQuery::new(DiffCompare::Head)
+}
+
+fn local_query() -> FilesDiffQuery {
+    FilesDiffQuery::new(DiffCompare::Local)
+}
+
+fn local_showing(untracked: UntrackedFilters) -> FilesDiffQuery {
+    FilesDiffQuery {
+        compare: DiffCompare::Local,
+        untracked,
+    }
+}
 
 fn base() -> RefName {
     RefName::new("refs/remotes/origin/base".to_string()).unwrap()
@@ -38,7 +56,7 @@ fn files_diff_numbers_context_add_and_delete_lines_of_a_modified_file() {
         "edit line 6",
     );
 
-    let file = only(fixture.repo.files_diff(base(), DiffCompare::Head).unwrap());
+    let file = only(fixture.repo.files_diff(base(), head_query()).unwrap());
 
     assert_eq!(file.path.as_str(), "src/app.ts");
     assert_eq!(file.status, FileDiffStatus::Modified);
@@ -85,7 +103,7 @@ fn files_diff_separates_two_hunks_that_are_far_apart() {
     let edited = replace_line(&replace_line(&seeded, 5, "near top"), 30, "near bottom");
     fixture.commit_file("wide.txt", &edited, "edit both ends");
 
-    let file = only(fixture.repo.files_diff(base(), DiffCompare::Head).unwrap());
+    let file = only(fixture.repo.files_diff(base(), head_query()).unwrap());
 
     assert_eq!(file.hunks.len(), 2);
     let first = &file.hunks[0];
@@ -101,7 +119,7 @@ fn files_diff_reports_an_added_file_with_no_old_line_numbers() {
     let fixture = FixtureRepo::new();
     fixture.commit_file("added.txt", "first\nsecond\n", "add a file");
 
-    let file = only(fixture.repo.files_diff(base(), DiffCompare::Head).unwrap());
+    let file = only(fixture.repo.files_diff(base(), head_query()).unwrap());
 
     assert_eq!(file.status, FileDiffStatus::Added);
     assert_eq!(file.old_mode, None);
@@ -127,7 +145,7 @@ fn files_diff_reports_a_deleted_file_with_no_new_line_numbers() {
     let fixture = FixtureRepo::new();
     fixture.remove_file("README.md", "drop the readme");
 
-    let file = only(fixture.repo.files_diff(base(), DiffCompare::Head).unwrap());
+    let file = only(fixture.repo.files_diff(base(), head_query()).unwrap());
 
     assert_eq!(file.path.as_str(), "README.md");
     assert_eq!(file.status, FileDiffStatus::Deleted);
@@ -146,7 +164,7 @@ fn files_diff_marks_the_last_line_when_the_file_has_no_trailing_newline() {
     let fixture = FixtureRepo::new();
     fixture.commit_file("tail.txt", "only line", "add a file with no final newline");
 
-    let file = only(fixture.repo.files_diff(base(), DiffCompare::Head).unwrap());
+    let file = only(fixture.repo.files_diff(base(), head_query()).unwrap());
 
     let lines = &file.hunks[0].lines;
     assert_eq!(lines.len(), 1, "the marker is not itself a line: {lines:?}");
@@ -164,7 +182,7 @@ fn files_diff_skips_a_binary_payload_without_losing_the_next_file() {
     );
     fixture.commit_file("after.txt", "text\n", "add text after the image");
 
-    let files = fixture.repo.files_diff(base(), DiffCompare::Head).unwrap();
+    let files = fixture.repo.files_diff(base(), head_query()).unwrap();
 
     assert_eq!(files.len(), 2, "{files:?}");
     let image = files
@@ -192,7 +210,7 @@ fn files_diff_reports_a_mode_change_with_no_hunks() {
     let fixture = FixtureRepo::new();
     fixture.chmod_executable("README.md", "make the readme executable");
 
-    let file = only(fixture.repo.files_diff(base(), DiffCompare::Head).unwrap());
+    let file = only(fixture.repo.files_diff(base(), head_query()).unwrap());
 
     assert_eq!(file.status, FileDiffStatus::Modified);
     assert_eq!(file.old_mode.as_deref(), Some("100644"));
@@ -207,7 +225,7 @@ fn files_diff_preserves_carriage_returns_in_content() {
     fixture.set_config("core.autocrlf", "false");
     fixture.commit_file("crlf.txt", "alpha\r\nbeta\r\n", "add a CRLF file");
 
-    let file = only(fixture.repo.files_diff(base(), DiffCompare::Head).unwrap());
+    let file = only(fixture.repo.files_diff(base(), head_query()).unwrap());
 
     let texts: Vec<&str> = file.hunks[0]
         .lines
@@ -226,7 +244,7 @@ fn files_diff_parses_a_header_path_that_contains_a_space() {
     let fixture = FixtureRepo::new();
     fixture.commit_file("spaced name.txt", "content\n", "add a spaced path");
 
-    let file = only(fixture.repo.files_diff(base(), DiffCompare::Head).unwrap());
+    let file = only(fixture.repo.files_diff(base(), head_query()).unwrap());
 
     assert_eq!(file.path.as_str(), "spaced name.txt");
 }
@@ -236,7 +254,7 @@ fn files_diff_parses_an_octal_escaped_non_ascii_path() {
     let fixture = FixtureRepo::new();
     fixture.commit_file("café.txt", "content\n", "add a non-ASCII path");
 
-    let file = only(fixture.repo.files_diff(base(), DiffCompare::Head).unwrap());
+    let file = only(fixture.repo.files_diff(base(), head_query()).unwrap());
 
     assert_eq!(file.path.as_str(), "café.txt");
 }
@@ -253,7 +271,7 @@ fn files_diff_describes_the_same_changes_as_the_copyable_patch() {
     fixture.set_config("diff.noprefix", "true");
 
     let patch = fixture.repo.branch_diff(base(), DiffCompare::Head).unwrap();
-    let files = fixture.repo.files_diff(base(), DiffCompare::Head).unwrap();
+    let files = fixture.repo.files_diff(base(), head_query()).unwrap();
 
     let added_text = patch
         .lines()
@@ -353,7 +371,7 @@ fn files_diff_rejects_a_base_that_is_not_remote_tracking() {
     let local = RefName::new("refs/heads/base".to_string()).unwrap();
     let path = RepoPath::new("README.md".to_string()).unwrap();
 
-    let listed = fixture.repo.files_diff(local.clone(), DiffCompare::Head).unwrap_err();
+    let listed = fixture.repo.files_diff(local.clone(), head_query()).unwrap_err();
     let expanded = fixture.repo.full_file_diff(local, path, DiffCompare::Head).unwrap_err();
 
     assert!(listed.to_string().contains("remote-tracking"), "{listed}");
@@ -369,7 +387,7 @@ fn local_files_diff_includes_untracked_text_files_as_complete_added_diffs() {
     fixture.write_worktree_file("fresh.ts", "export const x = 1;\n");
     let base = base();
 
-    let files = fixture.repo.files_diff(base, DiffCompare::Local).unwrap();
+    let files = fixture.repo.files_diff(base, local_query()).unwrap();
     let fresh = files
         .iter()
         .find(|file| file.path.as_str() == "fresh.ts")
@@ -391,7 +409,10 @@ fn local_files_diff_annotates_gitignored_untracked_paths() {
     fixture.write_worktree_file(".gitignore", "ignored.txt\n");
     fixture.write_worktree_file("ignored.txt", "secret\n");
 
-    let files = fixture.repo.files_diff(base(), DiffCompare::Local).unwrap();
+    let mut untracked = UntrackedFilters::default();
+    untracked.respect_gitignore = false;
+    untracked.exclude_unknown_types = false;
+    let files = fixture.repo.files_diff(base(), local_showing(untracked)).unwrap();
     let ignored = files
         .iter()
         .find(|file| file.path.as_str() == "ignored.txt")
@@ -400,11 +421,45 @@ fn local_files_diff_annotates_gitignored_untracked_paths() {
     assert_eq!(ignored.untracked.as_ref().unwrap().gitignored, true);
 }
 
-/// Build dirs often hold tens of thousands of ignored files. Reading every body
-/// into the list payload OOMs or times out, so Files diff Local looks empty even
-/// when tracked dirt is present. Gitignored list entries must be content stubs.
+/// Build dirs often hold tens of thousands of ignored files. Default filters must
+/// constrain `ls-files` itself — scanning then filtering still walks the tree.
 #[test]
-fn local_files_diff_stubs_gitignored_bodies_and_keeps_tracked_dirt() {
+fn local_files_diff_skips_gitignored_discovery_when_respecting_gitignore() {
+    let fixture = FixtureRepo::new();
+    fixture.write_worktree_file(".gitignore", "build/\n");
+    fixture.write_worktree_file("README.md", "local tracked edit\n");
+    fixture.write_worktree_file("fresh.ts", "export const x = 1;\n");
+    std::fs::create_dir_all(fixture.root.path().join("build")).unwrap();
+    let line = "ignored line that must not be discovered under default filters\n";
+    for index in 0..80 {
+        let path = format!("build/note-{index}.txt");
+        std::fs::write(fixture.root.path().join(&path), line.repeat(200)).unwrap();
+    }
+
+    let files = fixture
+        .repo
+        .files_diff(base(), FilesDiffQuery::new(DiffCompare::Local))
+        .unwrap();
+
+    let tracked = files
+        .iter()
+        .find(|file| file.path.as_str() == "README.md" && file.untracked.is_none())
+        .expect("tracked local change must survive ignored bulk");
+    assert_eq!(tracked.status, FileDiffStatus::Modified);
+    assert!(
+        files.iter().any(|file| file.path.as_str() == "fresh.ts"),
+        "ordinary untracked files must still appear"
+    );
+    assert!(
+        files
+            .iter()
+            .all(|file| !file.path.as_str().starts_with("build/")),
+        "default filters must not discover gitignored paths: {files:?}"
+    );
+}
+
+#[test]
+fn local_files_diff_stubs_gitignored_bodies_when_gitignore_is_not_respected() {
     let fixture = FixtureRepo::new();
     fixture.write_worktree_file(".gitignore", "build/\n");
     fixture.write_worktree_file("README.md", "local tracked edit\n");
@@ -415,17 +470,15 @@ fn local_files_diff_stubs_gitignored_bodies_and_keeps_tracked_dirt() {
         std::fs::write(fixture.root.path().join(&path), line.repeat(200)).unwrap();
     }
 
-    let files = fixture.repo.files_diff(base(), DiffCompare::Local).unwrap();
+    let mut query = FilesDiffQuery::new(DiffCompare::Local);
+    query.untracked.respect_gitignore = false;
+    query.untracked.exclude_unknown_types = false;
+    let files = fixture.repo.files_diff(base(), query).unwrap();
 
-    let tracked = files
-        .iter()
-        .find(|file| file.path.as_str() == "README.md" && file.untracked.is_none())
-        .expect("tracked local change must survive ignored bulk");
-    assert_eq!(tracked.status, FileDiffStatus::Modified);
     let ignored = files
         .iter()
         .find(|file| file.path.as_str() == "build/note-0.txt")
-        .expect("ignored path stays in the maximal set");
+        .expect("ignored path appears when gitignore is not respected");
     assert!(ignored.untracked.as_ref().unwrap().gitignored);
     assert!(
         ignored.hunks.is_empty(),
@@ -439,7 +492,11 @@ fn local_files_diff_annotates_root_dot_and_node_modules_paths() {
     fixture.write_worktree_file(".hidden/secret.txt", "hidden\n");
     fixture.write_worktree_file("pkg/node_modules/lib/index.js", "lib\n");
 
-    let files = fixture.repo.files_diff(base(), DiffCompare::Local).unwrap();
+    let mut untracked = UntrackedFilters::default();
+    untracked.exclude_root_dot = false;
+    untracked.exclude_node_modules = false;
+    untracked.exclude_unknown_types = false;
+    let files = fixture.repo.files_diff(base(), local_showing(untracked)).unwrap();
     let hidden = files
         .iter()
         .find(|file| file.path.as_str() == ".hidden/secret.txt")
@@ -460,7 +517,10 @@ fn local_files_diff_marks_untracked_files_older_than_head() {
     std::thread::sleep(std::time::Duration::from_secs(2));
     fixture.commit_file("other.txt", "other\n", "bump head");
 
-    let files = fixture.repo.files_diff(base(), DiffCompare::Local).unwrap();
+    let mut untracked = UntrackedFilters::default();
+    untracked.exclude_older_than_head = false;
+    untracked.exclude_unknown_types = false;
+    let files = fixture.repo.files_diff(base(), local_showing(untracked)).unwrap();
     let old = files
         .iter()
         .find(|file| file.path.as_str() == "old-untracked.txt")
@@ -474,7 +534,7 @@ fn head_files_diff_never_carries_untracked_annotations() {
     let fixture = FixtureRepo::new();
     fixture.write_worktree_file("fresh.ts", "export const x = 1;\n");
 
-    let files = fixture.repo.files_diff(base(), DiffCompare::Head).unwrap();
+    let files = fixture.repo.files_diff(base(), head_query()).unwrap();
 
     assert!(files.iter().all(|file| file.untracked.is_none()));
 }
@@ -503,7 +563,10 @@ fn full_file_diff_loads_body_for_a_gitignored_untracked_stub() {
     fixture.write_worktree_file("secret.txt", "hidden body\n");
     let path = RepoPath::new("secret.txt".to_string()).unwrap();
 
-    let listed = fixture.repo.files_diff(base(), DiffCompare::Local).unwrap();
+    let mut untracked = UntrackedFilters::default();
+    untracked.respect_gitignore = false;
+    untracked.exclude_unknown_types = false;
+    let listed = fixture.repo.files_diff(base(), local_showing(untracked)).unwrap();
     let stub = listed
         .iter()
         .find(|file| file.path.as_str() == "secret.txt")

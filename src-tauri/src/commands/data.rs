@@ -16,12 +16,15 @@ pub struct BaseRequest {
 }
 
 /// Inspection diff requests carry a compare mode; `BaseRequest` stays for Sync
-/// and other actions that only need the ref.
+/// and other actions that only need the ref. Local compare may send untracked
+/// discovery filters so `ls-files` is constrained before the search, not after.
 #[derive(Clone, Debug, Deserialize)]
 pub struct DiffRequest {
     pub base: String,
     #[serde(default)]
     pub compare: git_helper_core::DiffCompare,
+    #[serde(default)]
+    pub untracked_filters: git_helper_core::UntrackedFilters,
 }
 
 /// The diff viewer expands one file at a time, which `DiffRequest` cannot say.

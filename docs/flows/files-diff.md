@@ -10,16 +10,16 @@ The user opens **Inspection → Files diff**, refreshes while it is open, change
 
 1. `AppController.setView` selects `files-diff`, cancels any pending write review, and calls `resetFileDiffs`.
 2. `loadViewData` dispatches on the view id and calls `loadFileDiffs`. Without Base it returns before any Git request and the view renders `missingBaseGuidance`.
-3. `generate_files_diff` → `GitRepository::files_diff` → `inspection::diff::files_diff`, which parses the string `branch_diff` returns for tracked changes and — in **Local** mode only — appends untracked `FileDiff`s from `inspection/untracked/`. Visible untracked paths carry full bodies; gitignored and `node_modules` paths arrive as incomplete stubs (annotations only) so a large ignore tree cannot empty the view.
+3. `generate_files_diff` → `GitRepository::files_diff` → `inspection::diff::files_diff`, which parses the string `branch_diff` returns for tracked changes and — in **Local** mode only — appends untracked `FileDiff`s from `inspection/untracked/` under the active `UntrackedFilters` (sent with the request). Visible matching paths carry full bodies; gitignored and `node_modules` paths that a wider query includes arrive as incomplete stubs (annotations only) so a large ignore tree cannot empty the view.
 4. Any file whose rendered rows exceed `MAX_ROWS_PER_FILE` is added to `collapsed`, so it opens closed rather than making every later re-render slow.
 5. `ensureGrammars` loads the Prism core and the grammars the changed paths need — a no-op without a document.
 6. `filesDiffView` renders the visible file list: tracked entries always; untracked entries only when Local compare filters allow (`visibleFileDiffs`).
 
 ## Untracked filter sequence (Local only)
 
-1. The maximal untracked set arrives once with `untracked` annotations on each entry.
-2. **Untracked filters** opens a checkbox menu (all on by default). Toggling a box re-renders; revealing a stub also hydrates its body via `generate_full_file_diff` (same cache as gap expansion).
-3. Checked filters hide matching untracked paths; unchecking includes them again. Tracked paths never pass through this predicate.
+1. Load and each filter toggle send the five toggles to `generate_files_diff`, which constrains `ls-files` (and skips body reads for filtered paths) before discovery — not after a maximal ignored-tree walk.
+2. **Untracked filters** opens a checkbox menu (all on by default). Toggling a box reloads the Local list; revealing stubs also hydrates bodies via `generate_full_file_diff` (same cache as gap expansion).
+3. Checked filters hide matching untracked paths at discovery time; `visibleFileDiffs` is a client-side guard. Tracked paths never pass through this predicate.
 
 ## Expansion sequence
 

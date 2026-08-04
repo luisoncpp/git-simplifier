@@ -4,6 +4,7 @@ mod fetch;
 mod model;
 mod patch;
 mod queries;
+mod query;
 mod untracked;
 
 pub use errors::InspectionError;
@@ -12,6 +13,7 @@ pub use model::{
     FileDiffStatus, LocalBranchChoice, RemoteBaseChoice, RepositoryOverview, SubmoduleChoice,
     UntrackedAnnotations, WorktreeSummary,
 };
+pub use query::{FilesDiffQuery, UntrackedFilters};
 
 use crate::git::GitRunner;
 use crate::rewrite::{RefName, RepoPath};
@@ -38,9 +40,9 @@ pub(crate) fn branch_diff(
 pub(crate) fn files_diff(
     runner: &GitRunner,
     base: &RefName,
-    compare: model::DiffCompare,
+    query: query::FilesDiffQuery,
 ) -> Result<Vec<FileDiff>, InspectionError> {
-    diff::files_diff(runner, base, compare)
+    diff::files_diff(runner, base, query)
 }
 pub(crate) fn full_file_diff(
     runner: &GitRunner,

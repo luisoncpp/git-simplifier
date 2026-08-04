@@ -22,7 +22,11 @@ export async function loadFileDiffs(controller: AppController, base: string): Pr
   resetFileDiffs(state);
   if (!base) return;
   const files = await controller.bridge.invoke<FileDiff[]>("generate_files_diff", {
-    request: { base, compare: state.diffView.compare },
+    request: {
+      base,
+      compare: state.diffView.compare,
+      untracked_filters: state.diffView.untrackedFilters,
+    },
   });
   state.fileDiffs = files;
   collapseOversizedFiles(files, state.diffView.collapsed);

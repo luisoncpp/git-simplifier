@@ -377,7 +377,19 @@ test("switching compare reloads with the chosen mode and keeps it across refresh
   await controller.refresh();
 
   assert.equal(controller.state.diffView.compare, "local");
-  assert.deepEqual(requests.at(-1), { request: { base: "refs/remotes/origin/main", compare: "local" } });
+  assert.deepEqual(requests.at(-1), {
+    request: {
+      base: "refs/remotes/origin/main",
+      compare: "local",
+      untracked_filters: {
+        excludeOlderThanHead: true,
+        excludeRootDot: true,
+        excludeNodeModules: true,
+        respectGitignore: true,
+        excludeUnknownTypes: true,
+      },
+    },
+  });
 });
 
 test("Local compare shows untracked filter controls", async () => {

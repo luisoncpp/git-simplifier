@@ -5,6 +5,7 @@ use crate::rewrite::{ObjectId, RefName, RepoPath};
 
 use super::errors::InspectionError;
 use super::model::{DiffCompare, FileDiff};
+use super::query::FilesDiffQuery;
 
 const LOAD_CONTEXT: &str = "3";
 /// Git has no infinite-context flag, and `INT_MAX` is not safe: xdiff computes a
@@ -28,11 +29,11 @@ pub(crate) fn branch_diff(
 pub(crate) fn files_diff(
     runner: &GitRunner,
     base: &RefName,
-    compare: DiffCompare,
+    query: FilesDiffQuery,
 ) -> Result<Vec<FileDiff>, InspectionError> {
-    let mut files = super::patch::parse_patch(&branch_diff(runner, base, compare)?)?;
-    if compare == DiffCompare::Local {
-        super::untracked::append_untracked(runner, &mut files)?;
+    let mut files = super::patch::parse_patch(&branch_diff(runner, base, query.compare)?)?;
+    if query.compare == DiffCompare::Local {
+        super::untracked::append_untracked(runner, &mut files, query.untracked)?;
     }
     Ok(files)
 }
