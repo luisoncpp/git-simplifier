@@ -45,7 +45,7 @@ pub(super) fn save(
     runner: &GitRunner,
     journal: &Journal<'_>,
 ) -> Result<Option<SyncSnapshot>, SyncError> {
-    if !has_tracked_changes(runner)? {
+    if !state::has_tracked_changes(runner)? {
         return Ok(None);
     }
     let output = runner.run_unlocked(GitCommand::write(args(&[
@@ -113,20 +113,6 @@ fn apply_snapshot(runner: &GitRunner, journal: &Journal<'_>) -> Result<bool, Syn
         return Err(SyncError::WipReapplyConflict { source });
     }
     Ok(false)
-}
-
-fn has_tracked_changes(runner: &GitRunner) -> Result<bool, SyncError> {
-    let output = runner.run(GitCommand::read(args(&[
-        "status",
-        "--porcelain=v2",
-        "-z",
-        "--untracked-files=no",
-        "--ignore-submodules=all",
-    ])))?;
-    Ok(output
-        .stdout
-        .split(|byte| *byte == 0)
-        .any(|record| !record.is_empty()))
 }
 
 fn update_ref(runner: &GitRunner, reference: &str, snapshot: &ObjectId) -> Result<(), SyncError> {

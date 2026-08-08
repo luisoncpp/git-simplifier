@@ -111,6 +111,26 @@ fn carry_warns_when_pop_conflicts_on_divergent_files() {
     assert!(result.carry_warning.is_some());
 }
 
+/// A pop that cannot complete used to abandon the entry on the shared stash
+/// stack, where the app never looks: the panel reported "No Saved work" while
+/// the only copy of the carried changes sat in `refs/stash`.
+#[test]
+fn carry_that_cannot_pop_becomes_listable_saved_work() {
+    let fixture = fixture_with_target("other");
+    fixture.checkout("other");
+    fixture.commit_file("README.md", "target version\n", "target readme");
+    fixture.checkout("feature");
+    fixture.write_worktree_file("README.md", "my edit\n");
+
+    let plan = fixture.repo.plan_quick_switch(carry_request("other")).unwrap();
+    fixture.repo.apply_quick_switch(&plan).unwrap();
+
+    let saved = fixture.repo.list_saved_work().unwrap();
+    assert_eq!(saved.len(), 1);
+    assert_eq!(saved[0].branch, "feature");
+    assert_eq!(fixture.stash_entries(), 0);
+}
+
 #[test]
 fn switch_rejects_an_untracked_file_that_target_would_overwrite() {
     let fixture = fixture_with_target("other");

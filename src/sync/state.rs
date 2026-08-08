@@ -91,6 +91,21 @@ pub(crate) fn has_unmerged_entries(runner: &GitRunner) -> Result<bool, SyncError
         .any(|record| record.starts_with(b"u ")))
 }
 
+/// Nested submodule dirt is not superproject work, so it never counts here.
+pub(crate) fn has_tracked_changes(runner: &GitRunner) -> Result<bool, SyncError> {
+    let output = runner.run(GitCommand::read(args(&[
+        "status",
+        "--porcelain=v2",
+        "-z",
+        "--untracked-files=no",
+        "--ignore-submodules=all",
+    ])))?;
+    Ok(output
+        .stdout
+        .split(|byte| *byte == 0)
+        .any(|record| !record.is_empty()))
+}
+
 pub(crate) fn branch_ref(branch: &str) -> String {
     format!("refs/heads/{branch}")
 }

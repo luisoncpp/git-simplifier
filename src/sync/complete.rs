@@ -13,6 +13,7 @@ struct Completion<'a> {
     base: &'a RefName,
     new_head: &'a ObjectId,
     saved_work: Option<&'a SyncSnapshot>,
+    saved_work_warning: Option<String>,
 }
 
 impl<'a> Completion<'a> {
@@ -43,8 +44,31 @@ impl<'a> Completion<'a> {
             new_head: self.new_head.clone(),
             saved_work: self.saved_work.cloned(),
             applied_index,
+            saved_work_warning: self.saved_work_warning.clone(),
         })
     }
+}
+
+/// A snapshot is only ever written when tracked changes were set aside, so a
+/// worktree with nothing tracked means none of that work came back. Resuming
+/// after a conflicted reapply used to finish silently in exactly that case,
+/// reporting Saved work as restored while the tree held none of it.
+fn unrestored_warning(
+    runner: &GitRunner,
+    saved_work: Option<&SyncSnapshot>,
+    applied_index: bool,
+) -> Result<Option<String>, SyncError> {
+    let Some(saved_work) = saved_work else {
+        return Ok(None);
+    };
+    if applied_index || state::has_tracked_changes(runner)? {
+        return Ok(None);
+    }
+    Ok(Some(format!(
+        "Saved work did not reach the working tree. It is kept at {} — apply it there, \
+         or delete it once you are sure the work is no longer needed.",
+        saved_work.reference
+    )))
 }
 
 pub(super) fn finish(
@@ -62,6 +86,7 @@ pub(super) fn finish(
         base: &context.base,
         new_head: &new_head,
         saved_work: journal.saved_work,
+        saved_work_warning: unrestored_warning(runner, journal.saved_work, applied_index)?,
     };
     let after = completion.refs_after(runner)?;
     record::finish(journal.oplog, journal.operation_id, after)?;

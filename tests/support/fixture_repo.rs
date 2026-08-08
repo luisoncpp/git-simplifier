@@ -153,6 +153,26 @@ impl FixtureRepo {
         run(&self.repo, &["add", "--", path]);
     }
 
+    /// Discards every tracked change, standing in for a user who resolves a
+    /// conflicted reapply by throwing the carried work away.
+    pub fn reset_hard(&self) {
+        run(&self.repo, &["reset", "--hard", "HEAD"]);
+    }
+
+    pub fn ref_exists(&self, reference: &str) -> bool {
+        let values = vec!["for-each-ref", "--format=%(refname)", reference];
+        !read_owned(&self.repo, values).is_empty()
+    }
+
+    pub fn stash_entries(&self) -> usize {
+        let output = read(&self.repo, &["stash", "list"]);
+        String::from_utf8(output)
+            .unwrap()
+            .lines()
+            .filter(|line| !line.is_empty())
+            .count()
+    }
+
     pub fn cached_paths(&self) -> Vec<u8> {
         read(&self.repo, &["diff", "--cached", "--name-only", "-z"])
     }

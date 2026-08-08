@@ -1,6 +1,6 @@
 use git_helper_core::{
     CleanupPlan, ExcludeSubmodulePlan, ForcePushPlan, ObjectId, PublishBranchPlan, QuickSwitchPlan,
-    QuickSwitchResult, RefName, RevertPlan, RewritePlan, SplitBranchPlan, SyncRequest,
+    QuickSwitchResult, RefName, RevertPlan, RewritePlan, SplitBranchPlan, SyncRequest, SyncResult,
 };
 
 use super::data::{OperationOutcome, PendingOperation};
@@ -267,11 +267,20 @@ fn sync(state: &AppState, base: RefName, head: ObjectId) -> Result<OperationOutc
     let result = with_repository(state, |repo| {
         repo.sync(SyncRequest { base }).map_err(|e| e.to_string())
     })?;
-    Ok(bare(
-        "sync",
-        "Sync completed",
-        vec![format!("HEAD now points at {}", result.new_head)],
-    ))
+    Ok(sync_outcome("sync", "Sync completed", result))
+}
+
+/// Saved work that never reached the tree must not read as a clean success:
+/// the ref is the only remaining copy, so the banner has to name it.
+fn sync_outcome(kind: &str, headline: &str, result: SyncResult) -> OperationOutcome {
+    let mut details = vec![format!("HEAD now points at {}", result.new_head)];
+    let Some(warning) = result.saved_work_warning else {
+        return bare(kind, headline, details);
+    };
+    details.push(warning);
+    let mut outcome = bare(kind, "Sync finished without restoring Saved work", details);
+    outcome.has_warning = true;
+    outcome
 }
 
 fn restore(state: &AppState, head: ObjectId) -> Result<OperationOutcome, String> {
@@ -307,11 +316,7 @@ fn resume(state: &AppState, operation_id: String) -> Result<OperationOutcome, St
         return Err("the recorded sync changed since the review; prepare again".to_string());
     }
     let result = with_repository(state, |repo| repo.resume_sync().map_err(|e| e.to_string()))?;
-    Ok(bare(
-        "resume_sync",
-        "Sync finished",
-        vec![format!("HEAD now points at {}", result.new_head)],
-    ))
+    Ok(sync_outcome("resume_sync", "Sync finished", result))
 }
 
 fn ensure_unchanged(state: &AppState, head: &ObjectId, label: &str) -> Result<(), String> {

@@ -76,6 +76,8 @@ impl Oplog {
         };
         record.finished = Some(timestamp());
         record.refs_after = after;
+        // A finished operation is never in flight; a kept phase reads as one.
+        record.phase = None;
         self.write(&records)
     }
 

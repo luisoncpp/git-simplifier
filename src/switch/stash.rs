@@ -94,6 +94,11 @@ pub(super) fn pop_carry(runner: &crate::git::GitRunner) -> Result<PopOutcome, Sw
     })
 }
 
+pub(super) fn drop_top(runner: &crate::git::GitRunner) -> Result<(), SwitchError> {
+    runner.run_unlocked(GitCommand::write(stash_args(&["drop", "stash@{0}"])))?;
+    Ok(())
+}
+
 fn text(bytes: &[u8]) -> Result<String, SwitchError> {
     String::from_utf8(bytes.to_vec())
         .map_err(|_| SwitchError::InvalidState("Git output is not UTF-8".to_string()))

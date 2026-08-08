@@ -1,6 +1,6 @@
 mod support;
 
-use git_helper_core::{RecoveryEntry, RefName, RepoPath, UncommitRequest};
+use git_helper_core::{RecoveryEntry, RefName, RepoPath, SyncRequest, UncommitRequest};
 use support::fixture_repo::FixtureRepo;
 
 #[test]
@@ -28,6 +28,30 @@ fn operation_history_exposes_ref_recovery_for_a_completed_rewrite() {
         entry.recovery_command,
         Some(format!("git update-ref refs/heads/feature {old_head}"))
     );
+}
+
+/// A finished operation kept whatever in-flight phase it last recorded, so the
+/// history showed a completed sync as still stopped at its conflict.
+#[test]
+fn a_finished_operation_records_no_in_flight_phase() {
+    let fixture = FixtureRepo::new();
+    fixture.configure_origin_to_self();
+    fixture.commit_file("feature.txt", "feature\n", "feature change");
+    fixture.switch_to_base();
+    fixture.commit_file("README.md", "base update\n", "base change");
+    fixture.switch_to_feature();
+    fixture.write_worktree_file("README.md", "local\n");
+
+    let _ = fixture.repo.sync(SyncRequest {
+        base: RefName::new("refs/remotes/origin/base".to_string()).unwrap(),
+    });
+    fixture.reset_hard();
+    fixture.repo.resume_sync().unwrap();
+
+    let entry = latest(&fixture);
+
+    assert!(entry.finished.is_some());
+    assert_eq!(entry.phase, None);
 }
 
 #[test]

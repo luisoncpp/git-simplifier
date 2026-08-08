@@ -15,7 +15,7 @@ Backend caller submits another branch name (local, or a remote-tracking ref that
 6. Only after the WIP ref is written, tracked changes are removed with a non-recursive `git reset --hard HEAD`, then checkout moves:
    - existing local: `git switch --no-recurse-submodules --no-guess -- <target>`
    - remote-only: `git switch -c <local> <remote-ref>` then `branch.<local>.remote` / `.merge` are set so the remote is upstream
-7. When **carry changes** is enabled, tracked changes are stored with `git stash push`, the checkout switches, optional pull runs, then the stash is restored with `git stash pop --index` (falling back to a plain pop). Pop conflicts do not block the switch; the result reports a warning and leaves conflict markers for the user to resolve. No Saved work ref is written for the source branch. The UI surfaces carry and merge-pull warnings as a warn-tone result banner (`has_warning`) with a conflict headline, not a green success banner.
+7. When **carry changes** is enabled, tracked changes are stored with `git stash push`, the checkout switches, optional pull runs, then the stash is restored with `git stash pop --index` (falling back to a plain pop). Pop conflicts do not block the switch; the result reports a warning and leaves conflict markers for the user to resolve. When **both** pops fail, the left-behind entry is moved onto `refs/githelper/wip/<source-branch>` and dropped from the shared stash stack, so it becomes listable Saved work rather than a `refs/stash` entry the app cannot see. The rescue is skipped when the source branch already owns Saved work, since overwriting would trade one lost snapshot for another. Otherwise no Saved work ref is written for the source branch. The UI surfaces carry and merge-pull warnings as a warn-tone result banner (`has_warning`) with a conflict headline, not a green success banner.
 8. When a pull remote is planned, `git pull --ff-only` runs after the switch and before any carry pop.
 9. If the fast-forward fails, carry (when present) is moved to `refs/githelper/carry/<operation-id>`, the oplog phase becomes `pull-ff-failed`, and the apply returns with `pull_decision_needed` instead of finishing. The UI offers replace / merge-pull / cancel.
 
@@ -67,5 +67,5 @@ Backend caller submits another branch name (local, or a remote-tracking ref that
 - A plan becomes stale if HEAD, the target tip, tracked status, or untracked conflict set changes before application.
 - Nested submodule state is preserved in place rather than snapshotted per branch.
 - If restoration conflicts, the WIP ref remains until the user resolves or explicitly deletes it.
-- Carry pop conflicts leave the checkout on the target branch with conflict markers and may keep the stash entry until the user resolves and drops it.
+- Carry pop conflicts leave the checkout on the target branch with conflict markers; the snapshot is rescued as Saved work for the source branch so it stays reachable from the app.
 - A failed fast-forward leaves the checkout on the target branch until the user chooses replace, merge-pull, or cancel.

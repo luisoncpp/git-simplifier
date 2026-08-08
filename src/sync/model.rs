@@ -56,6 +56,9 @@ pub struct SyncResult {
     pub new_head: ObjectId,
     pub saved_work: Option<SyncSnapshot>,
     pub applied_index: bool,
+    /// Set when the sync finished without the snapshot reaching the working
+    /// tree. The snapshot ref is kept so the work stays recoverable.
+    pub saved_work_warning: Option<String>,
 }
 
 #[derive(Clone, Debug, Eq, PartialEq, Serialize, Deserialize)]

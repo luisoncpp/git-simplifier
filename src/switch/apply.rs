@@ -9,7 +9,7 @@ use super::errors::SwitchError;
 use super::model::{
     DeleteSavedWorkResult, QuickSwitchPlan, QuickSwitchResult, RestoreSavedWorkResult, SavedWork,
 };
-use super::{checkout, plan, pull, record, state, stash};
+use super::{carry, checkout, plan, pull, record, state, stash};
 
 struct TrackedPrep {
     saved_work: Option<SavedWork>,
@@ -78,13 +78,14 @@ fn finish_switch(
     tracked: TrackedPrep,
     pulled: bool,
 ) -> Result<QuickSwitchResult, SwitchError> {
-    let (carried_index, carry_warning) = pop_carried_changes(runner, tracked.carry_pushed)?;
+    let carry = carry::pop(runner, switch_plan, tracked.carry_pushed)?;
+    let saved_work = tracked.saved_work.or(carry.saved_work);
     let mut after = BTreeMap::new();
     after.insert(
         "HEAD".to_string(),
         state::read_id(runner, "HEAD")?.to_string(),
     );
-    if let Some(saved) = &tracked.saved_work {
+    if let Some(saved) = &saved_work {
         after.insert(saved.reference.clone(), saved.snapshot.to_string());
     }
     oplog
@@ -93,9 +94,9 @@ fn finish_switch(
     Ok(QuickSwitchResult {
         source_branch: switch_plan.source_branch.clone(),
         target_branch: switch_plan.target_branch.clone(),
-        saved_work: tracked.saved_work,
-        carried_index,
-        carry_warning,
+        saved_work,
+        carried_index: carry.carried_index,
+        carry_warning: carry.warning,
         target_saved_work: switch_plan.target_saved_work.clone(),
         pulled,
         pull_warning: None,
@@ -131,17 +132,6 @@ fn prepare_tracked_changes(
         }),
         carry_pushed: false,
     })
-}
-
-fn pop_carried_changes(
-    runner: &crate::git::GitRunner,
-    carry_pushed: bool,
-) -> Result<(Option<bool>, Option<String>), SwitchError> {
-    if !carry_pushed {
-        return Ok((None, None));
-    }
-    let outcome = stash::pop_carry(runner)?;
-    Ok((Some(outcome.applied_index), outcome.warning))
 }
 
 pub(crate) fn restore(
