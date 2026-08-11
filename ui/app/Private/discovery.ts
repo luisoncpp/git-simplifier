@@ -1,4 +1,4 @@
-import { adoptBranch, adoptCleanup, adoptCommit, adoptPaths, adoptSubmodule } from "./draft/index.ts";
+import { adoptBranch, adoptCleanup, adoptCommit, adoptDirtySubmodules, adoptPaths, adoptSubmodule } from "./draft/index.ts";
 import { loadFileDiffs } from "./files-diff/index.ts";
 import { discoveryFor } from "./operations/index.ts";
 import { baseRef, currentBranch, savedWorkFor } from "./snapshot.ts";
@@ -56,11 +56,29 @@ export async function loadOperationData(controller: AppController): Promise<void
   const state = controller.state;
   const base = baseRef(state);
   if (!base) await loadBaseChoices(controller);
+  if (state.operation === "submodules") {
+    await loadSubmodulesData(controller, base);
+    return;
+  }
   const discovery = discoveryFor(state.operation);
   if (!discovery || (discovery.needsBase && !base)) return;
   const result = await discovery.load(controller.bridge, base);
   Object.assign(state, { [discovery.key]: result });
   adoptSelections(state);
+}
+
+async function loadSubmodulesData(controller: AppController, base: string): Promise<void> {
+  const state = controller.state;
+  const [submodules, dirtySubmodules] = await Promise.all([
+    controller.bridge.invoke<import("./types.ts").SubmoduleChoice[]>("list_submodules"),
+    controller.bridge.invoke<import("./types.ts").DirtySubmodule[]>("list_dirty_submodules", {
+      request: { base: base || undefined },
+    }),
+  ]);
+  state.submodules = submodules;
+  state.dirtySubmodules = dirtySubmodules;
+  adoptSubmodule(state.draft, submodules);
+  adoptDirtySubmodules(state.draft, dirtySubmodules);
 }
 
 export async function loadBaseChoices(controller: AppController): Promise<void> {

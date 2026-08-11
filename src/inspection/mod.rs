@@ -1,4 +1,5 @@
 mod diff;
+mod dirty_submodules;
 mod errors;
 mod fetch;
 mod model;
@@ -10,8 +11,8 @@ mod untracked;
 pub use errors::InspectionError;
 pub use model::{
     ChangedPath, DiffCompare, DiffHunk, DiffLine, DiffLineKind, EditableCommit, FileDiff,
-    FileDiffStatus, LocalBranchChoice, RemoteBaseChoice, RepositoryOverview, SubmoduleChoice,
-    UntrackedAnnotations, WorktreeSummary,
+    DirtySubmodule, FileDiffStatus, LocalBranchChoice, RemoteBaseChoice, RepositoryOverview,
+    SubmoduleChoice, UntrackedAnnotations, WorktreeSummary,
 };
 pub use query::{FilesDiffQuery, UntrackedFilters};
 
@@ -80,6 +81,12 @@ pub(crate) fn local_branches(
 }
 pub(crate) fn submodules(runner: &GitRunner) -> Result<Vec<SubmoduleChoice>, InspectionError> {
     queries::submodules(runner)
+}
+pub(crate) fn dirty_submodules(
+    runner: &GitRunner,
+    base: Option<&RefName>,
+) -> Result<Vec<DirtySubmodule>, InspectionError> {
+    dirty_submodules::dirty_submodules(runner, base)
 }
 pub(crate) fn set_base(runner: &GitRunner, base: RefName) -> Result<(), InspectionError> {
     queries::set_base(runner, base)

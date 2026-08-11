@@ -10,7 +10,8 @@
     "lint": "tsc --noEmit",
     "test": "node --test test/*.test.mjs",
     "tauri": "tauri",
-    "installer": "tauri build"
+    "installer": "tauri build",
+    "clean:rust": "cargo clean"
   },
   "devDependencies": {
     "@tauri-apps/cli": "^2.5.0",

@@ -6,6 +6,7 @@ mod plan;
 
 pub use errors::RevertError;
 pub use model::{RevertPlan, RevertRequest, RevertResult, RevertTarget};
+pub(crate) use paths::literal;
 
 use crate::git::GitRunner;
 use crate::inspection::ChangedPath;

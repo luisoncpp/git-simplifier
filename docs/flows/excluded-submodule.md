@@ -12,7 +12,7 @@ Backend caller submits a repository path and chooses whether to install the loca
 4. `GitRepository::apply_exclude_submodule` takes the repository write lock and rechecks `HEAD`, the gitlink, config values, and any hook that will be changed.
 5. Application writes `submodule.<path>.ignore = all`, optionally writes `submodule.recurse = false`, and appends the guard. An existing hook is never replaced.
 6. The operation is recorded as `exclude-submodule` in `.git/githelper/oplog.json`. No branch or other Git ref moves.
-7. If the gitlink was already committed in the Editable range, cleanup uses the existing Uncommit flow with the path selected; it leaves the submodule working directory untouched.
+7. If the gitlink was already committed in the Editable range, cleanup is offered on the **Submodules** tab as **Cleanup dirty submodules** (Uncommit and/or Revert); see [cleanup-dirty-submodules.md](./cleanup-dirty-submodules.md).
 
 ## Reads
 

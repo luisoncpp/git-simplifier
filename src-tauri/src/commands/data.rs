@@ -15,6 +15,12 @@ pub struct BaseRequest {
     pub base: String,
 }
 
+#[derive(Clone, Debug, Deserialize)]
+pub struct DirtySubmodulesRequest {
+    #[serde(default)]
+    pub base: Option<String>,
+}
+
 /// Inspection diff requests carry a compare mode; `BaseRequest` stays for Sync
 /// and other actions that only need the ref. Local compare may send untracked
 /// discovery filters so `ls-files` is constrained before the search, not after.
@@ -66,6 +72,16 @@ pub struct ExcludeSubmoduleInput {
     pub path: String,
     pub install_hook: bool,
     pub disable_recurse: bool,
+}
+
+#[derive(Clone, Debug, Deserialize)]
+pub struct CleanupSubmodulesInput {
+    pub base: String,
+    pub paths: Vec<String>,
+    #[serde(default = "default_true")]
+    pub uncommit: bool,
+    #[serde(default = "default_true")]
+    pub revert: bool,
 }
 
 /// An empty `message` means the planner derives one; the review shows what it
@@ -132,6 +148,7 @@ pub enum PrepareOperationRequest {
     Revert(RevertInput),
     EditMessage(EditMessageInput),
     ExcludeSubmodule(ExcludeSubmoduleInput),
+    CleanupSubmodules(CleanupSubmodulesInput),
     SplitBranch(SplitBranchInput),
     PublishBranch(PublishBranchInput),
     QuickSwitch(QuickSwitchInput),
@@ -191,6 +208,10 @@ pub enum PendingOperation {
         id: String,
         plan: git_helper_core::ExcludeSubmodulePlan,
     },
+    SubmoduleCleanup {
+        id: String,
+        plan: git_helper_core::SubmoduleCleanupPlan,
+    },
     Split {
         id: String,
         plan: git_helper_core::SplitBranchPlan,
@@ -242,6 +263,7 @@ impl PendingOperation {
             | Self::Revert { id, .. }
             | Self::EditMessage { id, .. }
             | Self::Exclude { id, .. }
+            | Self::SubmoduleCleanup { id, .. }
             | Self::Split { id, .. }
             | Self::Publish { id, .. }
             | Self::QuickSwitch { id, .. }
@@ -269,6 +291,7 @@ mod tests {
             r#"{"kind":"revert","base":"refs/remotes/origin/main","paths":["a.txt"],"target":"head"}"#,
             r#"{"kind":"edit_message","base":"refs/remotes/origin/main","commit":"abcdef1","message":"new"}"#,
             r#"{"kind":"exclude_submodule","path":"vendor/sdk","install_hook":true,"disable_recurse":false}"#,
+            r#"{"kind":"cleanup_submodules","base":"refs/remotes/origin/main","paths":["Modules/Engine"],"uncommit":true,"revert":true}"#,
             r#"{"kind":"split_branch","base":"refs/remotes/origin/main","new_branch":"carved","paths":["a.txt"],"message":""}"#,
             r#"{"kind":"publish_branch","branch":"carved"}"#,
             r#"{"kind":"quick_switch","target_branch":"develop"}"#,

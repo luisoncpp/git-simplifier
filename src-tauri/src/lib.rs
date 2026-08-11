@@ -47,6 +47,7 @@ pub fn run() {
             commands::actions::list_local_branches,
             commands::actions::list_cleanup_branches,
             commands::actions::list_submodules,
+            commands::actions::list_dirty_submodules,
             commands::actions::prepare_operation,
             commands::actions::apply_operation,
             commands::actions::cancel_operation

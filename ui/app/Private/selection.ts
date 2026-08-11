@@ -123,6 +123,24 @@ export function setRevertTarget(controller: AppController, node: FieldNode): voi
   controller.render();
 }
 
+export function toggleCleanupSubmodule(controller: AppController, node: FieldNode): void {
+  const path = node.value;
+  const set = controller.state.draft.cleanupSubmodulePaths;
+  if (node.checked) set.add(path);
+  else set.delete(path);
+  controller.render();
+}
+
+export function setCleanupUncommit(controller: AppController, node: FieldNode): void {
+  controller.state.draft.cleanupUncommit = (node as HTMLInputElement).checked;
+  controller.render();
+}
+
+export function setCleanupRevert(controller: AppController, node: FieldNode): void {
+  controller.state.draft.cleanupRevert = (node as HTMLInputElement).checked;
+  controller.render();
+}
+
 export function setChangingBase(controller: AppController, value: string): void {
   controller.state.changingBase = value === "true";
   controller.render();

@@ -387,6 +387,29 @@ textarea {
   }
 }
 
+.submodules-columns {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  gap: 20px;
+  align-items: start;
+}
+
+.submodules-column fieldset {
+  height: 100%;
+}
+
+.column-submit {
+  margin-top: 16px;
+  display: grid;
+  gap: 6px;
+}
+
+@media (max-width: 860px) {
+  .submodules-columns {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
 @media (prefers-reduced-motion: reduce) {
   *,
   *::before,

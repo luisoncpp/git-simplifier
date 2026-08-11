@@ -69,6 +69,13 @@ pub struct SubmoduleChoice {
     pub excluded: bool,
 }
 
+#[derive(Clone, Debug, Eq, PartialEq, Serialize, Deserialize)]
+pub struct DirtySubmodule {
+    pub path: RepoPath,
+    pub local_dirty: bool,
+    pub in_editable_range: bool,
+}
+
 /// Which side of an Inspection diff is compared against the merge base of Base
 /// and HEAD.
 #[derive(Clone, Copy, Debug, Default, Eq, PartialEq, Serialize, Deserialize)]

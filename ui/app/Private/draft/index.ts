@@ -1,5 +1,6 @@
 export { createDraft } from "./create.ts";
 export { adoptPaths, adoptSubmodule, pathSetFor, pathValue, visiblePaths } from "./paths.ts";
+export { adoptDirtySubmodules, visibleDirtySubmodules } from "./submodules.ts";
 export {
   adoptCommit,
   commitValue,

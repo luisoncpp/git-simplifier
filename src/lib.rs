@@ -8,6 +8,7 @@ mod repository;
 mod revert;
 mod rewrite;
 mod split;
+mod submodule_cleanup;
 mod switch;
 mod sync;
 
@@ -24,6 +25,7 @@ pub use inspection::{
     ChangedPath, DiffCompare, DiffHunk, DiffLine, DiffLineKind, EditableCommit, FileDiff,
     FileDiffStatus, FilesDiffQuery, InspectionError, LocalBranchChoice, RemoteBaseChoice,
     RepositoryOverview, SubmoduleChoice, UntrackedAnnotations, UntrackedFilters, WorktreeSummary,
+    DirtySubmodule,
 };
 pub use push::{
     ForcePushError, ForcePushPlan, ForcePushResult, PublishBranchPlan, PublishBranchResult,
@@ -38,6 +40,9 @@ pub use rewrite::{
     UncommitRequest,
 };
 pub use split::{SplitBranchPlan, SplitBranchRequest, SplitBranchResult, SplitError};
+pub use submodule_cleanup::{
+    SubmoduleCleanupError, SubmoduleCleanupPlan, SubmoduleCleanupRequest, SubmoduleCleanupResult,
+};
 pub use switch::{
     DeleteSavedWorkResult, PullResolution, QuickSwitchPhase, QuickSwitchPlan, QuickSwitchRequest,
     QuickSwitchResult, QuickSwitchStatus, RestoreSavedWorkResult, SavedWork,

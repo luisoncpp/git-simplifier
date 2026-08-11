@@ -24,7 +24,7 @@ Both bugs are only visible in an installed release build. The regression guard i
 The subsystem is a field in the PE header, so a build can be checked directly instead of by launching it:
 
 ```bash
-powershell -c "$b=[IO.File]::ReadAllBytes('src-tauri/target/release/git-helper.exe'); $pe=[BitConverter]::ToInt32($b,0x3C); [BitConverter]::ToUInt16($b,$pe+0x5C)"
+powershell -c "$b=[IO.File]::ReadAllBytes('.cargo-target/release/git-helper.exe'); $pe=[BitConverter]::ToInt32($b,0x3C); [BitConverter]::ToUInt16($b,$pe+0x5C)"
 ```
 
 `2` is GUI, `3` is console. Worth running after any change to the entry point or build profile.

@@ -6,6 +6,7 @@
 - Immutable first-parent Uncommit planning and materialization through a temporary index, `commit-tree`, and one expected-old-SHA `update-ref`, without worktree checkout.
 - Editable-range Edit message planning and materialization with preserved trees, parents, authorship, index, and worktree.
 - Excluded submodule plans and application for repo-local ignore settings, optional recursion disabling, and non-destructive pre-commit guard installation.
+- Submodule cleanup on the **Submodules** tab: dirty gitlink discovery, optional Uncommit from Base…HEAD, and Revert to HEAD with nested checkout sync.
 - Quick branch switch with branch-scoped Saved work refs, untracked-file clobber preflight, explicit restoration, listing, and deletion.
 - Sync with Base core operation: remote-tracking fetch, tracked Saved work backup, merge/reapply conflict classification, oplog phases, and explicit resume.
 - Split branch in Copy mode: selected paths copied onto a new branch rooted at the merge base, built in a temporary detached worktree, with Unity `.meta` companions resolved by the planner and the source branch left untouched.
@@ -21,6 +22,6 @@
 
 ## Not implemented
 
-- Submodule cleanup chaining, backup-ref garbage collection, and desktop smoke/accessibility automation remain follow-up hardening.
+- Submodule cleanup chaining is implemented; backup-ref garbage collection and desktop smoke/accessibility automation remain follow-up hardening.
 - Split branch Move mode and hunk-level splitting are deliberately out of scope.
 - Publishing is offered only as a Split branch follow-up; there is no picker for publishing an arbitrary local branch.

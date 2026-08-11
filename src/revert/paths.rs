@@ -107,7 +107,7 @@ fn dirt_status(xy: &[u8]) -> String {
     String::from_utf8_lossy(&[letter]).into_owned()
 }
 
-pub(super) fn literal(path: &str) -> String {
+pub(crate) fn literal(path: &str) -> String {
     format!(":(top,literal){path}")
 }
 

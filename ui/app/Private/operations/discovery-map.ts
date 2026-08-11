@@ -30,7 +30,7 @@ const DISCOVERY: Partial<Record<OperationId, DiscoveryLoad>> = {
   edit_message: (bridge, base) => bridge.invoke<EditableCommit[]>("list_editable_commits", { request: { base } }),
   split_branch: (bridge, base) => bridge.invoke<ChangedPath[]>("list_changed_paths", { request: { base } }),
   quick_switch: (bridge) => bridge.invoke<LocalBranch[]>("list_local_branches"),
-  exclude_submodule: (bridge) => bridge.invoke<SubmoduleChoice[]>("list_submodules"),
+  submodules: (bridge) => bridge.invoke<SubmoduleChoice[]>("list_submodules"),
   cleanup: (bridge, base) => bridge.invoke<CleanupDiscovery>("list_cleanup_branches", { request: { base } }),
 };
 
@@ -40,7 +40,7 @@ const RESULT_KEY: Partial<Record<OperationId, DiscoveryKey>> = {
   edit_message: "commits",
   split_branch: "paths",
   quick_switch: "branches",
-  exclude_submodule: "submodules",
+  submodules: "submodules",
   cleanup: "cleanupBranches",
 };
 

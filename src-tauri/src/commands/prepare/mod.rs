@@ -3,6 +3,7 @@ mod cleanup;
 mod history;
 mod revert;
 mod saved_work;
+mod submodules;
 mod switch;
 mod worktree;
 
@@ -27,6 +28,9 @@ pub(super) fn prepare(
         PrepareOperationRequest::Revert(input) => revert::revert(state, id, input),
         PrepareOperationRequest::EditMessage(input) => history::edit_message(state, id, input),
         PrepareOperationRequest::ExcludeSubmodule(input) => history::exclude(state, id, input),
+        PrepareOperationRequest::CleanupSubmodules(input) => {
+            submodules::cleanup_submodules(state, id, input)
+        }
         PrepareOperationRequest::ForcePush => history::force_push(state, id),
         PrepareOperationRequest::SplitBranch(input) => branch::split_branch(state, id, input),
         PrepareOperationRequest::PublishBranch(input) => branch::publish_branch(state, id, input),

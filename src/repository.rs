@@ -14,6 +14,10 @@ use crate::revert::{
 use crate::rewrite::{
     self, ApplyError, ApplyResult, EditMessageRequest, RewriteError, RewritePlan, UncommitRequest,
 };
+use crate::submodule_cleanup::{
+    self, SubmoduleCleanupError, SubmoduleCleanupPlan, SubmoduleCleanupRequest,
+    SubmoduleCleanupResult,
+};
 use crate::split::{self, SplitBranchPlan, SplitBranchRequest, SplitBranchResult, SplitError};
 use crate::switch::{
     self, DeleteSavedWorkResult, PullResolution, QuickSwitchPlan, QuickSwitchRequest,
@@ -100,6 +104,21 @@ impl GitRepository {
     ) -> Result<ExcludeSubmoduleResult, ExclusionError> {
         self.runner
             .with_write_lock(|| exclusion::apply(&self.runner, plan))
+    }
+
+    pub fn plan_submodule_cleanup(
+        &self,
+        request: SubmoduleCleanupRequest,
+    ) -> Result<SubmoduleCleanupPlan, SubmoduleCleanupError> {
+        submodule_cleanup::create(&self.runner, request)
+    }
+
+    pub fn apply_submodule_cleanup(
+        &self,
+        plan: &SubmoduleCleanupPlan,
+    ) -> Result<SubmoduleCleanupResult, SubmoduleCleanupError> {
+        self.runner
+            .with_write_lock(|| submodule_cleanup::apply(&self.runner, plan))
     }
 
     pub fn plan_edit_message(

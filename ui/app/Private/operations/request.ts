@@ -7,12 +7,30 @@ export function buildRequest(state: AppState): OperationRequest {
   if (kind === "uncommit") return uncommitRequest(state);
   if (kind === "revert") return revertRequest(state);
   if (kind === "edit_message") return editMessageRequest(state);
-  if (kind === "exclude_submodule") return excludeSubmoduleRequest(state);
   if (kind === "split_branch") return splitBranchRequest(state);
   if (kind === "quick_switch") return quickSwitchRequest(state);
   if (kind === "sync") return { kind, base: baseRef(state) };
   if (kind === "cleanup") return cleanupRequest(state);
   return { kind: "force_push" };
+}
+
+export function buildExcludeRequest(state: AppState): OperationRequest {
+  return {
+    kind: "exclude_submodule",
+    path: state.draft.submodule,
+    install_hook: state.draft.installHook,
+    disable_recurse: state.draft.disableRecurse,
+  };
+}
+
+export function buildCleanupRequest(state: AppState): OperationRequest {
+  return {
+    kind: "cleanup_submodules",
+    base: baseRef(state),
+    paths: [...state.draft.cleanupSubmodulePaths],
+    uncommit: state.draft.cleanupUncommit,
+    revert: state.draft.cleanupRevert,
+  };
 }
 
 function cleanupRequest(state: AppState): OperationRequest {
@@ -43,15 +61,6 @@ function editMessageRequest(state: AppState): OperationRequest {
     base: baseRef(state),
     commit: state.draft.commit,
     message: messageFor(state),
-  };
-}
-
-function excludeSubmoduleRequest(state: AppState): OperationRequest {
-  return {
-    kind: "exclude_submodule",
-    path: state.draft.submodule,
-    install_hook: state.draft.installHook,
-    disable_recurse: state.draft.disableRecurse,
   };
 }
 

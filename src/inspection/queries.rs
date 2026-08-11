@@ -84,6 +84,7 @@ pub(crate) fn changed_paths(
             // Root-relative names are typed identifiers the planners match on,
             // so `diff.relative` or a subdirectory must not reshape them.
             "--no-relative",
+            "--ignore-submodules=none",
             &format!("{base}...HEAD"),
             "--",
         ],
@@ -287,7 +288,7 @@ fn parse_base_choice(line: &[u8]) -> Result<RemoteBaseChoice, InspectionError> {
     })
 }
 
-fn parse_changed_paths(output: &[u8]) -> Result<Vec<ChangedPath>, InspectionError> {
+pub(super) fn parse_changed_paths(output: &[u8]) -> Result<Vec<ChangedPath>, InspectionError> {
     let fields = output
         .split(|byte| *byte == 0)
         .filter(|field| !field.is_empty())
@@ -469,7 +470,7 @@ fn optional_text(runner: &GitRunner, args: &[&str]) -> Result<Option<String>, In
         Err(_) => Ok(None),
     }
 }
-fn run(runner: &GitRunner, args: &[&str]) -> Result<Vec<u8>, InspectionError> {
+pub(super) fn run(runner: &GitRunner, args: &[&str]) -> Result<Vec<u8>, InspectionError> {
     Ok(runner
         .run(GitCommand::read(
             args.iter().map(|value| OsString::from(*value)).collect(),

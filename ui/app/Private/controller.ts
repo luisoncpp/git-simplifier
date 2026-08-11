@@ -3,7 +3,14 @@ import { fetchRemotes, loadBaseChoices, loadOperationData, loadViewData, reloadS
 import { focusNode, renderInto } from "./dom.ts";
 import { bindEvents } from "./events.ts";
 import { resetFileDiffs } from "./files-diff/index.ts";
-import { buildRequest, submitState } from "./operations/index.ts";
+import {
+  buildCleanupRequest,
+  buildExcludeRequest,
+  buildRequest,
+  cleanupSubmitState,
+  excludeSubmitState,
+  submitState,
+} from "./operations/index.ts";
 import { loadUiPreferences } from "./preferences.ts";
 import { loadRecentRepositories } from "./repository-switcher.ts";
 import { createState, isInspectionView } from "./state.ts";
@@ -127,8 +134,24 @@ export class AppController {
   submitOperation(): Promise<void> {
     const { disabled, reason } = submitState(this.state);
     if (!disabled) return this.prepare(buildRequest(this.state));
-    if (reason) this.fail(new Error(reason));
-    this.render();
+    this.state.error = reason;
+    this.announce(reason);
+    return Promise.resolve();
+  }
+
+  submitExcludeSubmodule(): Promise<void> {
+    const { disabled, reason } = excludeSubmitState(this.state);
+    if (!disabled) return this.prepare(buildExcludeRequest(this.state));
+    this.state.error = reason;
+    this.announce(reason);
+    return Promise.resolve();
+  }
+
+  submitCleanupSubmodules(): Promise<void> {
+    const { disabled, reason } = cleanupSubmitState(this.state);
+    if (!disabled) return this.prepare(buildCleanupRequest(this.state));
+    this.state.error = reason;
+    this.announce(reason);
     return Promise.resolve();
   }
 

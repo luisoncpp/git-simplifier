@@ -1,6 +1,7 @@
 use git_helper_core::{
     CleanupPlan, ExcludeSubmodulePlan, ForcePushPlan, ObjectId, PublishBranchPlan, QuickSwitchPlan,
-    QuickSwitchResult, RefName, RevertPlan, RewritePlan, SplitBranchPlan, SyncRequest, SyncResult,
+    QuickSwitchResult, RefName, RevertPlan, RewritePlan, SplitBranchPlan, SubmoduleCleanupPlan,
+    SyncRequest, SyncResult,
 };
 
 use super::data::{OperationOutcome, PendingOperation};
@@ -17,6 +18,7 @@ pub(super) fn apply(
         }
         PendingOperation::Revert { plan, .. } => revert(state, plan),
         PendingOperation::Exclude { plan, .. } => exclude(state, plan),
+        PendingOperation::SubmoduleCleanup { plan, .. } => submodule_cleanup(state, plan),
         PendingOperation::Split { plan, .. } => split_branch(state, plan),
         PendingOperation::Publish { plan, .. } => publish_branch(state, plan),
         PendingOperation::QuickSwitch { plan, .. } => quick_switch(state, plan),
@@ -82,6 +84,33 @@ fn exclude(state: &AppState, plan: ExcludeSubmodulePlan) -> Result<OperationOutc
         details.push("The exclusion was already in place".to_string());
     }
     Ok(bare("exclude_submodule", "Submodule excluded", details))
+}
+
+fn submodule_cleanup(
+    state: &AppState,
+    plan: SubmoduleCleanupPlan,
+) -> Result<OperationOutcome, String> {
+    let result = with_repository(state, |repo| {
+        repo.apply_submodule_cleanup(&plan).map_err(|e| e.to_string())
+    })?;
+    let mut details = Vec::new();
+    if result.uncommitted > 0 {
+        details.push(format!(
+            "{} submodule pointer(s) removed from the Editable range",
+            result.uncommitted
+        ));
+    }
+    if result.reverted > 0 {
+        details.push(format!(
+            "{} submodule checkout(s) aligned to HEAD",
+            result.reverted
+        ));
+    }
+    let mut outcome = bare("cleanup_submodules", "Submodules cleaned up", details);
+    if result.uncommitted > 0 {
+        outcome.offer_force_push = true;
+    }
+    Ok(outcome)
 }
 
 fn split_branch(state: &AppState, plan: SplitBranchPlan) -> Result<OperationOutcome, String> {

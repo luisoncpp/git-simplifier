@@ -75,6 +75,12 @@ export interface LocalBranch {
 
 export interface SubmoduleChoice { path: string; object: string; excluded: boolean }
 
+export interface DirtySubmodule {
+  path: string;
+  local_dirty: boolean;
+  in_editable_range: boolean;
+}
+
 export interface CleanupRemote {
   remote: string;
   tracking_ref: string;
@@ -148,6 +154,7 @@ export type OperationRequest =
   | { kind: "revert"; base: string; paths: string[]; target: "head" | "base" }
   | { kind: "edit_message"; base: string; commit: string; message: string }
   | { kind: "exclude_submodule"; path: string; install_hook: boolean; disable_recurse: boolean }
+  | { kind: "cleanup_submodules"; base: string; paths: string[]; uncommit: boolean; revert: boolean }
   | { kind: "split_branch"; base: string; new_branch: string; paths: string[]; message: string }
   | { kind: "publish_branch"; branch: string }
   | { kind: "quick_switch"; target_branch: string; carry_changes?: boolean; pull_after_switch?: boolean; create_from_remote?: string | null }
@@ -168,7 +175,7 @@ export type OperationId =
   | "uncommit"
   | "revert"
   | "edit_message"
-  | "exclude_submodule"
+  | "submodules"
   | "split_branch"
   | "quick_switch"
   | "sync"
@@ -188,6 +195,10 @@ export interface Draft {
   submodule: string;
   installHook: boolean;
   disableRecurse: boolean;
+  cleanupSubmodulePaths: Set<string>;
+  cleanupSubmoduleFilter: string;
+  cleanupUncommit: boolean;
+  cleanupRevert: boolean;
   targetBranch: string;
   createFromRemote: string;
   /// True only after the user picks a row; auto-defaults stay eligible to refresh.
@@ -216,6 +227,7 @@ export interface AppState {
   commits: EditableCommit[];
   branches: LocalBranch[];
   submodules: SubmoduleChoice[];
+  dirtySubmodules: DirtySubmodule[];
   cleanupBranches: CleanupDiscovery | null;
   saved: SavedWork[];
   operations: RecoveryEntry[];

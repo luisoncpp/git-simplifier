@@ -24,6 +24,7 @@ function withData(data, overview = {}) {
     list_revert_paths: PATHS,
     list_local_branches: data.branches ?? [],
     list_submodules: data.submodules ?? [],
+    list_dirty_submodules: data.dirtySubmodules ?? [],
     list_cleanup_branches: data.cleanup ?? { choices: [], excluded: [] },
     load_snapshot: snapshot,
   };
@@ -293,11 +294,17 @@ test("an already excluded submodule is labelled instead of looking untouched", a
     { path: "vendor/theme", object: "c".repeat(40), excluded: true },
     { path: "vendor/sdk", object: "d".repeat(40), excluded: false },
   ];
-  const controller = withData({ submodules });
-  await controller.selectOperation("exclude_submodule");
+  const dirtySubmodules = [
+    { path: "vendor/sdk", local_dirty: true, in_editable_range: false },
+  ];
+  const controller = withData({ submodules, dirtySubmodules });
+  await controller.selectOperation("submodules");
 
   assert.equal(controller.state.draft.submodule, "vendor/sdk");
+  assert.equal(controller.state.draft.cleanupSubmodulePaths.size, 1);
   assert.match(renderShell(controller.state), /vendor\/theme · already excluded/);
+  assert.match(renderShell(controller.state), /Cleanup dirty submodules/);
+  assert.match(renderShell(controller.state), /data-event="submit-cleanup-submodules"/);
 });
 
 test("Saved work on another branch offers the switch instead of a dead Restore button", () => {

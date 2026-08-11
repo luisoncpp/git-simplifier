@@ -48,6 +48,7 @@ Keep these docs operational. Prefer short tables, explicit file names, and seque
 | [quick-file-diff.md](./quick-file-diff.md) | Right-click a path on Uncommit/Revert/Split → secondary window with one file's diff |
 | [edit-message.md](./edit-message.md) | Backend Edit message planning and application |
 | [excluded-submodule.md](./excluded-submodule.md) | Backend Excluded submodule configuration and guard installation |
+| [cleanup-dirty-submodules.md](./cleanup-dirty-submodules.md) | Submodules tab: cleanup dirty gitlinks with Uncommit and/or Revert |
 | [force-push.md](./force-push.md) | Backend explicit force-push after a rewrite |
 | [recovery-panel.md](./recovery-panel.md) | Backend operation history and ref-only recovery guidance |
 | [quick-switch.md](./quick-switch.md) | Backend Quick branch switch and Saved work restoration |

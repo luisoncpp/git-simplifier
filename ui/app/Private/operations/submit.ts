@@ -22,10 +22,39 @@ export function submitState(state: AppState): SubmitState {
   return { disabled: Boolean(blocked) || state.busy, reason: blocked };
 }
 
+export function excludeSubmitState(state: AppState): SubmitState {
+  const blocked = excludeBlockingReason(state);
+  return { disabled: Boolean(blocked) || state.busy, reason: blocked };
+}
+
+export function cleanupSubmitState(state: AppState): SubmitState {
+  const blocked = cleanupBlockingReason(state);
+  return { disabled: Boolean(blocked) || state.busy, reason: blocked };
+}
+
 function blockingReason(state: AppState): string {
+  if (state.operation === "submodules") return "";
   const operation = OPERATIONS.find((entry) => entry.id === state.operation);
   if (operation?.needsBase && !baseRef(state)) return "Set a Base ref first.";
   return SPECIFIC_REASON[state.operation]?.(state) ?? "";
+}
+
+function excludeBlockingReason(state: AppState): string {
+  if (!state.submodules.length) return "This repository has no submodules.";
+  if (!state.draft.submodule) return "Select a submodule.";
+  return "";
+}
+
+function cleanupBlockingReason(state: AppState): string {
+  if (!state.dirtySubmodules.length) return "No dirty submodules.";
+  if (!state.draft.cleanupSubmodulePaths.size) return "Select at least one submodule.";
+  if (!state.draft.cleanupUncommit && !state.draft.cleanupRevert) {
+    return "Select at least one cleanup action.";
+  }
+  if (state.draft.cleanupUncommit && !baseRef(state)) {
+    return "Set a Base ref first.";
+  }
+  return "";
 }
 
 const SPECIFIC_REASON: Partial<Record<OperationId, (state: AppState) => string>> = {
@@ -46,11 +75,6 @@ const SPECIFIC_REASON: Partial<Record<OperationId, (state: AppState) => string>>
     if (!selectedCommit(state)) return "Select a commit.";
     if (!messageFor(state).trim()) return "The message cannot be empty.";
     if (!messageChanged(state)) return "The message is unchanged.";
-    return "";
-  },
-  exclude_submodule: (state) => {
-    if (!state.submodules.length) return "This repository has no submodules.";
-    if (!state.draft.submodule) return "Select a submodule.";
     return "";
   },
   split_branch: (state) => {

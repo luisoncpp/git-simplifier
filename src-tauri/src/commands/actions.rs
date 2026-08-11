@@ -6,8 +6,8 @@ use tauri_plugin_opener::OpenerExt;
 
 use super::apply;
 use super::data::{
-    BaseRequest, OpenRepositoryInput, OperationOutcome, OperationReview, PrepareOperationRequest,
-    RepositorySnapshot,
+    BaseRequest, DirtySubmodulesRequest, OpenRepositoryInput, OperationOutcome, OperationReview,
+    PrepareOperationRequest, RepositorySnapshot,
 };
 use super::prepare;
 use super::prefs::{PrefsStore, UiPreferences};
@@ -201,6 +201,23 @@ pub fn list_submodules(
     with_repository(state.inner(), |repository| {
         repository
             .list_submodules()
+            .map_err(|error| error.to_string())
+    })
+}
+
+#[tauri::command(async)]
+pub fn list_dirty_submodules(
+    state: State<'_, AppState>,
+    request: DirtySubmodulesRequest,
+) -> Result<Vec<git_helper_core::DirtySubmodule>, String> {
+    let base = request
+        .base
+        .map(RefName::new)
+        .transpose()
+        .map_err(|error| error.to_string())?;
+    with_repository(state.inner(), |repository| {
+        repository
+            .list_dirty_submodules(base)
             .map_err(|error| error.to_string())
     })
 }

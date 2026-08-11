@@ -2,7 +2,7 @@
 
 A compact dark workbench, not a preview dashboard. Vanilla TypeScript (strict), one deep module: `ui/app/index.ts` is the public interface and everything under `ui/app/Private/` is implementation. Wire shapes mirror the Rust contracts in `ui/app/Private/types.ts`. See [docs/architecture/workbench-ui.md](../docs/architecture/workbench-ui.md) for the state and rendering rules.
 
-Run `npm.cmd run tauri dev` for desktop repository access. Browser mode deliberately reports that it cannot reach a repository and shows the reason of the last attempt; it contains no authoritative fixtures. Test fixtures may be supplied to `FixtureBridge` only.
+Run `npm.cmd run tauri dev` for desktop repository access. Rust build artifacts land in `.cargo-target/` (shared by the workspace); run `npm run clean:rust` to reclaim disk space. Browser mode deliberately reports that it cannot reach a repository and shows the reason of the last attempt; it contains no authoritative fixtures. Test fixtures may be supplied to `FixtureBridge` only.
 
 `prismjs` is the only runtime dependency. It is imported lazily and only when a `document` exists, so syntax highlighting degrades to escaped plain text everywhere else — which is why `npm test`, which loads these sources with no bundler, never resolves it.
 

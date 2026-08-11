@@ -6,10 +6,11 @@ import type { AppState } from "../types.ts";
 import { operationForm } from "./forms.ts";
 
 export function actionsView(state: AppState): string {
+  const submit = state.operation === "submodules" ? "" : submitRow(state);
   return `<div class="pane">
     <div class="tabs" role="tablist" aria-label="Operations">${OPERATIONS.map((operation) => tab(state, operation)).join("")}</div>
     <div class="tab-panel" role="tabpanel" id="operation-panel" aria-labelledby="tab-${esc(state.operation)}">
-      ${operationForm(state)}${submitRow(state)}
+      ${operationForm(state)}${submit}
     </div>
   </div>`;
 }
@@ -34,7 +35,7 @@ const ACTION_WORDS: Record<string, string> = {
   uncommit: "uncommit",
   revert: "revert",
   edit_message: "message edit",
-  exclude_submodule: "exclusion",
+  submodules: "submodule",
   split_branch: "split",
   quick_switch: "switch",
   sync: "sync",

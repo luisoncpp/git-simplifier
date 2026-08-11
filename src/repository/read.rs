@@ -1,6 +1,6 @@
 use crate::inspection::{
-    self, ChangedPath, DiffCompare, EditableCommit, FileDiff, FilesDiffQuery, InspectionError,
-    LocalBranchChoice, RemoteBaseChoice, RepositoryOverview, SubmoduleChoice,
+    self, ChangedPath, DiffCompare, DirtySubmodule, EditableCommit, FileDiff, FilesDiffQuery,
+    InspectionError, LocalBranchChoice, RemoteBaseChoice, RepositoryOverview, SubmoduleChoice,
 };
 use crate::rewrite::{ObjectId, RefName, RepoPath};
 use crate::switch;
@@ -114,6 +114,13 @@ impl GitRepository {
 
     pub fn list_submodules(&self) -> Result<Vec<SubmoduleChoice>, InspectionError> {
         inspection::submodules(&self.runner)
+    }
+
+    pub fn list_dirty_submodules(
+        &self,
+        base: Option<RefName>,
+    ) -> Result<Vec<DirtySubmodule>, InspectionError> {
+        inspection::dirty_submodules(&self.runner, base.as_ref())
     }
 
     pub fn set_base(&self, base: RefName) -> Result<(), InspectionError> {

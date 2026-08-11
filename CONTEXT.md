@@ -38,7 +38,7 @@ _Avoid_: amend, reword — `git commit --amend` also sweeps staged changes into 
 _Note_: the text being changed is the commit **message**; "description" means the same thing but only one word should appear in the product.
 
 **Excluded submodule**:
-A submodule the user has declared off-limits: its pointer must never appear in local changes and must never be committed from this repository. Exclusion is a standing rule, not an operation — it combines hiding the submodule from status, blocking it at commit time, and cleaning any pointer already committed within the **Editable range**.
+A submodule the user has declared off-limits: its pointer must never appear in local changes and must never be committed from this repository. Exclusion is a standing rule, not an operation — it combines hiding the submodule from status, blocking it at commit time, and cleaning any pointer already committed within the **Editable range**. The **Submodules** tab offers **Cleanup dirty submodules** for gitlinks that are locally dirty and/or differ in the Editable range: optional **Uncommit from Base…HEAD** (rewrite) plus **Revert** (restore gitlink to HEAD and reset nested checkouts).
 _Avoid_: pinned submodule, frozen submodule, ignored submodule
 
 **Saved work**:
