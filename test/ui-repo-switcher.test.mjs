@@ -71,7 +71,25 @@ test("opening a recent repository reloads from the returned snapshot", async () 
   assert.equal(controller.state.repoMenuOpen, false);
   assert.equal(controller.state.repoOpeningPath, "");
   assert.ok(commands.includes("open_repository"));
+  assert.ok(commands.includes("fetch_remotes"));
   assert.ok(commands.includes("list_recent_repositories"));
+});
+
+test("opening a repository with an unreachable remote warns without blocking", async () => {
+  const controller = withRecents({ repoMenuOpen: true });
+  const original = controller.bridge.invoke.bind(controller.bridge);
+  controller.bridge.invoke = async (command, args) => {
+    if (command === "fetch_remotes") throw new Error("Could not connect to remote");
+    return original(command, args);
+  };
+
+  await openRecentRepository(controller, "C:/work/beta");
+
+  assert.equal(controller.state.snapshot.overview.path, "C:/work/beta");
+  assert.equal(controller.state.warning, "Could not connect to remote");
+  assert.equal(controller.state.error, "");
+  assert.match(renderShell(controller.state), /Fetch failed/);
+  assert.match(renderShell(controller.state), /Could not connect to remote/);
 });
 
 test("opening a recent repository closes the menu and shows the target immediately", async () => {

@@ -1,4 +1,5 @@
 import { createDraft } from "./draft/index.ts";
+import { fetchRemotes } from "./discovery.ts";
 import { focusNode } from "./dom.ts";
 import { overviewOf } from "./snapshot.ts";
 import type { AppController } from "./controller.ts";
@@ -136,6 +137,10 @@ async function openRepositoryPath(controller: AppController, path: string): Prom
       controller.state.draft = createDraft();
       controller.state.outcome = null;
       controller.state.expanded.clear();
+      // Same contract as Refresh: learn whether remotes are reachable for the
+      // newly opened repo, without blocking the local snapshot reload.
+      controller.state.warning = await fetchRemotes(controller);
+      if (controller.state.warning) controller.announce(controller.state.warning);
       await controller.reload(snapshot);
       await loadRecentRepositories(controller);
     } catch (error) {

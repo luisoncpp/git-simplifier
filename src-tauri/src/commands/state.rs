@@ -1,7 +1,8 @@
+use std::ffi::OsString;
 use std::path::PathBuf;
 use std::sync::Mutex;
 
-use git_helper_core::{GitRepository, RepositoryConfig};
+use git_helper_core::{GitCommand, GitRepository, RepositoryConfig};
 
 use super::data::PendingOperation;
 
@@ -35,6 +36,10 @@ impl AppState {
             git_executable: PathBuf::from("git"),
         };
         let repository = GitRepository::open(config).map_err(|error| error.to_string())?;
+        // Probe before swapping: `GitRepository::open` only checks the Git
+        // binary, so a non-repo folder would otherwise replace a good session
+        // and fail later with a bare exit-code inspection error.
+        ensure_git_worktree(&repository)?;
         if let Ok(mut current_path) = self.path.lock() {
             *current_path = path;
         }
@@ -93,4 +98,24 @@ impl AppState {
         }
         Err("operation review is stale".to_string())
     }
+}
+
+fn ensure_git_worktree(repository: &GitRepository) -> Result<(), String> {
+    repository
+        .run(GitCommand::read(args(&[
+            "rev-parse",
+            "--is-inside-work-tree",
+        ])))
+        .map_err(|error| error.to_string())?;
+    repository
+        .run(GitCommand::read(args(&["rev-parse", "--verify", "HEAD"])))
+        .map_err(|_| {
+            "That folder is a Git repository without commits yet. Create an initial commit first."
+                .to_string()
+        })?;
+    Ok(())
+}
+
+fn args(values: &[&str]) -> Vec<OsString> {
+    values.iter().map(|value| OsString::from(*value)).collect()
 }

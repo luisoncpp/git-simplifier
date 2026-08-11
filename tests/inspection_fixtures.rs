@@ -125,6 +125,56 @@ fn fetch_remotes_picks_up_new_refs_on_a_configured_remote() {
     );
 }
 
+#[test]
+fn command_errors_include_git_stderr() {
+    let error = git_helper_core::GitError::Command {
+        args: vec!["rev-parse".into(), "--verify".into(), "HEAD".into()],
+        exit_code: Some(128),
+        stderr: b"fatal: not a git repository (or any of the parent directories): .git\n".to_vec(),
+    };
+    let message = error.to_string();
+    assert!(
+        message.contains("fatal: not a git repository"),
+        "stderr must surface in the user-visible error, got: {message}"
+    );
+    assert!(
+        message.contains("rev-parse"),
+        "failed argv should surface, got: {message}"
+    );
+}
+
+#[test]
+fn missing_base_is_reported_as_invalid_base_not_bare_exit_code() {
+    let fixture = FixtureRepo::new();
+    let base = RefName::new("refs/remotes/origin/missing".to_string()).unwrap();
+
+    let error = fixture.repo.list_changed_paths(base).unwrap_err();
+    let message = error.to_string();
+    assert!(
+        message.contains("not available locally"),
+        "expected a clear Base error, got: {message}"
+    );
+}
+
+#[test]
+fn load_state_fails_outside_a_git_worktree_with_stderr() {
+    let root = tempfile::tempdir().unwrap();
+    let repo = git_helper_core::GitRepository::open(git_helper_core::RepositoryConfig {
+        path: root.path().to_path_buf(),
+        git_executable: "git".into(),
+    })
+    .unwrap();
+
+    let message = match repo.load_state() {
+        Ok(_) => panic!("load_state should fail outside a git worktree"),
+        Err(error) => error.to_string(),
+    };
+    assert!(
+        message.contains("not a git repository") || message.contains("rev-parse"),
+        "expected repository probe detail, got: {message}"
+    );
+}
+
 fn args(values: &[&str]) -> Vec<OsString> {
     values.iter().map(|value| OsString::from(*value)).collect()
 }

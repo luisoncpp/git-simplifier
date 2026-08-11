@@ -6,7 +6,7 @@ use crate::rewrite::{RefName, RepoPath};
 
 use super::errors::InspectionError;
 use super::model::DirtySubmodule;
-use super::queries::{ensure_remote_base, parse_changed_paths, run};
+use super::queries::{ensure_base_resolves, ensure_remote_base, parse_changed_paths, run};
 
 /// Submodule gitlinks that are locally dirty and/or differ from Base in HEAD.
 pub(crate) fn dirty_submodules(
@@ -30,6 +30,7 @@ pub(crate) fn dirty_submodules(
     }
     if let Some(base) = base {
         ensure_remote_base(base)?;
+        ensure_base_resolves(runner, base)?;
         for path in editable_gitlinks(runner, base, &gitlinks)? {
             entries
                 .entry(path.clone())

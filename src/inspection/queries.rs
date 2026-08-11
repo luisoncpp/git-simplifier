@@ -74,6 +74,7 @@ pub(crate) fn changed_paths(
     base: &RefName,
 ) -> Result<Vec<ChangedPath>, InspectionError> {
     ensure_remote_base(base)?;
+    ensure_base_resolves(runner, base)?;
     let base = base.as_str().to_string();
     let output = run(
         runner,
@@ -97,6 +98,7 @@ pub(crate) fn editable_commits(
     base: &RefName,
 ) -> Result<Vec<EditableCommit>, InspectionError> {
     ensure_remote_base(base)?;
+    ensure_base_resolves(runner, base)?;
     let range = format!("{}..HEAD", base.as_str());
     let output = run(
         runner,
@@ -427,6 +429,23 @@ pub(super) fn ensure_remote_base(base: &RefName) -> Result<(), InspectionError> 
     Err(InspectionError::InvalidBase(
         "Base must be a remote-tracking ref".to_string(),
     ))
+}
+
+/// Config can still name a remote-tracking ref that is not present locally
+/// (never fetched, pruned, or renamed). Catch that before `diff A...HEAD`
+/// turns it into a bare exit-code 128.
+pub(super) fn ensure_base_resolves(
+    runner: &GitRunner,
+    base: &RefName,
+) -> Result<(), InspectionError> {
+    let spec = format!("{}^{{commit}}", base.as_str());
+    match run(runner, &["rev-parse", "--verify", &spec]) {
+        Ok(_) => Ok(()),
+        Err(_) => Err(InspectionError::InvalidBase(format!(
+            "Base {} is not available locally; fetch remotes or pick another Base",
+            base.as_str()
+        ))),
+    }
 }
 
 fn optional_ref(runner: &GitRunner, key: &str) -> Result<Option<RefName>, InspectionError> {

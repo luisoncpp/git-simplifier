@@ -20,6 +20,7 @@ pub(crate) fn branch_diff(
     compare: DiffCompare,
 ) -> Result<String, InspectionError> {
     super::queries::ensure_remote_base(base)?;
+    super::queries::ensure_base_resolves(runner, base)?;
     let range = diff_tip(runner, base, compare)?;
     patch_text(runner, diff_args(&range, LOAD_CONTEXT, /*pathspec=*/ None))
 }
@@ -48,6 +49,7 @@ pub(crate) fn full_file_diff(
     compare: DiffCompare,
 ) -> Result<Option<FileDiff>, InspectionError> {
     super::queries::ensure_remote_base(base)?;
+    super::queries::ensure_base_resolves(runner, base)?;
     let range = diff_tip(runner, base, compare)?;
     // Pinned so the pathspec and the names Git prints agree below the Git root.
     let pathspec = format!(":(top,literal){}", path.as_str());
