@@ -1,6 +1,6 @@
 use std::sync::atomic::{AtomicU64, Ordering};
 
-use git_helper_core::RefName;
+use git_helper_core::{FetchControl, RefName};
 use tauri::{AppHandle, State};
 use tauri_plugin_opener::OpenerExt;
 
@@ -80,14 +80,17 @@ pub fn load_snapshot(state: State<'_, AppState>) -> Result<RepositorySnapshot, S
 #[tauri::command(async)]
 pub fn fetch_remotes(state: State<'_, AppState>) -> Result<(), String> {
     with_repository(state.inner(), |repository| {
-        repository.fetch_remotes().map_err(|error| {
-            let text = error.to_string();
-            let detail = text
-                .strip_prefix("Git inspection failed: ")
-                .unwrap_or(&text);
-            format!("Could not fetch remotes: {detail}")
-        })
+        repository
+            .fetch_remotes_with_progress(&FetchControl::new(), |_| {})
+            .map_err(|error| {
+                let text = error.to_string();
+                let detail = text
+                    .strip_prefix("Git inspection failed: ")
+                    .unwrap_or(&text);
+                format!("Could not fetch remotes: {detail}")
+            })
     })
+    .map(|_| ())
 }
 
 #[tauri::command(async)]

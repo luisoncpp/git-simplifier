@@ -22,10 +22,10 @@ pub use exclusion::{
 };
 pub use git::{AccessMode, GitCommand, GitError, GitOutput, RepositoryConfig};
 pub use inspection::{
-    ChangedPath, DiffCompare, DiffHunk, DiffLine, DiffLineKind, EditableCommit, FileDiff,
-    FileDiffStatus, FilesDiffQuery, InspectionError, LocalBranchChoice, RemoteBaseChoice,
-    RepositoryOverview, SubmoduleChoice, UntrackedAnnotations, UntrackedFilters, WorktreeSummary,
-    DirtySubmodule,
+    ChangedPath, DiffCompare, DiffHunk, DiffLine, DiffLineKind, EditableCommit, FetchControl,
+    FetchProgress, FetchStatus, FileDiff, FileDiffStatus, FilesDiffQuery, InspectionError,
+    LocalBranchChoice, RemoteBaseChoice, RepositoryOverview, SubmoduleChoice, UntrackedAnnotations,
+    UntrackedFilters, WorktreeSummary, DirtySubmodule,
 };
 pub use push::{
     ForcePushError, ForcePushPlan, ForcePushResult, PublishBranchPlan, PublishBranchResult,

@@ -5,7 +5,7 @@ use std::sync::mpsc;
 use std::thread;
 use std::time::Duration;
 
-use git_helper_core::{DiffCompare, GitCommand, LocalBranchChoice, RefName};
+use git_helper_core::{DiffCompare, FetchControl, GitCommand, LocalBranchChoice, RefName};
 use support::fixture_repo::FixtureRepo;
 
 #[test]
@@ -88,7 +88,10 @@ fn saved_work_is_reported_for_simple_and_slashed_branch_names() {
 #[test]
 fn fetch_remotes_succeeds_when_no_remotes_are_configured() {
     let fixture = FixtureRepo::new();
-    fixture.repo.fetch_remotes().unwrap();
+    fixture
+        .repo
+        .fetch_remotes_with_progress(&FetchControl::new(), |_| {})
+        .unwrap();
 }
 
 #[test]
@@ -113,7 +116,10 @@ fn fetch_remotes_picks_up_new_refs_on_a_configured_remote() {
         .run(GitCommand::read(args(&["rev-parse", "--verify", "refs/remotes/origin/extra"])));
     assert!(missing.is_err());
 
-    fixture.repo.fetch_remotes().unwrap();
+    fixture
+        .repo
+        .fetch_remotes_with_progress(&FetchControl::new(), |_| {})
+        .unwrap();
 
     let fetched = fixture
         .repo

@@ -7,6 +7,9 @@ pub enum GitError {
     Spawn {
         source: io::Error,
     },
+    Io {
+        source: io::Error,
+    },
     Command {
         args: Vec<OsString>,
         exit_code: Option<i32>,
@@ -25,6 +28,7 @@ impl fmt::Display for GitError {
     fn fmt(&self, formatter: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
             Self::Spawn { source } => write!(formatter, "failed to start git: {source}"),
+            Self::Io { source } => write!(formatter, "git I/O failed: {source}"),
             Self::Command {
                 args,
                 exit_code,
@@ -57,7 +61,7 @@ impl fmt::Display for GitError {
 impl std::error::Error for GitError {
     fn source(&self) -> Option<&(dyn std::error::Error + 'static)> {
         match self {
-            Self::Spawn { source } => Some(source),
+            Self::Spawn { source } | Self::Io { source } => Some(source),
             _ => None,
         }
     }

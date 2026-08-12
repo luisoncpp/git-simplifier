@@ -62,6 +62,10 @@ impl GitRunner {
         process::execute_with_allowed_exits(&self.git, &self.repo, command, allowed_exits)
     }
 
+    pub(crate) fn spawn_piped(&self, command: &GitCommand) -> Result<std::process::Child, GitError> {
+        process::spawn_piped(&self.git, &self.repo, command)
+    }
+
     pub(crate) fn with_write_lock<T, E>(
         &self,
         action: impl FnOnce() -> Result<T, E>,

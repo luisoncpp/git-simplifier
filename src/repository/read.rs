@@ -1,6 +1,7 @@
 use crate::inspection::{
-    self, ChangedPath, DiffCompare, DirtySubmodule, EditableCommit, FileDiff, FilesDiffQuery,
-    InspectionError, LocalBranchChoice, RemoteBaseChoice, RepositoryOverview, SubmoduleChoice,
+    self, ChangedPath, DiffCompare, DirtySubmodule, EditableCommit, FetchControl, FetchProgress,
+    FetchStatus, FileDiff, FilesDiffQuery, InspectionError, LocalBranchChoice, RemoteBaseChoice,
+    RepositoryOverview, SubmoduleChoice,
 };
 use crate::rewrite::{ObjectId, RefName, RepoPath};
 use crate::switch;
@@ -127,8 +128,13 @@ impl GitRepository {
         inspection::set_base(&self.runner, base)
     }
 
-    pub fn fetch_remotes(&self) -> Result<(), InspectionError> {
-        self.runner
-            .with_write_lock(|| inspection::fetch_remotes(&self.runner))
+    pub fn fetch_remotes_with_progress(
+        &self,
+        control: &FetchControl,
+        mut on_progress: impl FnMut(FetchProgress),
+    ) -> Result<FetchStatus, InspectionError> {
+        self.runner.with_write_lock(|| {
+            inspection::fetch_remotes_with_progress(&self.runner, control, &mut on_progress)
+        })
     }
 }

@@ -1,7 +1,7 @@
 use std::ffi::OsString;
 use std::io::Write;
 use std::path::Path;
-use std::process::{Command, Output, Stdio};
+use std::process::{Child, Command, Output, Stdio};
 
 use super::command::{AccessMode, GitCommand, GitOutput};
 use super::error::GitError;
@@ -82,6 +82,17 @@ fn run_with_input(process: &mut Command, input: &[u8]) -> std::io::Result<Output
         stdin.write_all(input)?;
     }
     child.wait_with_output()
+}
+
+/// Streaming callers need the live child and its stderr; fetch writes nothing
+/// useful to stdout, so it is a dead end instead of a pipe that could fill.
+pub(crate) fn spawn_piped(git: &Path, repo: &Path, command: &GitCommand) -> Result<Child, GitError> {
+    let mut process = Command::new(git);
+    process.current_dir(repo).args(&command.args);
+    hide_console(&mut process);
+    set_environment(&mut process, command);
+    process.stdout(Stdio::null()).stderr(Stdio::piped());
+    process.spawn().map_err(|source| GitError::Spawn { source })
 }
 
 pub(crate) fn args(values: &[&str]) -> Vec<OsString> {

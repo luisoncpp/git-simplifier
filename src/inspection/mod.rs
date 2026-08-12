@@ -9,6 +9,7 @@ mod query;
 mod untracked;
 
 pub use errors::InspectionError;
+pub use fetch::{FetchControl, FetchProgress, FetchStatus};
 pub use model::{
     ChangedPath, DiffCompare, DiffHunk, DiffLine, DiffLineKind, EditableCommit, FileDiff,
     DirtySubmodule, FileDiffStatus, LocalBranchChoice, RemoteBaseChoice, RepositoryOverview,
@@ -91,6 +92,10 @@ pub(crate) fn dirty_submodules(
 pub(crate) fn set_base(runner: &GitRunner, base: RefName) -> Result<(), InspectionError> {
     queries::set_base(runner, base)
 }
-pub(crate) fn fetch_remotes(runner: &GitRunner) -> Result<(), InspectionError> {
-    fetch::fetch_remotes(runner)
+pub(crate) fn fetch_remotes_with_progress(
+    runner: &GitRunner,
+    control: &FetchControl,
+    on_progress: &mut dyn FnMut(FetchProgress),
+) -> Result<FetchStatus, InspectionError> {
+    fetch::fetch_remotes_with_progress(runner, control, on_progress)
 }
