@@ -12,13 +12,23 @@ const invokeError = (error: unknown): string => {
 };
 
 /// Refresh fetches every configured remote before reloading local discovery
-/// data. A failed fetch is surfaced as a warning, not a blocking error.
+/// data. A failed fetch is surfaced as a warning, not a blocking error. The
+/// active flag spans exactly the invoke so late progress events are dropped.
 export async function fetchRemotes(controller: AppController): Promise<string> {
+  const fetch = controller.state.fetch;
+  fetch.active = true;
+  fetch.phase = "";
+  fetch.done = 0;
+  fetch.total = 0;
+  controller.render();
   try {
     await controller.bridge.invoke("fetch_remotes");
     return "";
   } catch (error) {
     return invokeError(error);
+  } finally {
+    fetch.active = false;
+    controller.render();
   }
 }
 

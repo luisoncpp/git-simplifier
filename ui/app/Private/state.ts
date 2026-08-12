@@ -40,6 +40,7 @@ export function createState(): AppState {
     outcome: null,
     changingBase: false,
     busy: false,
+    fetch: { active: false, phase: "", done: 0, total: 0 },
     error: "",
     warning: "",
     dismissedSavedWorkBranch: null,

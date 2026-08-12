@@ -218,6 +218,21 @@ export interface Draft {
   cleanupFilter: string;
 }
 
+/// Payload of the desktop `fetch-progress` event, mirroring the Rust
+/// `FetchProgress` struct in src/inspection/fetch/progress.rs.
+export interface FetchProgressEvent {
+  phase: string;
+  done: number;
+  total: number;
+}
+
+export interface FetchState {
+  active: boolean;
+  phase: string;
+  done: number;
+  total: number;
+}
+
 export interface AppState {
   view: ViewId;
   operation: OperationId;
@@ -249,6 +264,9 @@ export interface AppState {
   outcome: OperationOutcome | null;
   changingBase: boolean;
   busy: boolean;
+  /// Live fetch progress, fed by the desktop `fetch-progress` event while the
+  /// `fetch_remotes` command runs; `active` spans exactly the invoke.
+  fetch: FetchState;
   error: string;
   /// Non-blocking warning from the latest refresh fetch attempt.
   warning: string;
@@ -260,6 +278,7 @@ export interface AppState {
 export interface Bridge {
   invoke<T = unknown>(command: string, args?: Record<string, unknown>): Promise<T>;
   pickRepository(): Promise<string | null>;
+  listen(event: string, handler: (payload: FetchProgressEvent) => void): void;
 }
 
 export type FieldNode = HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement;

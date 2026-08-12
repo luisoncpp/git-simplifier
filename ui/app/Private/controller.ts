@@ -18,6 +18,7 @@ import { renderShell } from "./views/shell.ts";
 import type {
   AppState,
   Bridge,
+  FetchProgressEvent,
   OperationId,
   OperationOutcome,
   OperationRequest,
@@ -43,6 +44,7 @@ export class AppController {
 
   async start(): Promise<void> {
     bindEvents(this);
+    this.bridge.listen("fetch-progress", /*trackFetchProgress=*/ (payload) => this.onFetchProgress(payload));
     await loadRecentRepositories(this);
     await loadUiPreferences(this);
     await this.refresh();
@@ -90,6 +92,21 @@ export class AppController {
 
   reloadViewData(): Promise<void> {
     return loadViewData(this);
+  }
+
+  /// Progress events can arrive after the command already settled (queued IPC);
+  /// a finished fetch must not light the bar back up.
+  onFetchProgress(payload: FetchProgressEvent): void {
+    if (!this.state.fetch.active) return;
+    this.state.fetch.phase = payload.phase;
+    this.state.fetch.done = payload.done;
+    this.state.fetch.total = payload.total;
+    this.render();
+  }
+
+  async cancelFetch(): Promise<void> {
+    if (!this.state.fetch.active) return;
+    await this.bridge.invoke("cancel_fetch");
   }
 
   async selectOperation(operation: OperationId): Promise<void> {
