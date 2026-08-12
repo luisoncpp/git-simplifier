@@ -30,9 +30,10 @@ Backend caller submits another branch name (local, or a remote-tracking ref that
 1. After a successful Quick switch onto a branch that already has Saved work (and no pull decision is pending), the outcome sets `offer_restore_saved_work` so the result banner offers **Review restore**. Opening the app or refreshing while the current branch has Saved work shows the same offer on a persistent banner. Restoration is never automatic.
 2. The caller confirms via the restore review; the current branch's WIP ref is applied non-recursively with `git stash apply --index`.
 3. If index restoration fails without creating unmerged paths, a plain `git stash apply` is attempted and the result reports that the staged split was not restored.
-4. If the indexed apply creates conflicts, restoration stops without retrying over the unmerged index. The result directs the user to resolve the conflict markers and delete Saved work after checking the result.
-5. The WIP ref is deleted with an expected snapshot SHA only after apply succeeds. Failed or conflicted application leaves the ref available for retry or inspection. **Diff** on a Saved work row opens a read-only merge-tree preview of the worktree delta (see [saved-work-diff.md](./saved-work-diff.md)).
-6. When a pull decision was pending, the restore offer waits until replace / merge-pull / cancel finishes; the resolve outcome then offers restore if Saved work is still present.
+4. If the indexed apply creates conflicts, restoration stops without retrying over the unmerged index. The result is a warn-tone success: conflict markers stay in the tree, the WIP ref is kept, and the user resolves then deletes Saved work.
+5. If apply hard-refuses because local dirt would be overwritten (no markers), current tracked dirt is parked at `refs/githelper/restore-park/<op-id>`, the tree is reset, Saved work is applied, tracked changes are staged, and the park is reapplied so Git can three-way merge. Park conflicts leave markers and delete the WIP (Saved work is already in the tree); Saved-work conflicts after the reset keep both the WIP and the park ref.
+6. The WIP ref is deleted with an expected snapshot SHA only when the snapshot was consumed into the tree. Failed or conflicted application that did not consume the snapshot leaves the ref for retry or inspection. **Diff** on a Saved work row opens a read-only merge-tree preview of the worktree delta (see [saved-work-diff.md](./saved-work-diff.md)).
+7. When a pull decision was pending, the restore offer waits until replace / merge-pull / cancel finishes; the resolve outcome then offers restore if Saved work is still present.
 
 ## Reads
 
@@ -66,6 +67,7 @@ Backend caller submits another branch name (local, or a remote-tracking ref that
 - A second switch away from a branch with existing Saved work is rejected instead of overwriting the only snapshot.
 - A plan becomes stale if HEAD, the target tip, tracked status, or untracked conflict set changes before application.
 - Nested submodule state is preserved in place rather than snapshotted per branch.
-- If restoration conflicts, the WIP ref remains until the user resolves or explicitly deletes it.
+- If restoration conflicts, the outcome is a warn-tone success with markers left; the WIP ref remains until the user resolves or explicitly deletes it (unless Saved work was already consumed and only recent edits conflicted).
+- A dirty overlapping tree that would make `stash apply` hard-refuse is parked, reset, applied, then re-merged so the user gets markers instead of an overwrite error.
 - Carry pop conflicts leave the checkout on the target branch with conflict markers; the snapshot is rescued as Saved work for the source branch so it stays reachable from the app.
 - A failed fast-forward leaves the checkout on the target branch until the user chooses replace, merge-pull, or cancel.

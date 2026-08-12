@@ -46,11 +46,31 @@ fn restore_reports_conflicts_without_retrying_over_the_conflicted_index() {
     fixture.checkout("feature");
     fixture.commit_file("README.md", "upstream edit\n", "change readme");
 
-    let error = fixture.repo.restore_saved_work().unwrap_err();
+    let restored = fixture.repo.restore_saved_work().unwrap();
 
-    assert!(matches!(error, SwitchError::SavedWorkConflict));
+    assert!(restored.warning.is_some());
     assert!(read_worktree(&fixture, "README.md").contains("<<<<<<<"));
     assert_eq!(fixture.repo.list_saved_work().unwrap().len(), 1);
+}
+
+/// Dirty overlap used to hard-refuse (`local changes would be overwritten`) with
+/// no markers. Park current dirt, apply Saved work, then reapply the park.
+#[test]
+fn restore_merges_when_local_dirt_would_overwrite() {
+    let fixture = fixture_with_target("other");
+    fixture.write_worktree_file("README.md", "saved edit\n");
+    fixture
+        .repo
+        .apply_quick_switch(&fixture.repo.plan_quick_switch(request("other")).unwrap())
+        .unwrap();
+    fixture.checkout("feature");
+    fixture.write_worktree_file("README.md", "recent edit\n");
+
+    let restored = fixture.repo.restore_saved_work().unwrap();
+
+    assert!(restored.warning.is_some());
+    assert!(read_worktree(&fixture, "README.md").contains("<<<<<<<"));
+    assert!(fixture.repo.list_saved_work().unwrap().is_empty());
 }
 
 #[test]

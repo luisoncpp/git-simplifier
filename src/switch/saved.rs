@@ -7,7 +7,7 @@ use crate::rewrite::ObjectId;
 
 use super::errors::SwitchError;
 use super::model::{DeleteSavedWorkResult, RestoreSavedWorkResult};
-use super::{plan, record, state, stash};
+use super::{plan, record, restore_apply, state};
 
 pub(crate) fn restore(
     runner: &crate::git::GitRunner,
@@ -20,8 +20,10 @@ pub(crate) fn restore(
     let oplog = Oplog::open(&runner.git_dir()?)
         .map_err(|error| SwitchError::Recording(error.to_string()))?;
     let operation_id = record::begin_restore(&oplog, &saved)?;
-    let applied_index = stash::apply(runner, &saved.reference)?;
-    delete_ref(runner, &saved.reference, &saved.snapshot)?;
+    let outcome = restore_apply::apply(runner, &saved.reference, &operation_id)?;
+    if outcome.consumed {
+        delete_ref(runner, &saved.reference, &saved.snapshot)?;
+    }
     let mut after = BTreeMap::new();
     after.insert(
         "HEAD".to_string(),
@@ -33,7 +35,8 @@ pub(crate) fn restore(
     Ok(RestoreSavedWorkResult {
         branch,
         reference: saved.reference,
-        applied_index,
+        applied_index: outcome.applied_index,
+        warning: outcome.warning,
     })
 }
 

@@ -324,7 +324,17 @@ fn restore(state: &AppState, head: ObjectId) -> Result<OperationOutcome, String>
     if !result.applied_index {
         details.push("The staged split could not be restored; everything is unstaged".to_string());
     }
-    Ok(bare("restore_saved_work", "Saved work restored", details))
+    let Some(warning) = result.warning else {
+        return Ok(bare("restore_saved_work", "Saved work restored", details));
+    };
+    details.push(warning);
+    let mut outcome = bare(
+        "restore_saved_work",
+        "Saved work restored with conflicts",
+        details,
+    );
+    outcome.has_warning = true;
+    Ok(outcome)
 }
 
 fn delete(state: &AppState, branch: String, head: ObjectId) -> Result<OperationOutcome, String> {

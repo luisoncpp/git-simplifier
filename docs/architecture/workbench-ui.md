@@ -74,7 +74,7 @@ Two rendering rules the Files diff depends on:
 
 ## Follow-up offers
 
-A result banner may offer exactly one follow-up. `offer_force_push` is a flag because it always means the current branch; `offer_publish_branch` carries the branch name, because a newly created branch is not checked out and a boolean could not say which one to push. The two are different operations with different risk, so the banner never shows force-push wording for a first push. `offer_restore_saved_work` is also a flag for the current branch: Quick switch (and a finished pull resolution) sets it when that branch already has Saved work, and the button opens the existing restore review — never auto-applies. `has_warning` forces a warn-tone result banner when carry or pull resolution left conflict details, so the headline and tone do not read as success.
+A result banner may offer exactly one follow-up. `offer_force_push` is a flag because it always means the current branch; `offer_publish_branch` carries the branch name, because a newly created branch is not checked out and a boolean could not say which one to push. The two are different operations with different risk, so the banner never shows force-push wording for a first push. `offer_restore_saved_work` is also a flag for the current branch: Quick switch (and a finished pull resolution) sets it when that branch already has Saved work, and the button opens the existing restore review — never auto-applies. `has_warning` forces a warn-tone result banner when carry, pull resolution, or restore left conflict details, so the headline and tone do not read as success.
 
 ## Saved work notice
 

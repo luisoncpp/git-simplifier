@@ -89,22 +89,19 @@ pub(crate) fn apply_carry_ref(
     runner: &crate::git::GitRunner,
     reference: &str,
 ) -> Result<(bool, Option<String>), SwitchError> {
-    let applied = super::stash::apply(runner, reference);
-    match applied {
-        Ok(indexed) => {
-            delete_carry(runner, reference)?;
-            Ok((indexed, None))
-        }
-        Err(SwitchError::SavedWorkConflict) => Ok((
+    let outcome = super::stash::apply(runner, reference)?;
+    if outcome.conflict {
+        return Ok((
             false,
             Some(
                 "Carried changes conflicted after the pull. Resolve the markers, then delete the \
                  carry ref when done."
                     .to_string(),
             ),
-        )),
-        Err(error) => Err(error),
+        ));
     }
+    delete_carry(runner, reference)?;
+    Ok((outcome.applied_index, None))
 }
 
 fn delete_carry(runner: &crate::git::GitRunner, reference: &str) -> Result<(), SwitchError> {

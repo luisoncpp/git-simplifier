@@ -1,14 +1,25 @@
 use std::ffi::OsString;
 
 use crate::git::GitCommand;
+use crate::rewrite::ObjectId;
 
 use super::errors::SwitchError;
-use crate::rewrite::ObjectId;
 
 pub(super) struct PopOutcome {
     pub applied_index: bool,
     pub warning: Option<String>,
 }
+
+pub(super) struct ApplyOutcome {
+    pub applied_index: bool,
+    pub conflict: bool,
+    pub warning: Option<String>,
+    /// When true, the Saved work snapshot is already in the tree; delete the WIP ref.
+    pub consumed: bool,
+}
+
+const CONFLICT_WARNING: &str = "Saved work was applied with conflicts. Resolve the conflict \
+    markers, then delete Saved work when the result is correct; the backup was kept.";
 
 pub(super) fn snapshot(runner: &crate::git::GitRunner) -> Result<ObjectId, SwitchError> {
     let output = runner.run_unlocked(GitCommand::write(stash_args(&["create"])))?;
@@ -40,23 +51,41 @@ pub(super) fn reset_tracked(runner: &crate::git::GitRunner) -> Result<(), Switch
     Ok(())
 }
 
-pub(super) fn apply(runner: &crate::git::GitRunner, reference: &str) -> Result<bool, SwitchError> {
-    let indexed = runner
+/// Apply a stash-shaped ref without parking local dirt (carry / pull paths).
+pub(super) fn apply(
+    runner: &crate::git::GitRunner,
+    reference: &str,
+) -> Result<ApplyOutcome, SwitchError> {
+    try_apply(runner, reference)
+}
+
+pub(super) fn try_apply(
+    runner: &crate::git::GitRunner,
+    reference: &str,
+) -> Result<ApplyOutcome, SwitchError> {
+    if runner
         .run_unlocked(GitCommand::write(stash_args(&[
             "apply", "--index", reference,
         ])))
-        .is_ok();
-    if indexed {
-        return Ok(true);
+        .is_ok()
+    {
+        return Ok(clean(/*applied_index=*/ true));
     }
     if has_unmerged_paths(runner)? {
-        return Err(SwitchError::SavedWorkConflict);
+        return Ok(conflict(CONFLICT_WARNING, /*consumed=*/ false));
     }
-    runner.run_unlocked(GitCommand::write(stash_args(&["apply", reference])))?;
-    Ok(false)
+    match runner.run_unlocked(GitCommand::write(stash_args(&["apply", reference]))) {
+        Ok(_) => Ok(clean(/*applied_index=*/ false)),
+        Err(source) => {
+            if has_unmerged_paths(runner)? {
+                return Ok(conflict(CONFLICT_WARNING, /*consumed=*/ false));
+            }
+            Err(SwitchError::Git(source))
+        }
+    }
 }
 
-fn has_unmerged_paths(runner: &crate::git::GitRunner) -> Result<bool, SwitchError> {
+pub(super) fn has_unmerged_paths(runner: &crate::git::GitRunner) -> Result<bool, SwitchError> {
     let output = runner.run_unlocked(GitCommand::read(args(&[
         "diff",
         "--name-only",
@@ -97,6 +126,24 @@ pub(super) fn pop_carry(runner: &crate::git::GitRunner) -> Result<PopOutcome, Sw
 pub(super) fn drop_top(runner: &crate::git::GitRunner) -> Result<(), SwitchError> {
     runner.run_unlocked(GitCommand::write(stash_args(&["drop", "stash@{0}"])))?;
     Ok(())
+}
+
+fn clean(applied_index: bool) -> ApplyOutcome {
+    ApplyOutcome {
+        applied_index,
+        conflict: false,
+        warning: None,
+        consumed: true,
+    }
+}
+
+pub(super) fn conflict(warning: &str, consumed: bool) -> ApplyOutcome {
+    ApplyOutcome {
+        applied_index: false,
+        conflict: true,
+        warning: Some(warning.to_string()),
+        consumed,
+    }
 }
 
 fn text(bytes: &[u8]) -> Result<String, SwitchError> {

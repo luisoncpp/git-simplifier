@@ -98,6 +98,8 @@ pub struct RestoreSavedWorkResult {
     pub branch: String,
     pub reference: String,
     pub applied_index: bool,
+    /// Soft conflict or park note; restore still returns `Ok` so the UI can warn.
+    pub warning: Option<String>,
 }
 
 #[derive(Clone, Debug, Eq, PartialEq, Serialize, Deserialize)]

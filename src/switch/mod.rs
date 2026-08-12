@@ -9,6 +9,7 @@ mod preview;
 mod pull;
 mod record;
 mod resolve;
+mod restore_apply;
 mod saved;
 mod state;
 mod stash;

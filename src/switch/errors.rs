@@ -14,11 +14,6 @@ pub enum SwitchError {
     MissingSavedWork(String),
     #[error("saved work for branch already exists: {0}")]
     ExistingSavedWork(String),
-    #[error(
-        "Saved work was applied with conflicts. Resolve the conflict markers, then delete Saved \
-         work when the result is correct; the backup was kept."
-    )]
-    SavedWorkConflict,
     #[error("untracked files would be overwritten on the target branch: {0}")]
     UntrackedConflict(String),
     #[error("quick branch switch recording failed: {0}")]
