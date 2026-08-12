@@ -12,6 +12,7 @@ type ActionElement = HTMLElement & { disabled?: boolean };
 export function bindEvents(controller: AppController): void {
   const target = globalThis.document;
   if (!target) return;
+  target.addEventListener("pointerdown", /*armFetchStop=*/ (event) => handleFetchStop(controller, event));
   target.addEventListener("click", /*handleClick=*/ (event) => handleClick(controller, event));
   target.addEventListener("contextmenu", /*handleContextMenu=*/ (event) => handleContextMenu(controller, event));
   target.addEventListener("change", /*handleChange=*/ (event) => dispatchNode(controller, event, CHANGE));
@@ -19,11 +20,28 @@ export function bindEvents(controller: AppController): void {
   target.addEventListener("keydown", /*handleKeys=*/ (event) => handleKeys(controller, event));
 }
 
+/// Progress re-renders can replace the stop button between mousedown and
+/// mouseup, so the click never fires. Arm cancel on pointerdown instead.
+function handleFetchStop(controller: AppController, event: PointerEvent): void {
+  if (event.button !== 0 || !isArmedStop(event.target)) return;
+  event.preventDefault();
+  settle(controller, controller.cancelFetch());
+}
+
+function isArmedStop(target: EventTarget | null): boolean {
+  const node = (target as HTMLElement | null)?.closest?.(
+    '[data-event="cancel-fetch"]',
+  ) as ActionElement | null;
+  return Boolean(node) && !node!.disabled;
+}
+
 function handleClick(controller: AppController, event: MouseEvent): void {
   const target = event.target as HTMLElement | null;
   dismissOpenOverlays(controller, target);
   const node = target?.closest?.("[data-event]") as ActionElement | null;
   if (!node || node.disabled) return;
+  // Stop was already armed on pointerdown; a synthetic click would double-fire.
+  if (node.dataset.event === "cancel-fetch") return;
   const action = CLICK[node.dataset.event ?? ""];
   if (!action) return;
   event.preventDefault();

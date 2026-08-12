@@ -47,7 +47,7 @@ impl FetchControl {
         self.cancelled.store(true, Ordering::SeqCst);
         if let Ok(mut slot) = self.child.lock() {
             if let Some(child) = slot.as_mut() {
-                let _ = child.kill();
+                kill_fetch_child(child);
             }
         }
     }
@@ -64,6 +64,10 @@ impl FetchControl {
         if let Ok(mut slot) = self.child.lock() {
             *slot = Some(child);
         }
+        // Cancel may have raced between spawn and register with an empty slot.
+        if self.was_cancelled() {
+            self.cancel();
+        }
     }
 
     /// The child leaves the slot before `wait`, so a cancel never blocks on a
@@ -71,6 +75,28 @@ impl FetchControl {
     fn take_child(&self) -> Option<Child> {
         self.child.lock().ok()?.take()
     }
+}
+
+/// On Windows, `Child::kill` only terminates `git.exe`; the remote helper that
+/// owns the transfer (and often the stderr pipe) keeps running. Kill the tree.
+fn kill_fetch_child(child: &mut Child) {
+    #[cfg(windows)]
+    kill_fetch_tree(child);
+    #[cfg(not(windows))]
+    {
+        let _ = child.kill();
+    }
+}
+
+#[cfg(windows)]
+fn kill_fetch_tree(child: &mut Child) {
+    use std::process::{Command, Stdio};
+    let pid = child.id().to_string();
+    let _ = Command::new("taskkill")
+        .args(["/PID", &pid, "/T", "/F"])
+        .stdout(Stdio::null())
+        .stderr(Stdio::null())
+        .status();
 }
 
 pub(super) fn fetch_remotes_with_progress(

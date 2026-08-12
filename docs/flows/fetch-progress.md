@@ -15,7 +15,7 @@ Tauri: `commands/actions.rs` `fetch_remotes` / `cancel_fetch`; core `src/inspect
 2. Rust creates a `FetchControl`, stores it in `AppState`, and spawns `git fetch --all --no-tags --no-recurse-submodules --progress` with stderr piped and stdout nulled.
 3. The fetch loop parses `\r`/`\n`-separated stderr fragments; each recognized `phase: N% (done/total)` line becomes a `FetchProgress` emitted as the `fetch-progress` event. Non-progress lines accumulate into a 20-line error tail.
 4. The UI listener updates `state.fetch` and re-renders the status footer; events arriving after the command settled are dropped.
-5. The stop button invokes `cancel_fetch`, which kills the child through the shared `FetchControl`. The killed process closes stderr; the loop sees EOF and reports `FetchStatus::Cancelled`, which the command maps to success — no warning banner.
+5. The stop button arms cancel on `pointerdown` (not `click`, so a progress re-render cannot swallow the press). That invokes `cancel_fetch`, which kills the Git process tree through the shared `FetchControl`. The killed process closes stderr; the loop sees EOF and reports `FetchStatus::Cancelled`, which the command maps to success — no warning banner.
 6. When the command settles, the UI clears `state.fetch.active` and reloads the snapshot so moved remote-tracking refs show up.
 
 ## Reads

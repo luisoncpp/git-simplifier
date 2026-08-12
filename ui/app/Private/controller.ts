@@ -15,6 +15,7 @@ import { loadUiPreferences } from "./preferences.ts";
 import { loadRecentRepositories } from "./repository-switcher.ts";
 import { createState, isInspectionView } from "./state.ts";
 import { renderShell } from "./views/shell.ts";
+import { patchFetchProgress } from "./views/status-bar.ts";
 import type {
   AppState,
   Bridge,
@@ -99,13 +100,14 @@ export class AppController {
   }
 
   /// Progress events can arrive after the command already settled (queued IPC);
-  /// a finished fetch must not light the bar back up.
+  /// a finished fetch must not light the bar back up. When the bar is already
+  /// mounted, patch it in place so the stop button survives the tick.
   onFetchProgress(payload: FetchProgressEvent): void {
     if (!this.state.fetch.active) return;
     this.state.fetch.phase = payload.phase;
     this.state.fetch.done = payload.done;
     this.state.fetch.total = payload.total;
-    this.render();
+    if (!patchFetchProgress(this.state)) this.render();
   }
 
   async cancelFetch(): Promise<void> {

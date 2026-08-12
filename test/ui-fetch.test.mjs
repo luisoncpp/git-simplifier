@@ -1,4 +1,5 @@
 import assert from "node:assert/strict";
+import { readFile } from "node:fs/promises";
 import test from "node:test";
 import { AppController, FixtureBridge, renderShell } from "../ui/app/index.ts";
 import { fetchRemotes } from "../ui/app/Private/discovery.ts";
@@ -163,4 +164,69 @@ test("refresh paints local state before the first fetch of a session", async () 
   const fetchAt = commands.indexOf("fetch_remotes");
   assert.ok(firstLoad !== -1 && firstLoad < fetchAt);
   assert.ok(commands.lastIndexOf("load_snapshot") > fetchAt);
+});
+
+test("progress events patch the mounted status bar without a full re-render", () => {
+  const controller = controllerWith(stubBridge());
+  controller.state.fetch = { active: true, phase: "Receiving objects", done: 10, total: 100 };
+  const fill = { style: { width: "10%" } };
+  const attrs = {};
+  const bar = { setAttribute(name, value) { attrs[name] = value; } };
+  const label = { textContent: "Receiving objects 10%" };
+  const stop = { keep: true };
+  const nodes = {
+    ".fetch-fill": fill,
+    ".fetch-progress": bar,
+    ".fetch-label": label,
+    '[data-event="cancel-fetch"]': stop,
+  };
+  const footer = {
+    querySelector(selector) {
+      return nodes[selector] ?? null;
+    },
+  };
+  const previous = globalThis.document;
+  globalThis.document = {
+    querySelector(selector) {
+      return selector === "footer.status" ? footer : null;
+    },
+  };
+  let rendered = 0;
+  controller.render = () => {
+    rendered += 1;
+  };
+
+  try {
+    controller.onFetchProgress({ phase: "Receiving objects", done: 45, total: 100 });
+    assert.equal(rendered, 0, "a full re-render would drop the stop button mid-click");
+    assert.equal(fill.style.width, "45%");
+    assert.equal(attrs["aria-valuenow"], "45");
+    assert.equal(label.textContent, "Receiving objects 45%");
+  } finally {
+    globalThis.document = previous;
+  }
+});
+
+test("progress falls back to a full render when the status bar is not mounted", () => {
+  const controller = controllerWith(stubBridge());
+  controller.state.fetch.active = true;
+  const previous = globalThis.document;
+  globalThis.document = { querySelector() { return null; } };
+  let rendered = 0;
+  controller.render = () => {
+    rendered += 1;
+  };
+
+  try {
+    controller.onFetchProgress({ phase: "Receiving objects", done: 1, total: 2 });
+    assert.equal(rendered, 1);
+  } finally {
+    globalThis.document = previous;
+  }
+});
+
+test("cancel-fetch is armed on pointerdown so a re-render cannot swallow the click", async () => {
+  const source = await readFile(new URL("../ui/app/Private/events.ts", import.meta.url), "utf8");
+  assert.match(source, /pointerdown/);
+  assert.match(source, /cancel-fetch/);
 });

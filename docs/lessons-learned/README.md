@@ -62,3 +62,4 @@ Avoid: "bug description + fix". Prefer: "what I learned that applies to future w
 | [opening-a-repository-must-fetch-like-refresh.md](./opening-a-repository-must-fetch-like-refresh.md) | Opening another repository must fetch remotes the same way Refresh does | 2026-08-11 |
 | [git-errors-must-surface-stderr-and-open-must-probe.md](./git-errors-must-surface-stderr-and-open-must-probe.md) | Command errors must include stderr; open must probe the worktree before swapping sessions | 2026-08-11 |
 | [fetch-progress-streaming.md](./fetch-progress-streaming.md) | Git progress needs `--progress` and `\r`-splitting; cancel kills via a child slot, never a lock held across wait | 2026-11-08 |
+| [fetch-stop-must-survive-progress-rerenders.md](./fetch-stop-must-survive-progress-rerenders.md) | Progress full-renders swallow stop clicks; arm on pointerdown and patch the bar; Windows cancel needs process-tree kill | 2026-08-12 |
