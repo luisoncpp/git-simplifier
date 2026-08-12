@@ -126,7 +126,7 @@ export function setRevertTarget(controller: AppController, node: FieldNode): voi
 export function toggleCleanupSubmodule(controller: AppController, node: FieldNode): void {
   const path = node.value;
   const set = controller.state.draft.cleanupSubmodulePaths;
-  if (node.checked) set.add(path);
+  if ((node as HTMLInputElement).checked) set.add(path);
   else set.delete(path);
   controller.render();
 }
