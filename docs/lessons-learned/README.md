@@ -61,3 +61,4 @@ Avoid: "bug description + fix". Prefer: "what I learned that applies to future w
 | [work-parked-outside-app-owned-refs-is-invisible-work.md](./work-parked-outside-app-owned-refs-is-invisible-work.md) | Work left on the shared stash stack reads as "No Saved work"; park it on a ref the listing already reads | 2026-08-07 |
 | [opening-a-repository-must-fetch-like-refresh.md](./opening-a-repository-must-fetch-like-refresh.md) | Opening another repository must fetch remotes the same way Refresh does | 2026-08-11 |
 | [git-errors-must-surface-stderr-and-open-must-probe.md](./git-errors-must-surface-stderr-and-open-must-probe.md) | Command errors must include stderr; open must probe the worktree before swapping sessions | 2026-08-11 |
+| [fetch-progress-streaming.md](./fetch-progress-streaming.md) | Git progress needs `--progress` and `\r`-splitting; cancel kills via a child slot, never a lock held across wait | 2026-11-08 |

@@ -54,6 +54,7 @@ Keep these docs operational. Prefer short tables, explicit file names, and seque
 | [quick-switch.md](./quick-switch.md) | Backend Quick branch switch and Saved work restoration |
 | [saved-work-diff.md](./saved-work-diff.md) | Saved work restore apply preview in a secondary window |
 | [switch-repository.md](./switch-repository.md) | Recent repository menu, persistence, and open/prune |
+| [fetch-progress.md](./fetch-progress.md) | Refresh/open fetch: progress bar, stop button, paint-before-fetch ordering |
 | [split-branch.md](./split-branch.md) | Backend Split branch copy of selected paths onto a new branch |
 | [sync.md](./sync.md) | Backend Sync with Base, Saved work reapply, and resumable conflicts |
 | [uncommit-rewrite.md](./uncommit-rewrite.md) | Backend Uncommit planning and application |
