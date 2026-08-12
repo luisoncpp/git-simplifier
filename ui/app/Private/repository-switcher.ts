@@ -137,11 +137,15 @@ async function openRepositoryPath(controller: AppController, path: string): Prom
       controller.state.draft = createDraft();
       controller.state.outcome = null;
       controller.state.expanded.clear();
+      // Paint the new repository from the returned snapshot first; the fetch
+      // then runs behind the progress bar instead of hiding the switch.
+      await controller.reload(snapshot);
       // Same contract as Refresh: learn whether remotes are reachable for the
       // newly opened repo, without blocking the local snapshot reload.
       controller.state.warning = await fetchRemotes(controller);
       if (controller.state.warning) controller.announce(controller.state.warning);
-      await controller.reload(snapshot);
+      // The fetch moved remote-tracking refs, so the snapshot is stale now.
+      await controller.reload();
       await loadRecentRepositories(controller);
     } catch (error) {
       await loadRecentRepositories(controller);

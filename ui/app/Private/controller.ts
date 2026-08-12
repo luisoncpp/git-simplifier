@@ -80,6 +80,10 @@ export class AppController {
 
   refresh(snapshot: RepositorySnapshot | null = null): Promise<void> {
     return this.run(async () => {
+      // With nothing on screen yet (app start), paint local state first so a
+      // slow fetch never hides a repository we already know. A visible
+      // repository skips this: its data is already on screen.
+      if (!this.state.snapshot && !snapshot) await this.reload();
       this.state.warning = await fetchRemotes(this);
       if (this.state.warning) this.announce(this.state.warning);
       await this.reload(snapshot);

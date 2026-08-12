@@ -20,6 +20,7 @@ const RECENTS = [
 ];
 
 function withRecents(extra = {}) {
+  let current = snapshotWith({});
   const controller = controllerWith({
     async invoke(command, args) {
       if (command === "list_recent_repositories") return [...RECENTS];
@@ -27,9 +28,10 @@ function withRecents(extra = {}) {
         return RECENTS.filter((entry) => entry.path !== args.path);
       }
       if (command === "open_repository") {
-        return snapshotWith({ path: args.request.path, name: args.request.path.split("/").pop() });
+        current = snapshotWith({ path: args.request.path, name: args.request.path.split("/").pop() });
+        return current;
       }
-      if (command === "load_snapshot") return snapshotWith({});
+      if (command === "load_snapshot") return current;
       return [];
     },
   });
@@ -175,4 +177,52 @@ test("reveal in file explorer asks the desktop shell to show the folder", async 
 
   assert.deepEqual(commands[0], ["reveal_in_explorer", { path: "C:/work/beta" }]);
   assert.equal(controller.state.repoContextMenu, null);
+});
+
+async function flushUntil(condition) {
+  for (let attempt = 0; attempt < 100; attempt += 1) {
+    if (condition()) return;
+    await new Promise((resolve) => setTimeout(resolve, 0));
+  }
+  throw new Error("condition was never met");
+}
+
+test("the new repository is visible while its fetch is still running", async () => {
+  const controller = withRecents({ repoMenuOpen: true });
+  const original = controller.bridge.invoke.bind(controller.bridge);
+  let finishFetch;
+  controller.bridge.invoke = (command, args) => {
+    if (command !== "fetch_remotes") return original(command, args);
+    return new Promise((resolve) => { finishFetch = () => resolve(null); });
+  };
+
+  const opening = openRecentRepository(controller, "C:/work/beta");
+  await flushUntil(() => controller.state.fetch.active);
+
+  assert.equal(controller.state.snapshot.overview.path, "C:/work/beta");
+
+  finishFetch();
+  await opening;
+  assert.equal(controller.state.snapshot.overview.path, "C:/work/beta");
+  assert.equal(controller.state.fetch.active, false);
+});
+
+test("opening a repository reloads once more after the fetch", async () => {
+  const controller = withRecents({ repoMenuOpen: true });
+  const commands = [];
+  const original = controller.bridge.invoke.bind(controller.bridge);
+  controller.bridge.invoke = async (command, args) => {
+    commands.push(command);
+    return original(command, args);
+  };
+
+  await openRecentRepository(controller, "C:/work/beta");
+
+  const fetchAt = commands.indexOf("fetch_remotes");
+  const loads = commands
+    .map((command, index) => (command === "load_snapshot" ? index : -1))
+    .filter((index) => index >= 0);
+  assert.ok(fetchAt > commands.indexOf("open_repository"));
+  assert.deepEqual(loads.length, 1);
+  assert.ok(loads[0] > fetchAt);
 });

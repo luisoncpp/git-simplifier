@@ -146,3 +146,21 @@ test("the cancel-fetch click action invokes the desktop cancel command", async (
 
   assert.deepEqual(commands, ["cancel_fetch"]);
 });
+
+test("refresh paints local state before the first fetch of a session", async () => {
+  const commands = [];
+  const controller = controllerWith(stubBridge());
+  controller.bridge.invoke = async (command) => {
+    commands.push(command);
+    if (command === "load_snapshot") return snapshotWith({});
+    return [];
+  };
+  controller.state.snapshot = null;
+
+  await controller.refresh();
+
+  const firstLoad = commands.indexOf("load_snapshot");
+  const fetchAt = commands.indexOf("fetch_remotes");
+  assert.ok(firstLoad !== -1 && firstLoad < fetchAt);
+  assert.ok(commands.lastIndexOf("load_snapshot") > fetchAt);
+});
