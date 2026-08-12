@@ -1,7 +1,7 @@
 use std::sync::atomic::{AtomicU64, Ordering};
 
-use git_helper_core::{FetchControl, RefName};
-use tauri::{AppHandle, State};
+use git_helper_core::{FetchControl, FetchProgress, InspectionError, RefName};
+use tauri::{AppHandle, Emitter, State};
 use tauri_plugin_opener::OpenerExt;
 
 use super::apply;
@@ -78,19 +78,33 @@ pub fn load_snapshot(state: State<'_, AppState>) -> Result<RepositorySnapshot, S
 }
 
 #[tauri::command(async)]
-pub fn fetch_remotes(state: State<'_, AppState>) -> Result<(), String> {
-    with_repository(state.inner(), |repository| {
+pub fn fetch_remotes(app: AppHandle, state: State<'_, AppState>) -> Result<(), String> {
+    let control = FetchControl::new();
+    state.register_fetch(control.clone());
+    let progress = move |event: FetchProgress| {
+        let _ = app.emit("fetch-progress", event);
+    };
+    let result = with_repository(state.inner(), |repository| {
         repository
-            .fetch_remotes_with_progress(&FetchControl::new(), |_| {})
-            .map_err(|error| {
-                let text = error.to_string();
-                let detail = text
-                    .strip_prefix("Git inspection failed: ")
-                    .unwrap_or(&text);
-                format!("Could not fetch remotes: {detail}")
-            })
-    })
-    .map(|_| ())
+            .fetch_remotes_with_progress(&control, progress)
+            .map_err(fetch_error_message)
+    });
+    state.clear_fetch();
+    result.map(|_| ())
+}
+
+/// The cancel path touches only the fetch slot, never the repository mutex, so
+/// it runs while a fetch holds that mutex.
+#[tauri::command(async)]
+pub fn cancel_fetch(state: State<'_, AppState>) -> Result<(), String> {
+    state.cancel_fetch();
+    Ok(())
+}
+
+fn fetch_error_message(error: InspectionError) -> String {
+    let text = error.to_string();
+    let detail = text.strip_prefix("Git inspection failed: ").unwrap_or(&text);
+    format!("Could not fetch remotes: {detail}")
 }
 
 #[tauri::command(async)]

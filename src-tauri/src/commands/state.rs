@@ -2,7 +2,7 @@ use std::ffi::OsString;
 use std::path::PathBuf;
 use std::sync::Mutex;
 
-use git_helper_core::{GitCommand, GitRepository, RepositoryConfig};
+use git_helper_core::{FetchControl, GitCommand, GitRepository, RepositoryConfig};
 
 use super::data::PendingOperation;
 
@@ -11,6 +11,7 @@ pub struct AppState {
     pub(super) init_error: Mutex<Option<String>>,
     pub(super) path: Mutex<PathBuf>,
     pub(super) pending: Mutex<Option<PendingOperation>>,
+    pub(super) fetch: Mutex<Option<FetchControl>>,
 }
 
 impl AppState {
@@ -21,6 +22,7 @@ impl AppState {
             init_error: Mutex::new(None),
             path: Mutex::new(path.clone()),
             pending: Mutex::new(None),
+            fetch: Mutex::new(None),
         };
         if let Err(error) = state.open_path(path) {
             state.set_error(error);
@@ -98,6 +100,27 @@ impl AppState {
         }
         Err("operation review is stale".to_string())
     }
+
+    pub fn register_fetch(&self, control: FetchControl) {
+        if let Ok(mut slot) = self.fetch.lock() {
+            *slot = Some(control);
+        }
+    }
+
+    /// Only the handle is cloned out of the slot; `FetchControl::cancel` takes
+    /// its own child lock, so this never blocks on the running fetch.
+    pub fn cancel_fetch(&self) {
+        let control = self.fetch.lock().ok().and_then(|slot| slot.clone());
+        if let Some(control) = control {
+            control.cancel();
+        }
+    }
+
+    pub fn clear_fetch(&self) {
+        if let Ok(mut slot) = self.fetch.lock() {
+            *slot = None;
+        }
+    }
 }
 
 fn ensure_git_worktree(repository: &GitRepository) -> Result<(), String> {
@@ -118,4 +141,14 @@ fn ensure_git_worktree(repository: &GitRepository) -> Result<(), String> {
 
 fn args(values: &[&str]) -> Vec<OsString> {
     values.iter().map(|value| OsString::from(*value)).collect()
+}
+
+#[cfg(test)]
+mod tests {
+    #[test]
+    fn cancel_fetch_without_a_running_fetch_is_a_no_op() {
+        let state = super::AppState::new();
+        state.cancel_fetch();
+        state.clear_fetch();
+    }
 }

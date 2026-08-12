@@ -28,6 +28,7 @@ pub fn run() {
             commands::actions::reveal_in_explorer,
             commands::actions::load_snapshot,
             commands::actions::fetch_remotes,
+            commands::actions::cancel_fetch,
             commands::actions::list_operations,
             commands::actions::list_saved_work,
             commands::actions::list_base_choices,
