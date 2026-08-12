@@ -26,6 +26,7 @@ export const CLICK: Record<string, ClickHandler> = {
   "pick-branch": (controller, value, node) =>
     branches.pickBranch(controller, value, node?.dataset.remote ?? ""),
   refresh: (controller) => controller.refresh(),
+  "cancel-fetch": (controller) => controller.cancelFetch(),
   "set-skip-review": (controller, value) => prefs.setSkipReview(controller, value === "true"),
   "set-view": (controller, value) => controller.setView(value as ViewId),
   "set-operation": (controller, value) => controller.selectOperation(value as OperationId),

@@ -1,7 +1,8 @@
 import assert from "node:assert/strict";
 import test from "node:test";
-import { AppController, FixtureBridge } from "../ui/app/index.ts";
+import { AppController, FixtureBridge, renderShell } from "../ui/app/index.ts";
 import { fetchRemotes } from "../ui/app/Private/discovery.ts";
+import { CLICK } from "../ui/app/Private/event-tables.ts";
 import { controllerWith, snapshotWith } from "./support/controller.mjs";
 
 function stubBridge(responses = {}) {
@@ -95,5 +96,53 @@ test("cancelFetch only invokes the desktop command while a fetch is active", asy
 
   controller.state.fetch.active = true;
   await controller.cancelFetch();
+  assert.deepEqual(commands, ["cancel_fetch"]);
+});
+
+test("the status bar shows fetch progress with a stop button", () => {
+  const controller = controllerWith(stubBridge());
+  controller.state.busy = true;
+  controller.state.fetch = { active: true, phase: "Receiving objects", done: 45, total: 100 };
+
+  const markup = renderShell(controller.state);
+
+  assert.match(markup, /role="progressbar"/);
+  assert.match(markup, /aria-valuenow="45"/);
+  assert.match(markup, /width:45%/);
+  assert.match(markup, /Receiving objects 45%/);
+  assert.match(markup, /data-event="cancel-fetch"/);
+  assert.doesNotMatch(markup, /Working…/);
+});
+
+test("the status bar shows an indeterminate fetch state before the first event", () => {
+  const controller = controllerWith(stubBridge());
+  controller.state.busy = true;
+  controller.state.fetch = { active: true, phase: "", done: 0, total: 0 };
+
+  const markup = renderShell(controller.state);
+
+  assert.match(markup, /Fetching remotes…/);
+  assert.match(markup, /data-event="cancel-fetch"/);
+  assert.doesNotMatch(markup, /role="progressbar"/);
+});
+
+test("the status bar keeps the busy spinner when no fetch is active", () => {
+  const controller = controllerWith(stubBridge());
+  controller.state.busy = true;
+
+  const markup = renderShell(controller.state);
+
+  assert.match(markup, /Working…/);
+  assert.doesNotMatch(markup, /role="progressbar"/);
+});
+
+test("the cancel-fetch click action invokes the desktop cancel command", async () => {
+  const commands = [];
+  const controller = controllerWith(stubBridge());
+  controller.bridge.invoke = async (command) => { commands.push(command); return []; };
+  controller.state.fetch.active = true;
+
+  await CLICK["cancel-fetch"](controller, "");
+
   assert.deepEqual(commands, ["cancel_fetch"]);
 });

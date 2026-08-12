@@ -10,6 +10,7 @@ import { inspectionView } from "./inspection.ts";
 import { recoveryView, savedView } from "./panels.ts";
 import { repoSwitcher } from "./repo-menu.ts";
 import { reviewPane } from "./review.ts";
+import { statusBar } from "./status-bar.ts";
 
 type NavEntry = [ViewId, string, (state: AppState) => number];
 
@@ -64,7 +65,7 @@ function main(state: AppState): string {
   return `<section class="main">${repoBar(state)}
     <div class="banner-stack">${banners(state)}</div>
     <div class="workspace${workspaceClass(state)}">${pane(state)}${reviewPane(state)}</div>
-    <footer class="status" role="status">${status(state)}</footer>
+    <footer class="status" role="status">${statusBar(state)}</footer>
   </section>`;
 }
 
@@ -158,10 +159,4 @@ function skipModeButton(state: AppState, skip: boolean, label: string): string {
   return `<button class="ghost small${current ? " active" : ""}${skipActive}" data-event="set-skip-review"
     data-value="${skip}" data-focus="skip-review:${skip}" aria-pressed="${current}"
     ${state.busy ? "disabled" : ""}>${esc(label)}</button>`;
-}
-
-function status(state: AppState): string {
-  if (state.busy) return `<span class="spinner" aria-hidden="true"></span>Working…`;
-  if (state.review) return "Review pending — nothing has been written yet.";
-  return "Ready";
 }
