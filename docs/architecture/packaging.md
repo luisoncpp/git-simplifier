@@ -12,6 +12,8 @@ Output: `.cargo-target/release/bundle/nsis/Git Simplifier_<version>_x64-setup.ex
 
 The command chains `vite build` (via `beforeBuildCommand`) → cargo release build → `makensis`. NSIS ships with the Tauri CLI, so no separate installer toolchain is required.
 
+On this Windows setup, `.cargo/config.toml` pins `LIB`/`INCLUDE` to MSVC 14.38 under `[env]` so release linking finds `msvcrt.lib` (14.44's linker otherwise fails with LNK1104). See [msvc-144-lacks-msvcrt-needs-env-lib-pin](../lessons-learned/msvc-144-lacks-msvcrt-needs-env-lib-pin.md).
+
 ## Decisions
 
 | Choice | Value | Why |

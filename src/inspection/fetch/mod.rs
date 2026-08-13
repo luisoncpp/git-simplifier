@@ -13,9 +13,13 @@ use super::errors::InspectionError;
 pub use progress::FetchProgress;
 use progress::ProgressFeed;
 
+/// `--prune` is load-bearing, not hygiene: a merged branch deleted on the
+/// server keeps its remote-tracking ref without it, so Cleanup offers a remote
+/// deletion whose lease the server rejects as "stale info".
 const FETCH_ARGS: &[&str] = &[
     "fetch",
     "--all",
+    "--prune",
     "--no-tags",
     "--no-recurse-submodules",
     "--progress",

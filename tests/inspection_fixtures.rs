@@ -94,6 +94,31 @@ fn fetch_remotes_succeeds_when_no_remotes_are_configured() {
         .unwrap();
 }
 
+/// A branch deleted on the server keeps its remote-tracking ref without prune,
+/// and Cleanup then offers a remote deletion the lease rejects as "stale info".
+#[test]
+fn fetch_remotes_drops_tracking_refs_for_branches_deleted_on_the_remote() {
+    let fixture = FixtureRepo::new();
+    let remote = fixture.add_bare_origin();
+    let commit = fixture.head();
+    seed_remote_ref(&remote, "refs/heads/extra", Some(&commit));
+
+    fixture
+        .repo
+        .fetch_remotes_with_progress(&FetchControl::new(), |_| {})
+        .unwrap();
+    seed_remote_ref(&remote, "refs/heads/extra", /*commit=*/ None);
+    fixture
+        .repo
+        .fetch_remotes_with_progress(&FetchControl::new(), |_| {})
+        .unwrap();
+
+    let stale = fixture
+        .repo
+        .run(GitCommand::read(args(&["rev-parse", "--verify", "refs/remotes/origin/extra"])));
+    assert!(stale.is_err());
+}
+
 #[test]
 fn fetch_remotes_picks_up_new_refs_on_a_configured_remote() {
     let fixture = FixtureRepo::new();
@@ -179,6 +204,22 @@ fn load_state_fails_outside_a_git_worktree_with_stderr() {
         message.contains("not a git repository") || message.contains("rev-parse"),
         "expected repository probe detail, got: {message}"
     );
+}
+
+/// `None` deletes the ref, so a test can make a branch vanish on the server the
+/// way a merge request with "delete source branch" does.
+fn seed_remote_ref(remote: &tempfile::TempDir, reference: &str, commit: Option<&str>) {
+    let git_dir = remote.path().to_str().unwrap();
+    let mut values = vec!["--git-dir", git_dir, "update-ref"];
+    match commit {
+        Some(commit) => values.extend(["--create-reflog", reference, commit]),
+        None => values.extend(["-d", reference]),
+    }
+    let status = std::process::Command::new("git")
+        .args(&values)
+        .status()
+        .expect("failed to run git against the bare remote");
+    assert!(status.success(), "git update-ref failed for {reference}");
 }
 
 fn args(values: &[&str]) -> Vec<OsString> {
