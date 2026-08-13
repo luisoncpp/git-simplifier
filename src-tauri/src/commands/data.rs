@@ -158,6 +158,7 @@ pub enum PrepareOperationRequest {
     RestoreSavedWork,
     DeleteSavedWork(DeleteSavedWorkInput),
     ResumeSync,
+    CommitMerge,
     ForcePush,
 }
 
@@ -186,6 +187,9 @@ pub struct OperationOutcome {
     pub offer_resolve_pull: bool,
     /// When set, the current branch has Saved work ready for the restore review.
     pub offer_restore_saved_work: bool,
+    /// When set, a Sync paused at base-merge-conflict can resume after the merge commit.
+    #[serde(default)]
+    pub offer_resume_sync: bool,
     /// Conflict or warning details are present; the result banner should not look like success.
     pub has_warning: bool,
 }
@@ -254,6 +258,11 @@ pub enum PendingOperation {
         id: String,
         operation_id: String,
     },
+    CommitMerge {
+        id: String,
+        plan: git_helper_core::CommitMergePlan,
+        head: ObjectId,
+    },
 }
 
 impl PendingOperation {
@@ -274,6 +283,7 @@ impl PendingOperation {
             | Self::Restore { id, .. }
             | Self::Delete { id, .. }
             | Self::Resume { id, .. } => id,
+            Self::CommitMerge { id, .. } => id,
         }
     }
 }
@@ -300,6 +310,7 @@ mod tests {
             r#"{"kind":"cleanup","base":"refs/remotes/origin/main","references":["refs/heads/spike"],"delete_remotes":true}"#,
             r#"{"kind":"restore_saved_work"}"#,
             r#"{"kind":"delete_saved_work","branch":"feature"}"#,
+            r#"{"kind":"commit_merge"}"#,
             r#"{"kind":"resume_sync"}"#,
             r#"{"kind":"force_push"}"#,
         ];

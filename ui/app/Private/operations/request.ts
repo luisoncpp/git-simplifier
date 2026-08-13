@@ -10,6 +10,7 @@ export function buildRequest(state: AppState): OperationRequest {
   if (kind === "split_branch") return splitBranchRequest(state);
   if (kind === "quick_switch") return quickSwitchRequest(state);
   if (kind === "sync") return { kind, base: baseRef(state) };
+  if (kind === "commit_merge") return { kind };
   if (kind === "cleanup") return cleanupRequest(state);
   return { kind: "force_push" };
 }

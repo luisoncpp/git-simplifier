@@ -108,6 +108,24 @@ export function syncForm(state: AppState): string {
   </fieldset>`;
 }
 
+export function commitMergeForm(state: AppState): string {
+  if (!state.snapshot?.overview.merge_in_progress) {
+    return emptyState(
+      "No merge in progress",
+      "Finish conflict resolution in your Git client, then commit the merge here so unrelated files cannot land in the PR.",
+    );
+  }
+  if (state.snapshot.overview.worktree.conflicts > 0) {
+    return emptyState(
+      "Conflicts still unmerged",
+      "Resolve every conflicted path in your editor, then come back. This app does not author merge resolutions.",
+    );
+  }
+  return `<fieldset><legend>Finish the in-progress merge</legend>
+    ${fieldNote("Commits only the merge result. Unrelated staged or untracked files stay in the working tree, so Base…HEAD cannot gain extra paths.")}
+  </fieldset>`;
+}
+
 export function forcePushForm(state: AppState): string {
   const upstream = upstreamRef(state);
   if (!upstream) {

@@ -95,3 +95,48 @@ pub(crate) fn phase_label(phase: &SyncPhase) -> &'static str {
         SyncPhase::WipReapplyConflict => "conflicts while reapplying Saved work",
     }
 }
+
+pub(super) fn commit_merge(state: &AppState, id: String) -> Result<Prepared, String> {
+    let (plan, head) = with_repository(state, |repo| {
+        let overview = repo.overview().map_err(|e| e.to_string())?;
+        let plan = repo.plan_commit_merge().map_err(|e| e.to_string())?;
+        Ok((plan, overview.head))
+    })?;
+    let mut impact = vec![
+        "Create a merge commit of HEAD and MERGE_HEAD from the resolved three-way result"
+            .to_string(),
+    ];
+    if !plan.excluded_paths.is_empty() {
+        impact.push(format!(
+            "{} unrelated path(s) will stay uncommitted",
+            plan.excluded_paths.len()
+        ));
+    }
+    let mut warnings = Vec::new();
+    if !plan.excluded_paths.is_empty() {
+        let names = plan
+            .excluded_paths
+            .iter()
+            .map(|path| path.as_str())
+            .collect::<Vec<_>>()
+            .join(", ");
+        warnings.push(format!("A naive git add -A would have committed: {names}"));
+    }
+    let review = OperationReview {
+        plan_id: id.clone(),
+        kind: "commit_merge".to_string(),
+        title: "Commit merge".to_string(),
+        impact,
+        preserves: vec![
+            "Working tree contents".to_string(),
+            "Unrelated staged and untracked files".to_string(),
+        ],
+        warnings,
+        commands: plan.commands.clone(),
+        apply_label: "Commit merge".to_string(),
+    };
+    Ok(Prepared {
+        review,
+        pending: PendingOperation::CommitMerge { id, plan, head },
+    })
+}

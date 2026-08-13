@@ -9,6 +9,7 @@ export interface OperationDef {
 export const OPERATIONS: OperationDef[] = [
   { id: "sync", label: "Sync with Base", needsBase: true },
   { id: "quick_switch", label: "Quick switch", needsBase: false },
+  { id: "commit_merge", label: "Commit merge", needsBase: false },
   { id: "revert", label: "Revert", needsBase: true },
   { id: "uncommit", label: "Uncommit", needsBase: true },
   { id: "edit_message", label: "Edit message", needsBase: true },

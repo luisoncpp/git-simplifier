@@ -27,6 +27,7 @@ export interface RepositoryOverview {
   recovery_count: number;
   sync_status: string | null;
   quick_switch_status?: string | null;
+  merge_in_progress?: boolean;
 }
 
 export interface RepositorySnapshot {
@@ -123,7 +124,12 @@ export interface RecentRepository { name: string; path: string }
 
 export interface RepoContextMenu { path: string; x: number; y: number }
 
-export interface PathContextMenu { path: string; x: number; y: number }
+export interface PathContextMenu {
+  path: string;
+  x: number;
+  y: number;
+  viewDiff: boolean;
+}
 
 export interface OperationReview {
   plan_id: string;
@@ -144,6 +150,7 @@ export interface OperationOutcome {
   offer_publish_branch: string | null;
   offer_resolve_pull?: boolean;
   offer_restore_saved_work?: boolean;
+  offer_resume_sync?: boolean;
   has_warning?: boolean;
 }
 
@@ -164,6 +171,7 @@ export type OperationRequest =
   | { kind: "restore_saved_work" }
   | { kind: "delete_saved_work"; branch: string }
   | { kind: "resume_sync" }
+  | { kind: "commit_merge" }
   | { kind: "force_push" };
 
 /// The two Inspection sections are separate views: every gate that used to read
@@ -190,6 +198,7 @@ export type OperationId =
   | "split_branch"
   | "quick_switch"
   | "sync"
+  | "commit_merge"
   | "force_push"
   | "cleanup";
 

@@ -39,7 +39,7 @@ export function statusTag(file: FileDiff): string {
 function cardHead(file: FileDiff, open: { open: boolean; bodyId: string }): string {
   const path = esc(file.path);
   const was = file.previous_path ? `<span class="was">was ${esc(file.previous_path)}</span>` : "";
-  return `<header class="file-head">
+  return `<header class="file-head" data-path-context="${path}">
     <button class="file-toggle" data-event="toggle-file" data-value="${path}" data-focus="diff-file:${path}"
       aria-expanded="${open.open}" aria-controls="${open.bodyId}">
       <span class="caret" aria-hidden="true">${open.open ? "&#9662;" : "&#9656;"}</span>

@@ -4,7 +4,7 @@ The per-file viewer over the same patch [raw-diff.md](./raw-diff.md) shows as te
 
 ## Trigger
 
-The user opens **Inspection → Files diff**, refreshes while it is open, changes Base, or switches the **HEAD / Local** compare toggle. Inside the view: the layout toggle, a file's collapse control, a gap expander, and the file navigator.
+The user opens **Inspection → Files diff**, refreshes while it is open, changes Base, or switches the **HEAD / Local** compare toggle. Inside the view: the layout toggle, a file's collapse control, a gap expander, the file navigator, and right-click **Edit in IDE** on a file.
 
 ## Load sequence
 
@@ -14,6 +14,7 @@ The user opens **Inspection → Files diff**, refreshes while it is open, change
 4. Any file whose rendered rows exceed `MAX_ROWS_PER_FILE` is added to `collapsed`, so it opens closed rather than making every later re-render slow.
 5. `ensureGrammars` loads the Prism core and the grammars the changed paths need — a no-op without a document.
 6. `filesDiffView` renders the visible file list: tracked entries always; untracked entries only when Local compare filters allow (`visibleFileDiffs`).
+7. Right-click a navigator row or file head opens the shared path context menu with **Edit in IDE** only (`open_file_in_ide`). **View diff** stays on Uncommit/Revert/Split lists.
 
 ## Untracked filter sequence (Local only)
 
@@ -36,11 +37,12 @@ The user opens **Inspection → Files diff**, refreshes while it is open, change
 
 - Reads: configured Base, HEAD, their merge base, and — in **HEAD** mode — committed trees; in **Local** mode, the working tree as well.
 - Git writes: none.
-- Other side effects: none. No clipboard, no persistence — the layout, compare mode, untracked filter toggles, and navigator choices live in `AppState` for the session only.
+- Other side effects: **Edit in IDE** spawns the configured editor for that file. Layout, compare mode, untracked filter toggles, and navigator choices live in `AppState` for the session only.
 
 ## Files to inspect
 
 - `ui/app/Private/files-diff/` (`reads.ts` for the gap arithmetic, `rows.ts` for what both layouts share, `highlight.ts` for Prism, `single.ts` for the one-file pane reused by quick diff)
+- `ui/app/Private/path-diff-menu.ts` (Files diff **Edit in IDE** menu)
 - `ui/app/Private/discovery.ts`, `ui/app/Private/events.ts`, `ui/app/Private/dom.ts`
 - `ui/styles/files-diff.css`
 - `src/inspection/patch/`, `src/inspection/diff.rs`, `src/inspection/untracked/`

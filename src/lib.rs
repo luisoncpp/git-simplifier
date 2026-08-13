@@ -2,6 +2,7 @@ mod cleanup;
 mod exclusion;
 mod git;
 mod inspection;
+mod merge_commit;
 mod push;
 mod recording;
 mod repository;
@@ -27,6 +28,7 @@ pub use inspection::{
     LocalBranchChoice, RemoteBaseChoice, RepositoryOverview, SubmoduleChoice, UntrackedAnnotations,
     UntrackedFilters, WorktreeSummary, DirtySubmodule,
 };
+pub use merge_commit::{CommitMergeError, CommitMergePlan, CommitMergeResult};
 pub use push::{
     ForcePushError, ForcePushPlan, ForcePushResult, PublishBranchPlan, PublishBranchResult,
     PublishError,

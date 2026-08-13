@@ -56,6 +56,10 @@ _Avoid_: duplicate, branch off
 **Move** (not implemented):
 The same selection, but the original branch must also lose the change — by **Rewrite** or by a revert commit. Deliberately out of scope: it is a different, destructive operation, and the word "split" hides the difference. UI must never offer "split" without saying which of the two it does.
 
+**Commit merge**:
+Finishing an in-progress Git merge (`MERGE_HEAD`) with a merge commit whose tree is the three-way result plus staged conflict resolutions only. Unrelated staged or untracked work stays in the worktree so **Base…HEAD** cannot gain paths that were not in the PR before the conflict.
+_Avoid_: amend, `git add -A` — those sweep unrelated files into the merge commit.
+
 **Undo**:
 Reversing the effect of an operation the app itself performed. A safety net over any operation, not a git concept.
 _Avoid_: rollback — and never label Undo as **Revert**

@@ -1,6 +1,6 @@
 import { esc } from "../dom.ts";
 import { actionVerb } from "../review-mode.ts";
-import { currentBranch, quickSwitchPause, savedWorkFor, syncPause } from "../snapshot.ts";
+import { currentBranch, overviewOf, quickSwitchPause, savedWorkFor, syncPause } from "../snapshot.ts";
 import type { SyncPause } from "../snapshot.ts";
 import type { AppState, OperationOutcome } from "../types.ts";
 
@@ -13,11 +13,21 @@ function syncBanner(state: AppState): string {
   if (!pause) return "";
   return `<div class="banner warn" role="alert">
     <div><strong>${esc(pause.label)}</strong>
-      <p>${pause.resumable ? resumeHint(pause) : "This phase is not resumable from here."}</p></div>
-    ${pause.resumable
-      ? `<button class="primary small" data-event="resume-sync" ${state.busy ? "disabled" : ""}>${actionVerb(state.skipReview)} ${pause.retry ? "retry" : "resume"}</button>`
-      : `<button class="ghost small" data-event="set-view" data-value="recovery">Inspect recovery</button>`}
+      <p>${pause.resumable ? resumeHint(state, pause) : "This phase is not resumable from here."}</p></div>
+    ${syncPrimaryAction(state, pause)}
   </div>`;
+}
+
+function syncPrimaryAction(state: AppState, pause: SyncPause): string {
+  const disabled = state.busy ? "disabled" : "";
+  const mergeOpen = overviewOf(state)?.merge_in_progress;
+  if (pause.phase === "base-merge-conflict" && mergeOpen) {
+    return `<button class="primary small" data-event="commit-merge" ${disabled}>${actionVerb(state.skipReview)} merge commit</button>`;
+  }
+  if (pause.resumable) {
+    return `<button class="primary small" data-event="resume-sync" ${disabled}>${actionVerb(state.skipReview)} ${pause.retry ? "retry" : "resume"}</button>`;
+  }
+  return `<button class="ghost small" data-event="set-view" data-value="recovery">Inspect recovery</button>`;
 }
 
 function quickSwitchBanner(state: AppState): string {
@@ -54,8 +64,11 @@ function savedWorkBanner(state: AppState): string {
   </div>`;
 }
 
-function resumeHint(pause: SyncPause): string {
+function resumeHint(state: AppState, pause: SyncPause): string {
   if (pause.retry) return "Nothing was written yet. Reconnect to the remote and retry the fetch.";
+  if (pause.phase === "base-merge-conflict" && overviewOf(state)?.merge_in_progress) {
+    return "Resolve conflicts in your editor, then use Commit merge here so unrelated files cannot land in the PR.";
+  }
   return "Resolve the conflicted files in your editor, then resume. Your Saved work stays anchored until then.";
 }
 
@@ -82,6 +95,9 @@ function followUp(state: AppState, outcome: OperationOutcome): string {
       <button class="primary small" data-event="restore-saved" ${disabled}>${actionVerb(state.skipReview)} restore</button>
       <button class="ghost small" data-event="dismiss-outcome" ${disabled}>Dismiss</button>
     </div>`;
+  }
+  if (outcome.offer_resume_sync) {
+    return `<button class="primary small" data-event="resume-sync" ${disabled}>${actionVerb(state.skipReview)} resume sync</button>`;
   }
   return "";
 }

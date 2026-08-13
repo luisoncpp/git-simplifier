@@ -13,6 +13,7 @@ import {
   toggleUntrackedFilters,
   visibleFileDiffs,
 } from "../ui/app/Private/files-diff/index.ts";
+import { openPathContextMenu, openPathInIde } from "../ui/app/Private/path-diff-menu.ts";
 import { controllerWith, snapshotWith } from "./support/controller.mjs";
 
 const APP = "src/app.ts";
@@ -290,6 +291,7 @@ test("the file navigator starts collapsed and opens on demand", async () => {
   assert.match(markup, /id="file-navigator"/);
   assert.match(markup, /files-diff-body with-navigator/);
   assert.equal(markup.match(/data-event="jump-to-file"/g).length, 3);
+  assert.match(markup, /data-path-context="src\/app\.ts"/);
 });
 
 test("jumping to a collapsed file opens it", async () => {
@@ -448,4 +450,27 @@ test("untracked filters hide annotated files but never tracked changes", async (
   controller.state.diffView.untrackedFilters.excludeRootDot = false;
   controller.state.diffView.untrackedFilters.excludeUnknownTypes = false;
   assert.equal(visibleFileDiffs(controller.state.fileDiffs, controller.state.diffView).length, 3);
+});
+
+test("Files diff path menu offers Edit in IDE without View diff", async () => {
+  const calls = [];
+  const controller = controllerWith({
+    async invoke(command, args) {
+      calls.push({ command, args });
+    },
+  });
+  controller.state.view = "files-diff";
+  controller.state.operation = "uncommit";
+
+  openPathContextMenu(controller, APP, /*x=*/10, /*y=*/20);
+  const html = renderShell(controller.state);
+  assert.match(html, /data-event="edit-path-in-ide"/);
+  assert.match(html, /Edit in IDE/);
+  assert.doesNotMatch(html, /data-event="view-path-diff"/);
+
+  await openPathInIde(controller, APP);
+  assert.deepEqual(calls[0], {
+    command: "open_file_in_ide",
+    args: { repoPath: "C:/repo", filePath: APP },
+  });
 });

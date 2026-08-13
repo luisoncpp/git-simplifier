@@ -35,6 +35,29 @@ fn sync_fetches_base_and_reapplies_staged_work() {
 }
 
 #[test]
+fn commit_merge_then_resume_sync_completes_a_base_conflict() {
+    let fixture = FixtureRepo::new();
+    fixture.configure_origin_to_self();
+    fixture.commit_file("README.md", "feature\n", "feature change");
+    fixture.switch_to_base();
+    fixture.commit_file("README.md", "base changed\n", "base change");
+    fixture.switch_to_feature();
+
+    let result = fixture.repo.sync(request());
+    assert!(matches!(result, Err(SyncError::BaseMergeConflict { .. })));
+
+    fixture.write_worktree_file("README.md", "resolved\n");
+    fixture.stage_file("README.md");
+    let plan = fixture.repo.plan_commit_merge().unwrap();
+    fixture.repo.apply_commit_merge(&plan).unwrap();
+
+    let resumed = fixture.repo.resume_sync().unwrap();
+    assert_eq!(read_worktree(&fixture, "README.md"), "resolved\n");
+    assert!(resumed.saved_work.is_none());
+    assert!(fixture.repo.sync_status().unwrap().is_none());
+}
+
+#[test]
 fn sync_labels_a_base_merge_conflict_and_can_resume_after_commit() {
     let fixture = FixtureRepo::new();
     fixture.configure_origin_to_self();

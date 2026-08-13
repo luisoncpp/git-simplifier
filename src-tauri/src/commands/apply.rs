@@ -1,7 +1,7 @@
 use git_helper_core::{
-    CleanupPlan, ExcludeSubmodulePlan, ForcePushPlan, ObjectId, PublishBranchPlan, QuickSwitchPlan,
-    QuickSwitchResult, RefName, RevertPlan, RewritePlan, SplitBranchPlan, SubmoduleCleanupPlan,
-    SyncRequest, SyncResult,
+    CleanupPlan, CommitMergePlan, ExcludeSubmodulePlan, ForcePushPlan, ObjectId,
+    PublishBranchPlan, QuickSwitchPlan, QuickSwitchResult, RefName, RevertPlan, RewritePlan,
+    SplitBranchPlan, SubmoduleCleanupPlan, SyncPhase, SyncRequest, SyncResult,
 };
 
 use super::data::{OperationOutcome, PendingOperation};
@@ -31,6 +31,7 @@ pub(super) fn apply(
         PendingOperation::Restore { head, .. } => restore(state, head),
         PendingOperation::Delete { branch, head, .. } => delete(state, branch, head),
         PendingOperation::Resume { operation_id, .. } => resume(state, operation_id),
+        PendingOperation::CommitMerge { plan, head, .. } => commit_merge(state, plan, head),
     }
 }
 
@@ -358,6 +359,33 @@ fn resume(state: &AppState, operation_id: String) -> Result<OperationOutcome, St
     Ok(sync_outcome("resume_sync", "Sync finished", result))
 }
 
+fn commit_merge(
+    state: &AppState,
+    plan: CommitMergePlan,
+    head: ObjectId,
+) -> Result<OperationOutcome, String> {
+    ensure_unchanged(state, &head, "commit merge")?;
+    let result = with_repository(state, |repo| {
+        repo.apply_commit_merge(&plan).map_err(|e| e.to_string())
+    })?;
+    let mut details = vec![format!("HEAD now points at {}", result.new_head)];
+    if !result.excluded_paths.is_empty() {
+        details.push(format!(
+            "{} unrelated path(s) stayed uncommitted",
+            result.excluded_paths.len()
+        ));
+    }
+    let mut outcome = bare("commit_merge", "Merge committed", details);
+    let status = with_repository(state, |repo| repo.sync_status().map_err(|e| e.to_string()))?;
+    if status
+        .as_ref()
+        .is_some_and(|value| value.phase == SyncPhase::BaseMergeConflict)
+    {
+        outcome.offer_resume_sync = true;
+    }
+    Ok(outcome)
+}
+
 fn ensure_unchanged(state: &AppState, head: &ObjectId, label: &str) -> Result<(), String> {
     let current = with_repository(state, |repo| {
         Ok(repo.overview().map_err(|e| e.to_string())?.head)
@@ -379,6 +407,7 @@ fn bare(kind: &str, headline: &str, details: Vec<String>) -> OperationOutcome {
         offer_publish_branch: None,
         offer_resolve_pull: false,
         offer_restore_saved_work: false,
+        offer_resume_sync: false,
         has_warning: false,
     }
 }

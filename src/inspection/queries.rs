@@ -24,6 +24,8 @@ pub(crate) fn overview(runner: &GitRunner) -> Result<RepositoryOverview, Inspect
     let head = object_id(runner, &["rev-parse", "--verify", "HEAD^{commit}"])?;
     let git_version = runner.git_version().to_string();
     let worktree = worktree_summary(runner)?;
+    let merge_in_progress = crate::merge_commit::merge_in_progress(runner)
+        .map_err(map_merge_commit)?;
     let path = runner.repo_path().display().to_string();
     let name = runner
         .repo_path()
@@ -40,6 +42,7 @@ pub(crate) fn overview(runner: &GitRunner) -> Result<RepositoryOverview, Inspect
         head,
         git_version,
         worktree,
+        merge_in_progress,
         saved_work_count: 0,
         recovery_count: 0,
         sync_status: None,
@@ -502,4 +505,11 @@ fn run_write(runner: &GitRunner, args: &[&str]) -> Result<Vec<u8>, InspectionErr
             args.iter().map(|value| OsString::from(*value)).collect(),
         ))?
         .stdout)
+}
+
+fn map_merge_commit(error: crate::merge_commit::CommitMergeError) -> InspectionError {
+    match error {
+        crate::merge_commit::CommitMergeError::Git(git) => InspectionError::Git(git),
+        other => InspectionError::Parse(other.to_string()),
+    }
 }

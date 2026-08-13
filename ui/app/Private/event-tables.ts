@@ -52,6 +52,7 @@ export const CLICK: Record<string, ClickHandler> = {
   "resolve-pull-cancel": (controller) =>
     controller.prepare({ kind: "resolve_quick_switch_pull", resolution: "cancel" }),
   "resume-sync": (controller) => controller.prepare({ kind: "resume_sync" }),
+  "commit-merge": (controller) => controller.prepare({ kind: "commit_merge" }),
   "restore-saved": (controller) => controller.prepare({ kind: "restore_saved_work" }),
   "delete-saved": (controller, value) => controller.prepare({ kind: "delete_saved_work", branch: value }),
   "switch-to": (controller, value) => controller.switchTo(value),

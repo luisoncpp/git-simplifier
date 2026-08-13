@@ -10,10 +10,16 @@ export function openPathContextMenu(
   x: number,
   y: number,
 ): void {
-  if (!pathDiffRequest(controller.state.operation, path, baseRef(controller.state))) return;
+  const viewDiff = pathMenuOffersViewDiff(controller, path);
+  if (!path || (!viewDiff && controller.state.view !== "files-diff")) return;
   controller.state.repoContextMenu = null;
-  controller.state.pathContextMenu = { path, x, y };
+  controller.state.pathContextMenu = { path, x, y, viewDiff };
   controller.render();
+}
+
+function pathMenuOffersViewDiff(controller: AppController, path: string): boolean {
+  if (controller.state.view === "files-diff") return false;
+  return Boolean(pathDiffRequest(controller.state.operation, path, baseRef(controller.state)));
 }
 
 export function closePathContextMenu(controller: AppController, render = true): void {
@@ -44,12 +50,15 @@ export async function openPathInIde(controller: AppController, path: string): Pr
 
 export function pathContextMenuMarkup(menu: PathContextMenu | null): string {
   if (!menu) return "";
-  return `<div class="repo-context-menu path-context-menu" role="menu" aria-label="Path actions"
-    style="left:${menu.x}px;top:${menu.y}px">
-    <button class="repo-context-item" type="button" role="menuitem"
+  const viewDiff = menu.viewDiff
+    ? `<button class="repo-context-item" type="button" role="menuitem"
       data-event="view-path-diff" data-value="${esc(menu.path)}">
       View diff
-    </button>
+    </button>`
+    : "";
+  return `<div class="repo-context-menu path-context-menu" role="menu" aria-label="Path actions"
+    style="left:${menu.x}px;top:${menu.y}px">
+    ${viewDiff}
     <button class="repo-context-item" type="button" role="menuitem"
       data-event="edit-path-in-ide" data-value="${esc(menu.path)}">
       Edit in IDE

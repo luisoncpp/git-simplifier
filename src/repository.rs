@@ -3,6 +3,7 @@ use crate::exclusion::{
 };
 use crate::git::{GitCommand, GitError, GitOutput, GitRunner, RepositoryConfig};
 use crate::inspection::RepositoryOverview;
+use crate::merge_commit::{self, CommitMergeError, CommitMergePlan, CommitMergeResult};
 use crate::push::{
     self, ForcePushError, ForcePushPlan, ForcePushResult, PublishBranchPlan, PublishBranchResult,
     PublishError,
@@ -200,5 +201,17 @@ impl GitRepository {
 
     pub fn sync_status(&self) -> Result<Option<SyncStatus>, SyncError> {
         sync::status(&self.runner)
+    }
+
+    pub fn plan_commit_merge(&self) -> Result<CommitMergePlan, CommitMergeError> {
+        merge_commit::create(&self.runner)
+    }
+
+    pub fn apply_commit_merge(
+        &self,
+        plan: &CommitMergePlan,
+    ) -> Result<CommitMergeResult, CommitMergeError> {
+        self.runner
+            .with_write_lock(|| merge_commit::apply(&self.runner, plan))
     }
 }

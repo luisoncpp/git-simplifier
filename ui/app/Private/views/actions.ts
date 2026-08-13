@@ -39,6 +39,7 @@ const ACTION_WORDS: Record<string, string> = {
   split_branch: "split",
   quick_switch: "switch",
   sync: "sync",
+  commit_merge: "merge commit",
   force_push: "force push",
   cleanup: "cleanup",
 };

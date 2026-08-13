@@ -20,6 +20,8 @@ pub struct RepositoryOverview {
     pub head: ObjectId,
     pub git_version: String,
     pub worktree: WorktreeSummary,
+    #[serde(default)]
+    pub merge_in_progress: bool,
     pub saved_work_count: usize,
     pub recovery_count: usize,
     pub sync_status: Option<String>,

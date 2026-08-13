@@ -42,6 +42,7 @@ Keep these docs operational. Prefer short tables, explicit file names, and seque
 | File | Scope |
 |------|-------|
 | [cleanup.md](./cleanup.md) | Delete branches fully merged into Base, locally and on their remotes |
+| [commit-merge.md](./commit-merge.md) | Finish MERGE_HEAD with a minimal merge commit; unrelated work stays uncommitted |
 | [close-to-tray.md](./close-to-tray.md) | Window close hides to tray; tray Show/Quit |
 | [raw-diff.md](./raw-diff.md) | Generate and copy the current branch's committed `Base...HEAD` patch as text |
 | [files-diff.md](./files-diff.md) | Per-file diff viewer: unified/side-by-side, gap expansion, file navigator |

@@ -91,6 +91,11 @@ const SPECIFIC_REASON: Partial<Record<OperationId, (state: AppState) => string>>
     return "";
   },
   force_push: (state) => (upstreamRef(state) ? "" : "The current branch has no upstream to push to."),
+  commit_merge: (state) => {
+    if (!state.snapshot?.overview.merge_in_progress) return "No merge in progress.";
+    if (state.snapshot.overview.worktree.conflicts > 0) return "Resolve merge conflicts first.";
+    return "";
+  },
   cleanup: (state) => {
     if (!state.cleanupBranches?.choices.length) return "No branch is fully merged into Base.";
     if (!cleanupChoices(state).length) return "No branch matches these filters.";

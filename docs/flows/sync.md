@@ -14,7 +14,8 @@ The backend caller submits the configured remote-tracking Base ref, such as `ref
 6. Non-recursive reset and merge commands clean superproject tracked changes and merge Base without checking out, cleaning, or fetching inside submodules.
 7. A Base merge failure leaves Git's merge state and the Saved work ref in place, with the oplog phase set to `base-merge-conflict`.
 8. After a successful merge, the snapshot is reapplied with `git stash apply --index`, falling back to plain apply if the staged split cannot be restored. A failure is recorded as `wip-reapply-conflict`.
-9. The caller resolves a conflict in its existing Git client, commits a Base merge resolution when needed, then calls `resume_sync`. The operation completes only after Git has no unmerged entries.
+9. The caller resolves conflicts in an existing Git client, then **Commit merge** in this app (or an external `git commit`) so unrelated staged files cannot enter the merge commit. While `MERGE_HEAD` still exists during `base-merge-conflict`, the Sync banner offers Commit merge instead of Resume sync.
+9b. After the merge commit, **Resume sync** reapplies Saved work. The operation completes only after Git has no unmerged entries.
 9a. Resuming does **not** reapply the snapshot — it assumes the resolution left the carried work in the tree. When the tree instead has no tracked changes, that assumption is false, so the result carries `saved_work_warning`, the backup ref is kept, and the UI shows a warn-tone banner instead of a clean success. Resolving a reapply conflict by discarding is the case this covers.
 10. If the desktop apply call returns an error, the consumed review is discarded and the repository snapshot is reloaded. A recorded conflict is immediately surfaced with its resume review action instead of leaving the stale Start Sync review visible.
 
