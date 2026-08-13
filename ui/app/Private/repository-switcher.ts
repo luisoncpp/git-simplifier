@@ -107,6 +107,12 @@ export function closeRepoContextMenu(controller: AppController, render = true): 
   if (render) controller.render();
 }
 
+export async function copyRepositoryPath(controller: AppController, path: string): Promise<void> {
+  if (!path) return;
+  closeRepoContextMenu(controller, /*render=*/false);
+  await controller.copy(path, "Path copied to the clipboard");
+}
+
 export async function revealRepository(controller: AppController, path: string): Promise<void> {
   await invokeRepoShellAction(controller, "reveal_in_explorer", path);
 }
@@ -153,8 +159,7 @@ async function openRepositoryPath(controller: AppController, path: string): Prom
       controller.state.draft = createDraft();
       controller.state.outcome = null;
       controller.state.expanded.clear();
-      // Paint the new repository from the returned snapshot first; the fetch
-      // then runs behind the progress bar instead of hiding the switch.
+      // Paint from the returned snapshot first so fetch runs behind the bar.
       await controller.reload(snapshot);
       controller.state.warning = await fetchRemotes(controller);
       if (controller.state.warning) controller.announce(controller.state.warning);

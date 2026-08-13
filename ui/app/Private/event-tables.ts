@@ -21,6 +21,7 @@ export const CLICK: Record<string, ClickHandler> = {
   "pick-repository": (controller) => repos.openPickedRepository(controller),
   "open-recent": (controller, value) => repos.openRecentRepository(controller, value),
   "remove-recent": (controller, value) => repos.removeRecentRepository(controller, value),
+  "copy-repository-path": (controller, value) => repos.copyRepositoryPath(controller, value),
   "reveal-repository": (controller, value) => repos.revealRepository(controller, value),
   "open-in-ide": (controller, value) => repos.openRepositoryInIde(controller, value),
   "open-in-codechart": (controller, value) => repos.openRepositoryInCodechart(controller, value),

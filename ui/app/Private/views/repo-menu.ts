@@ -85,6 +85,10 @@ function repoContextMenu(state: AppState): string {
   return `<div class="repo-context-menu" role="menu" aria-label="Repository actions"
     style="left:${menu.x}px;top:${menu.y}px">
     <button class="repo-context-item" type="button" role="menuitem"
+      data-event="copy-repository-path" data-value="${esc(menu.path)}">
+      Copy path
+    </button>
+    <button class="repo-context-item" type="button" role="menuitem"
       data-event="reveal-repository" data-value="${esc(menu.path)}">
       Reveal in File Explorer
     </button>

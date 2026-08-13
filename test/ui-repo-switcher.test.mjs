@@ -3,6 +3,7 @@ import { readFile } from "node:fs/promises";
 import test from "node:test";
 import { renderShell } from "../ui/app/index.ts";
 import {
+  copyRepositoryPath,
   filteredRecents,
   openRecentRepository,
   openRepoContextMenu,
@@ -154,6 +155,35 @@ test("toggling the picker opens an empty teach state", () => {
 
   assert.equal(controller.state.repoMenuOpen, true);
   assert.match(renderShell(controller.state), /No recent repositories yet/);
+});
+
+test("the repository context menu offers copy path", () => {
+  const controller = withRecents({ repoMenuOpen: true });
+  openRepoContextMenu(controller, "C:/work/beta", 120, 80);
+
+  const markup = renderShell(controller.state);
+  assert.match(markup, /Copy path/);
+  assert.match(markup, /data-event="copy-repository-path"/);
+  assert.match(markup, /style="left:120px;top:80px"/);
+});
+
+test("copy path writes the repository path to the clipboard", async () => {
+  const controller = withRecents();
+  controller.state.repoContextMenu = { path: "C:/work/beta", x: 10, y: 20 };
+  const writes = [];
+  Object.defineProperty(globalThis.navigator, "clipboard", {
+    configurable: true,
+    value: { writeText: async (value) => writes.push(value) },
+  });
+
+  try {
+    await copyRepositoryPath(controller, "C:/work/beta");
+  } finally {
+    delete globalThis.navigator.clipboard;
+  }
+
+  assert.deepEqual(writes, ["C:/work/beta"]);
+  assert.equal(controller.state.repoContextMenu, null);
 });
 
 test("the repository context menu offers reveal in file explorer", () => {
