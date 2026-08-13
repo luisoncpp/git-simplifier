@@ -137,4 +137,10 @@ impl GitRepository {
             inspection::fetch_remotes_with_progress(&self.runner, control, &mut on_progress)
         })
     }
+
+    pub fn worktree_root(&self) -> Result<std::path::PathBuf, InspectionError> {
+        self.runner
+            .worktree_root()
+            .map_err(|error| InspectionError::Parse(error.to_string()))
+    }
 }

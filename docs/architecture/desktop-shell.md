@@ -35,3 +35,13 @@ Implementation: `src-tauri/src/tray.rs`, wired from `lib.rs` via `.setup` and `.
 ## Recent repositories
 
 Successful `open_repository` calls append/promote the path in the app data file owned by `commands/recents.rs`. This is machine-local preference data, separate from repository-local `.git/githelper/` state. See [switch-repository.md](../flows/switch-repository.md).
+
+## Project settings, open in IDE, and open in Codechart
+
+Per-repository preferences live in `project-settings.json` under app data (`commands/project_settings.rs`). The first field is `ide`: a tagged choice (`vscode`, `cursor`, `visual-studio`, `rider`, or `custom` with a command path). Missing entries default to VS Code.
+
+Global user preferences live in `ui-preferences.json` (`commands/prefs.rs`). `codechart_path` overrides the default Codechart install location; empty means auto-guess under `%LOCALAPPDATA%\codechart\codechart.exe`.
+
+`open_in_ide` (`commands/ide.rs`) loads the path's IDE choice, maps presets to CLI programs (`code`, `cursor`, `devenv`, `rider`), and spawns the folder argument without waiting. `open_file_in_ide` uses the same IDE choice and opens a file inside the repository: VS Code and Cursor pass `--reuse-window`, Visual Studio passes `/edit`, Rider and custom commands receive the absolute file path. Windows uses `CREATE_NO_WINDOW` on the spawn so `.cmd` shims do not flash a console.
+
+`open_in_codechart` (`commands/codechart.rs`) resolves `codechart.exe` from saved or guessed paths and spawns it directly with the folder argument (no `cmd /C`; `CREATE_NO_WINDOW` on Windows). Settings are edited from the rail gear; see [settings.md](../flows/settings.md).

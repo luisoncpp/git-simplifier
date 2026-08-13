@@ -1,6 +1,6 @@
 import { esc } from "./dom.ts";
 import { pathDiffRequest } from "./quick-file-diff/index.ts";
-import { baseRef } from "./snapshot.ts";
+import { baseRef, overviewOf } from "./snapshot.ts";
 import type { AppController } from "./controller.ts";
 import type { PathContextMenu } from "./types.ts";
 
@@ -30,6 +30,18 @@ export async function openPathDiff(controller: AppController, path: string): Pro
   controller.render();
 }
 
+export async function openPathInIde(controller: AppController, path: string): Promise<void> {
+  closePathContextMenu(controller, /*render=*/false);
+  const repoPath = overviewOf(controller.state)?.path ?? "";
+  if (!repoPath || !path) return;
+  try {
+    await controller.bridge.invoke("open_file_in_ide", { repoPath, filePath: path });
+  } catch (error) {
+    controller.fail(error);
+  }
+  controller.render();
+}
+
 export function pathContextMenuMarkup(menu: PathContextMenu | null): string {
   if (!menu) return "";
   return `<div class="repo-context-menu path-context-menu" role="menu" aria-label="Path actions"
@@ -37,6 +49,10 @@ export function pathContextMenuMarkup(menu: PathContextMenu | null): string {
     <button class="repo-context-item" type="button" role="menuitem"
       data-event="view-path-diff" data-value="${esc(menu.path)}">
       View diff
+    </button>
+    <button class="repo-context-item" type="button" role="menuitem"
+      data-event="edit-path-in-ide" data-value="${esc(menu.path)}">
+      Edit in IDE
     </button>
   </div>`;
 }

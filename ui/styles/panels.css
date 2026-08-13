@@ -374,8 +374,12 @@ textarea {
     grid-auto-flow: column;
   }
 
-  .rail-foot {
+  .rail-end {
     margin-top: 4px;
+  }
+
+  .rail-foot {
+    margin-top: 0;
   }
 
   .main {

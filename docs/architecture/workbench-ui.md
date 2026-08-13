@@ -7,8 +7,9 @@ The UI is a single deep module written in strict TypeScript (`tsc --noEmit` is t
 | `Private/types.ts` | Wire shapes mirroring the Rust contracts, `AppState`, `Draft`, the `Bridge` interface, and the `__TAURI__` global |
 | `Private/state.ts` | `createState`: the initial `AppState` (mirrors `createDraft`) |
 | `Private/controller.ts` | `AppController`: owns state, busy/error handling, and the prepare → apply → cancel boundary |
-| `Private/repository-switcher.ts` | Recent repository menu: filter, open, remove, and persistence refresh |
-| `Private/path-diff-menu.ts` | Path-list context menu and `open_file_diff_window` invoke |
+| `Private/repository-switcher.ts` | Recent repository menu: filter, open, remove, reveal/open-in-IDE/open-in-Codechart context actions, and persistence refresh |
+| `Private/project-settings.ts` | Per-repository IDE preference load/save and `open_in_ide` invoke |
+| `Private/path-diff-menu.ts` | Path-list context menu, `open_file_diff_window`, and `open_file_in_ide` invoke |
 | `Private/quick-file-diff/` | Nested deep module: secondary-window single-file diff app. Only its `index.ts` may be imported |
 | `Private/draft/` | Nested deep module: draft shape and derived reads (visible paths, selected commit, message drafts). Only its `index.ts` may be imported |
 | `Private/operations/` | Nested deep module: operation catalog, request builders, and `submitState`. Only its `index.ts` may be imported |
@@ -18,7 +19,8 @@ The UI is a single deep module written in strict TypeScript (`tsc --noEmit` is t
 | `Private/discovery.ts` | Snapshot reload and per-operation discovery; drops selections that no longer exist |
 | `Private/snapshot.ts` | Typed reads over the Rust snapshot, including human sync-phase labels |
 | `Private/dom.ts` | HTML escaping and `renderInto`, which preserves caret and scroll across a re-render |
-| `Private/views/repo-menu.ts` | Rail repository picker, filterable recent list, and the reveal-in-explorer context menu |
+| `Private/views/repo-menu.ts` | Rail repository picker, filterable recent list, and repository context menu (reveal, open in IDE, open in Codechart) |
+| `Private/views/settings.ts` | Settings view: global Codechart path and per-repository IDE preset |
 | `Private/views/status-bar.ts` | Status footer: busy spinner, fetch progress bar with stop button, review hint |
 | `Private/views/branch-picker.ts` | Searchable Quick switch branch menu (local + remote-only) |
 | `Private/branch-switcher.ts` | Branch menu open/filter/pick keyboard handlers |
@@ -34,6 +36,8 @@ The UI is a single deep module written in strict TypeScript (`tsc --noEmit` is t
 - **Base choices are loaded when the chooser opens.** Initial discovery loads `state.baseChoices` only when the repository has no configured Base; changing an existing Base therefore explicitly refreshes the remote-tracking choices before rendering the selector. The chooser never treats an empty, not-yet-loaded list as proof that no remote exists.
 - **Recent repositories are app preference, not Git state.** `state.recentRepositories` is a list of paths loaded from the desktop app data file; it is never written into `.git`. Opening a repository promotes its path; remove only drops the preference entry.
 - **Skip review is app preference, not Git state.** `state.skipReview` is loaded from `ui-preferences.json` on start and persisted when the repo-bar **Review | Skip** toggle changes. Default is **Review**. In **Skip**, primary actions read **Apply …** and `prepare` chains straight into `apply_operation` without rendering the review pane; prepare still runs so validation and the pending plan boundary stay intact.
+- **Codechart path is app preference, not Git state.** `state.codechartPath` and `state.guessedCodechartPath` load from `ui-preferences.json` on start and persist when the Settings Codechart field changes. Empty means auto-guess under LocalAppData. **Open in Codechart** on a recent row or the current picker resolves and spawns `codechart.exe` with that row's path.
+- **Project settings are app preference keyed by repository path.** `state.projectIde` mirrors the open repository's entry in `project-settings.json` (loaded on every snapshot reload). Unset paths default to VS Code (`code`). The rail gear opens the **Settings** view (`view === "settings"`), which always shows user settings and edits project IDE only when a repository is open. Right-click **Open in the IDE** on a recent row or the current picker looks up that row's path (not necessarily the active session) and spawns the configured editor via `open_in_ide`.
 - **An in-flight repository choice is visible intent.** `state.repoOpeningPath` temporarily supplies the repository picker's name and path after the menu closes and before the new snapshot arrives. It is cleared after success or failure, so a successful snapshot takes over and a failed open visibly returns to the previous repository.
 - **Every form control is state-backed.** Re-rendering therefore cannot lose a typed message, a filter query, or a path selection, and cancelling a review returns the user to the exact selection they had.
 - **A message draft is per commit** (`draft.messages` keyed by commit id). Changing the selected commit shows that commit's message; it never carries text from another commit into a rewrite.

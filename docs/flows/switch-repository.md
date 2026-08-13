@@ -2,12 +2,12 @@
 
 ## Trigger
 
-The user opens the rail Repository control and picks a recent path, removes one, browses for a new folder, or right-clicks a repository row or the current picker to reveal its folder in the system file manager.
+The user opens the rail Repository control and picks a recent path, removes one, browses for a new folder, or right-clicks a repository row or the current picker to reveal its folder in the system file manager, open it in the configured IDE, or open it in Codechart.
 
 ## Entry point
 
-UI: `repository-switcher.ts` via `toggle-repo-menu` / `open-recent` / `remove-recent` / `pick-repository` / `reveal-repository`.
-Tauri: `open_repository`, `list_recent_repositories`, `remove_recent_repository`, `reveal_in_explorer`.
+UI: `repository-switcher.ts` via `toggle-repo-menu` / `open-recent` / `remove-recent` / `pick-repository` / `reveal-repository` / `open-in-ide` / `open-in-codechart`.
+Tauri: `open_repository`, `list_recent_repositories`, `remove_recent_repository`, `reveal_in_explorer`, `open_in_ide`, `open_in_codechart`.
 
 ## Step-by-step sequence
 
@@ -20,12 +20,19 @@ Tauri: `open_repository`, `list_recent_repositories`, `remove_recent_repository`
 4. Rust opens the path; on success it remembers the path at the front of the recent list and returns a snapshot.
 5. On open failure, Rust removes that path from recents (idempotent) and returns the error; the previous repository session stays open.
 6. The controller clears draft / outcome / expanded, reloads from the returned snapshot immediately so the new repository is on screen before any network wait, then fetches remotes for the new repository (same as Refresh — status-bar progress bar and stop button), reloads once more so moved remote-tracking refs are reflected, refreshes the recent list, and clears the in-flight selection. A failed fetch sets `state.warning` and still loads the local snapshot. A failed open restores the previous repository as the visible selection.
-7. Right-clicking a recent row or the current picker opens a context menu; **Reveal in File Explorer**
+7. Right-clicking a recent row or the current picker opens a context menu. **Reveal in File Explorer**
    calls `reveal_in_explorer`, which uses the desktop opener plugin to show that path in the OS file manager.
+   **Open in the IDE** dismisses the menu synchronously, then calls `open_in_ide` with the menu path; Rust
+   looks up that path's IDE in `project-settings.json` (default VS Code) and spawns the editor with the
+   folder argument. **Open in Codechart** dismisses the menu synchronously, then calls `open_in_codechart`;
+   Rust resolves `codechart.exe` from `ui-preferences.json` (saved path, else `%LOCALAPPDATA%\codechart\codechart.exe`)
+   and spawns it with the folder argument.
 
 ## Reads
 
 - App data file `recent-repositories.json` (paths only)
+- App data file `project-settings.json` (per-path IDE, for open-in-IDE only)
+- App data file `ui-preferences.json` (`codechart_path`, for open-in-Codechart only)
 - `GitRepository::open` + `load_state` for a successful switch
 
 ## Writes
@@ -47,6 +54,9 @@ Tauri: `open_repository`, `list_recent_repositories`, `remove_recent_repository`
 - `ui/app/Private/repository-switcher.ts`
 - `ui/app/Private/discovery.ts` (`fetchRemotes`)
 - `ui/app/Private/views/repo-menu.ts`
+- `src-tauri/src/commands/project_settings.rs`
+- `src-tauri/src/commands/ide.rs`
+- `src-tauri/src/commands/codechart.rs`
 - `src/inspection/fetch/`
 - `ui/app/Private/views/status-bar.ts`
 
@@ -57,3 +67,5 @@ Tauri: `open_repository`, `list_recent_repositories`, `remove_recent_repository`
 - Configured Base is missing locally → discovery after open fails with an actionable Invalid Base message (fetch or pick another Base), not a bare exit code
 - Remote unreachable (tunnel down, offline, auth) → open still succeeds; **Fetch failed** warning banner with the Git stderr
 - Browser / no desktop bridge → recents stay empty; browse reports unavailable
+- IDE not on PATH or custom command missing → error banner from `open_in_ide` spawn failure
+- Codechart not installed and path left empty → error banner from `open_in_codechart` spawn failure

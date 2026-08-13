@@ -88,5 +88,13 @@ function repoContextMenu(state: AppState): string {
       data-event="reveal-repository" data-value="${esc(menu.path)}">
       Reveal in File Explorer
     </button>
+    <button class="repo-context-item" type="button" role="menuitem"
+      data-event="open-in-ide" data-value="${esc(menu.path)}">
+      Open in the IDE
+    </button>
+    <button class="repo-context-item" type="button" role="menuitem"
+      data-event="open-in-codechart" data-value="${esc(menu.path)}">
+      Open in Codechart
+    </button>
   </div>`;
 }

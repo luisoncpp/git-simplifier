@@ -169,7 +169,18 @@ export type OperationRequest =
 /// The two Inspection sections are separate views: every gate that used to read
 /// `"inspection"` now asks `isInspectionView`, so neither can be mistaken for the
 /// group.
-export type ViewId = "actions" | "saved" | "recovery" | "files-diff" | "raw-diff";
+export type ViewId = "actions" | "saved" | "recovery" | "files-diff" | "raw-diff" | "settings";
+
+export type IdeChoice =
+  | { kind: "vscode" }
+  | { kind: "cursor" }
+  | { kind: "visual-studio" }
+  | { kind: "rider" }
+  | { kind: "custom"; command: string };
+
+export interface ProjectSettings {
+  ide: IdeChoice;
+}
 
 export type OperationId =
   | "uncommit"
@@ -273,6 +284,10 @@ export interface AppState {
   /// Branch whose persistent Saved work notice the user dismissed for this visit.
   dismissedSavedWorkBranch: string | null;
   skipReview: boolean;
+  codechartPath: string;
+  guessedCodechartPath: string;
+  projectIde: IdeChoice;
+  customIdeCommand: string;
 }
 
 export interface Bridge {

@@ -8,6 +8,8 @@ import {
   openRepoContextMenu,
   removeRecentRepository,
   revealRepository,
+  openRepositoryInIde,
+  openRepositoryInCodechart,
   setRepoFilter,
   toggleRepoMenu,
 } from "../ui/app/Private/repository-switcher.ts";
@@ -164,6 +166,15 @@ test("the repository context menu offers reveal in file explorer", () => {
   assert.match(markup, /style="left:120px;top:80px"/);
 });
 
+test("the repository context menu offers open in the ide", () => {
+  const controller = withRecents({ repoMenuOpen: true });
+  openRepoContextMenu(controller, "C:/work/beta", 120, 80);
+
+  const markup = renderShell(controller.state);
+  assert.match(markup, /Open in the IDE/);
+  assert.match(markup, /data-event="open-in-ide"/);
+});
+
 test("reveal in file explorer asks the desktop shell to show the folder", async () => {
   const controller = withRecents();
   const commands = [];
@@ -176,6 +187,47 @@ test("reveal in file explorer asks the desktop shell to show the folder", async 
   await revealRepository(controller, "C:/work/beta");
 
   assert.deepEqual(commands[0], ["reveal_in_explorer", { path: "C:/work/beta" }]);
+  assert.equal(controller.state.repoContextMenu, null);
+});
+
+test("the repository context menu offers open in codechart", () => {
+  const controller = withRecents({ repoMenuOpen: true });
+  openRepoContextMenu(controller, "C:/work/beta", 120, 80);
+
+  const markup = renderShell(controller.state);
+  assert.match(markup, /Open in Codechart/);
+  assert.match(markup, /data-event="open-in-codechart"/);
+});
+
+test("open in codechart asks the desktop shell to launch codechart", async () => {
+  const controller = withRecents();
+  controller.state.repoContextMenu = { path: "C:/work/beta", x: 10, y: 20 };
+  const commands = [];
+  const original = controller.bridge.invoke.bind(controller.bridge);
+  controller.bridge.invoke = async (command, args) => {
+    commands.push([command, args]);
+    return original(command, args);
+  };
+
+  await openRepositoryInCodechart(controller, "C:/work/beta");
+
+  assert.deepEqual(commands[0], ["open_in_codechart", { path: "C:/work/beta" }]);
+  assert.equal(controller.state.repoContextMenu, null);
+});
+
+test("open in the ide asks the desktop shell to launch the configured editor", async () => {
+  const controller = withRecents();
+  controller.state.repoContextMenu = { path: "C:/work/beta", x: 10, y: 20 };
+  const commands = [];
+  const original = controller.bridge.invoke.bind(controller.bridge);
+  controller.bridge.invoke = async (command, args) => {
+    commands.push([command, args]);
+    return original(command, args);
+  };
+
+  await openRepositoryInIde(controller, "C:/work/beta");
+
+  assert.deepEqual(commands[0], ["open_in_ide", { path: "C:/work/beta" }]);
   assert.equal(controller.state.repoContextMenu, null);
 });
 

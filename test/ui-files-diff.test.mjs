@@ -114,11 +114,16 @@ function diffController(overview = {}) {
   const controller = controllerWith({
     async invoke(command, args) {
       commands.push(command);
-      requests.push(args);
-      if (command === "generate_files_diff") return fileDiffsFixture();
-      if (command === "generate_full_file_diff") return fullAppDiff();
-      if (command === "load_snapshot") return snapshotWith(overview);
-      return [];
+      const replies = {
+        generate_files_diff: () => {
+          requests.push(args);
+          return fileDiffsFixture();
+        },
+        generate_full_file_diff: () => fullAppDiff(),
+        get_project_settings: () => ({ ide: { kind: "vscode" } }),
+        load_snapshot: () => snapshotWith(overview),
+      };
+      return replies[command]?.() ?? [];
     },
   }, overview);
   return { controller, commands, requests };

@@ -70,7 +70,11 @@ test("progress events update the fetch state only while a fetch is active", () =
 test("start listens for fetch progress and a live event updates state", async () => {
   const bridge = new FixtureBridge({
     list_recent_repositories: [],
-    get_ui_preferences: { skip_review: false },
+    get_ui_preferences: {
+      skip_review: false,
+      codechart_path: "",
+      guessed_codechart_path: "",
+    },
     fetch_remotes: null,
     load_snapshot: snapshotWith({}),
     list_changed_paths: [],

@@ -4,6 +4,7 @@ import * as edit from "./selection.ts";
 import * as pathDiff from "./path-diff-menu.ts";
 import * as savedDiff from "./saved-work-diff/index.ts";
 import * as prefs from "./preferences.ts";
+import * as project from "./project-settings.ts";
 import * as repos from "./repository-switcher.ts";
 import type { AppController } from "./controller.ts";
 import type { FieldNode, OperationId, ViewId } from "./types.ts";
@@ -21,7 +22,10 @@ export const CLICK: Record<string, ClickHandler> = {
   "open-recent": (controller, value) => repos.openRecentRepository(controller, value),
   "remove-recent": (controller, value) => repos.removeRecentRepository(controller, value),
   "reveal-repository": (controller, value) => repos.revealRepository(controller, value),
+  "open-in-ide": (controller, value) => repos.openRepositoryInIde(controller, value),
+  "open-in-codechart": (controller, value) => repos.openRepositoryInCodechart(controller, value),
   "view-path-diff": (controller, value) => pathDiff.openPathDiff(controller, value),
+  "edit-path-in-ide": (controller, value) => pathDiff.openPathInIde(controller, value),
   "toggle-branch-menu": (controller) => branches.toggleBranchMenu(controller),
   "pick-branch": (controller, value, node) =>
     branches.pickBranch(controller, value, node?.dataset.remote ?? ""),
@@ -88,6 +92,7 @@ export const CHANGE: Record<string, FieldHandler> = {
   "toggle-cleanup-all-remote": edit.setCleanupAllRemote,
   "toggle-cleanup-branch": edit.toggleCleanupBranch,
   "toggle-untracked-filter": diff.toggleUntrackedFilter,
+  "select-ide": (controller, node) => project.setIdeKind(controller, node.value),
 };
 
 export const INPUT: Record<string, FieldHandler> = {
@@ -98,6 +103,8 @@ export const INPUT: Record<string, FieldHandler> = {
   "split-branch-name": edit.setNewBranch,
   "split-message": edit.setSplitMessage,
   "cleanup-filter": edit.setCleanupFilter,
+  "custom-ide-command": (controller, node) => project.setCustomIdeCommand(controller, node.value),
+  "codechart-path": (controller, node) => prefs.setCodechartPath(controller, node.value),
 };
 
 export const TAB_STEP: Record<string, number> = { ArrowRight: 1, ArrowLeft: -1 };

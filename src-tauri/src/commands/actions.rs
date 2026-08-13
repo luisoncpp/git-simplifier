@@ -10,7 +10,7 @@ use super::data::{
     PrepareOperationRequest, RepositorySnapshot,
 };
 use super::prepare;
-use super::prefs::{PrefsStore, UiPreferences};
+use super::prefs::PrefsStore;
 use super::recents::{RecentRepository, RecentStore};
 use super::repository::{self, with_repository};
 use super::state::AppState;
@@ -56,12 +56,10 @@ pub fn remove_recent_repository(
 }
 
 #[tauri::command(async)]
-pub fn get_ui_preferences(app: AppHandle) -> Result<UiPreferences, String> {
-    PrefsStore::from_app(&app)?.load()
-}
-
-#[tauri::command(async)]
-pub fn set_skip_review(app: AppHandle, skip_review: bool) -> Result<UiPreferences, String> {
+pub fn set_skip_review(
+    app: AppHandle,
+    skip_review: bool,
+) -> Result<super::prefs::UiPreferences, String> {
     PrefsStore::from_app(&app)?.set_skip_review(skip_review)
 }
 

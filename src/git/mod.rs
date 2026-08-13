@@ -99,6 +99,15 @@ impl GitRunner {
     pub(crate) fn command_args(values: &[&str]) -> Vec<OsString> {
         process::args(values)
     }
+
+    pub fn worktree_root(&self) -> Result<PathBuf, GitError> {
+        let output = self.run(GitCommand::read(Self::command_args(&[
+            "rev-parse",
+            "--show-toplevel",
+        ])))?;
+        let text = output_text(&output.stdout, "show-toplevel")?;
+        Ok(PathBuf::from(text))
+    }
 }
 
 fn output_text(bytes: &[u8], name: &str) -> Result<String, GitError> {

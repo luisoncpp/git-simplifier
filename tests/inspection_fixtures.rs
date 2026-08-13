@@ -239,3 +239,11 @@ fn has_saved_work(branches: &[LocalBranchChoice], name: &str) -> bool {
         .iter()
         .any(|branch| branch.name == name && branch.saved_work)
 }
+
+#[test]
+fn worktree_root_from_subdirectory_matches_git_toplevel() {
+    let fixture = FixtureRepo::new();
+    std::fs::create_dir_all(fixture.root.path().join("dir")).unwrap();
+    let nested = fixture.reopen_at("dir");
+    assert_eq!(nested.worktree_root().unwrap(), fixture.root.path());
+}

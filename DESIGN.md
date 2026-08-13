@@ -19,6 +19,8 @@ Compact dark workbench for a Windows-first desktop Git tool. The visual identity
 - Body font: `Segoe UI`, `system-ui`, sans-serif
 - Mono font: `Cascadia Mono`, `Consolas`, monospace
 
+
+
 ## Component Rules
 
 - Controls are at least 36px high and have visible default, hover, focus, disabled, loading, and error states.
@@ -27,9 +29,12 @@ Compact dark workbench for a Windows-first desktop Git tool. The visual identity
 - Operation screens use inline panels and progressive disclosure; modal dialogs are reserved for native folder selection and confirmations that cannot be inline.
 - All dynamic data is rendered from Tauri responses or an explicit test bridge. No sample values ship in the live shell.
 
+
+
 ## Responsive Rules
 
 - At normal desktop width, use a repository rail and two-column operation workspace.
 - Below 760 CSS pixels, collapse the rail and stack the workspace.
 - No page-level minimum width; long refs and paths wrap or ellipsize with a copy affordance.
 - Respect `prefers-reduced-motion: reduce`.
+

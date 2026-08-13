@@ -4,16 +4,17 @@ One-file diff in a secondary Tauri window, opened from Uncommit / Revert / Split
 
 ## Trigger
 
-Right-click a path row → context menu **View diff**.
+Right-click a path row → context menu **View diff** or **Edit in IDE**.
 
 ## Sequence
 
 1. `pathDiffRequest` picks compare: Uncommit/Split → `head` (no toggle); Revert → `local` with HEAD/Local toggle.
-2. Main UI invokes `open_file_diff_window` with path, base, compare, and toggle flag.
+2. Main UI invokes `open_file_diff_window` with path, base, compare, and toggle flag, or `open_file_in_ide` with the repository path and file path.
 3. Rust stores a `FileDiffSession`, creates or focuses `file-diff-<path-hash>`, title = path.
 4. `file-diff.html` boots `QuickFileDiffApp`, calls `file_diff_session`, then `generate_full_file_diff`.
 5. Renders via `singleFileDiff` (same tables/highlighting as Inspection). Layout toggle always; compare toggle only when requested.
 6. Closing the window destroys it (not hide-to-tray) and drops the session. Re-open focuses and emits `file-diff-reload`.
+7. **Edit in IDE** resolves the file with `git rev-parse --show-toplevel` plus the root-relative path from the list (not the opened folder path), so repositories opened below their Git root still open the real file.
 
 ## Reads / writes
 

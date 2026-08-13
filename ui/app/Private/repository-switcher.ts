@@ -108,10 +108,26 @@ export function closeRepoContextMenu(controller: AppController, render = true): 
 }
 
 export async function revealRepository(controller: AppController, path: string): Promise<void> {
+  await invokeRepoShellAction(controller, "reveal_in_explorer", path);
+}
+
+export async function openRepositoryInIde(controller: AppController, path: string): Promise<void> {
+  await invokeRepoShellAction(controller, "open_in_ide", path);
+}
+
+export async function openRepositoryInCodechart(controller: AppController, path: string): Promise<void> {
+  await invokeRepoShellAction(controller, "open_in_codechart", path);
+}
+
+async function invokeRepoShellAction(
+  controller: AppController,
+  command: string,
+  path: string,
+): Promise<void> {
   if (!path) return;
   closeRepoContextMenu(controller);
   try {
-    await controller.bridge.invoke("reveal_in_explorer", { path });
+    await controller.bridge.invoke(command, { path });
   } catch (error) {
     controller.fail(error);
     controller.render();
@@ -140,11 +156,8 @@ async function openRepositoryPath(controller: AppController, path: string): Prom
       // Paint the new repository from the returned snapshot first; the fetch
       // then runs behind the progress bar instead of hiding the switch.
       await controller.reload(snapshot);
-      // Same contract as Refresh: learn whether remotes are reachable for the
-      // newly opened repo, without blocking the local snapshot reload.
       controller.state.warning = await fetchRemotes(controller);
       if (controller.state.warning) controller.announce(controller.state.warning);
-      // The fetch moved remote-tracking refs, so the snapshot is stale now.
       await controller.reload();
       await loadRecentRepositories(controller);
     } catch (error) {
@@ -156,9 +169,7 @@ async function openRepositoryPath(controller: AppController, path: string): Prom
   });
 }
 
-/// Truthy when the key belonged to the open repository menu, so the delegated
-/// dispatcher stops looking. Enter returns its promise so the caller reports a
-/// failed open instead of losing it.
+/// Return true when the repo menu consumed the key; Enter may return a promise.
 export function handleKeys(controller: AppController, event: KeyboardEvent): boolean | Promise<void> {
   if (!controller.state.repoMenuOpen) return false;
   if (event.key === "Escape") {

@@ -7,11 +7,16 @@ use tauri::{AppHandle, Manager};
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
 pub struct UiPreferences {
     pub skip_review: bool,
+    #[serde(default)]
+    pub codechart_path: String,
 }
 
 impl Default for UiPreferences {
     fn default() -> Self {
-        Self { skip_review: false }
+        Self {
+            skip_review: false,
+            codechart_path: String::new(),
+        }
     }
 }
 
@@ -40,7 +45,15 @@ impl PrefsStore {
     }
 
     pub fn set_skip_review(&self, skip_review: bool) -> Result<UiPreferences, String> {
-        let prefs = UiPreferences { skip_review };
+        let mut prefs = self.load()?;
+        prefs.skip_review = skip_review;
+        self.save(&prefs)?;
+        Ok(prefs)
+    }
+
+    pub fn set_codechart_path(&self, codechart_path: String) -> Result<UiPreferences, String> {
+        let mut prefs = self.load()?;
+        prefs.codechart_path = codechart_path;
         self.save(&prefs)?;
         Ok(prefs)
     }
@@ -77,6 +90,42 @@ mod tests {
         assert_eq!(store.load().unwrap().skip_review, true);
         store.set_skip_review(false).unwrap();
         assert_eq!(store.load().unwrap().skip_review, false);
+    }
+
+    #[test]
+    fn set_codechart_path_round_trips() {
+        let (_dir, store) = live_store();
+        let saved = store
+            .set_codechart_path(r"C:\tools\codechart.exe".into())
+            .unwrap();
+        assert_eq!(saved.codechart_path, r"C:\tools\codechart.exe");
+        assert_eq!(
+            store.load().unwrap().codechart_path,
+            r"C:\tools\codechart.exe"
+        );
+    }
+
+    #[test]
+    fn set_skip_review_preserves_codechart_path() {
+        let (_dir, store) = live_store();
+        store
+            .set_codechart_path(r"C:\tools\codechart.exe".into())
+            .unwrap();
+        store.set_skip_review(true).unwrap();
+        assert_eq!(
+            store.load().unwrap().codechart_path,
+            r"C:\tools\codechart.exe"
+        );
+    }
+
+    #[test]
+    fn set_codechart_path_preserves_skip_review() {
+        let (_dir, store) = live_store();
+        store.set_skip_review(true).unwrap();
+        store
+            .set_codechart_path(r"C:\tools\codechart.exe".into())
+            .unwrap();
+        assert!(store.load().unwrap().skip_review);
     }
 
     #[test]

@@ -3,7 +3,7 @@ import test from "node:test";
 import { renderShell } from "../ui/app/index.ts";
 import { pathDiffRequest } from "../ui/app/Private/quick-file-diff/index.ts";
 import { singleFileDiff, createDiffView } from "../ui/app/Private/files-diff/index.ts";
-import { openPathContextMenu, openPathDiff } from "../ui/app/Private/path-diff-menu.ts";
+import { openPathContextMenu, openPathDiff, openPathInIde } from "../ui/app/Private/path-diff-menu.ts";
 import { controllerWith, snapshotWith } from "./support/controller.mjs";
 
 const PATH = "src/app.ts";
@@ -46,6 +46,8 @@ test("right-click path menu opens View diff and invokes the window command", asy
   const html = renderShell(controller.state);
   assert.match(html, /data-event="view-path-diff"/);
   assert.match(html, /View diff/);
+  assert.match(html, /data-event="edit-path-in-ide"/);
+  assert.match(html, /Edit in IDE/);
   assert.match(html, /path-context-menu/);
 
   await openPathDiff(controller, PATH);
@@ -55,6 +57,24 @@ test("right-click path menu opens View diff and invokes the window command", asy
     args: {
       request: { path: PATH, base: BASE, compare: "head", compare_toggle: false },
     },
+  });
+});
+
+test("path context menu Edit in IDE invokes open_file_in_ide", async () => {
+  const calls = [];
+  const controller = controllerWith({
+    async invoke(command, args) {
+      calls.push({ command, args });
+    },
+  });
+  controller.state.operation = "revert";
+  controller.state.paths = [{ path: PATH, previous_path: null, status: "M" }];
+
+  await openPathInIde(controller, PATH);
+  assert.equal(controller.state.pathContextMenu, null);
+  assert.deepEqual(calls[0], {
+    command: "open_file_in_ide",
+    args: { repoPath: "C:/repo", filePath: PATH },
   });
 });
 

@@ -1,5 +1,6 @@
 import { createDraft } from "./draft/index.ts";
 import { createDiffView } from "./files-diff/index.ts";
+import { defaultIde } from "./project-settings.ts";
 import type { AppState, ViewId } from "./types.ts";
 
 const INSPECTION: ViewId[] = ["files-diff", "raw-diff"];
@@ -45,5 +46,9 @@ export function createState(): AppState {
     warning: "",
     dismissedSavedWorkBranch: null,
     skipReview: false,
+    codechartPath: "",
+    guessedCodechartPath: "",
+    projectIde: defaultIde(),
+    customIdeCommand: "",
   };
 }
