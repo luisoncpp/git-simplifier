@@ -3,5 +3,5 @@
   "identifier": "default",
   "description": "Default desktop permissions for Git Simplifier",
   "windows": ["main", "file-diff-*", "saved-work-diff-*"],
-  "permissions": ["core:default", "dialog:default", "opener:allow-reveal-item-in-dir"]
+  "permissions": ["core:default", "dialog:default", "opener:allow-open-path"]
 }

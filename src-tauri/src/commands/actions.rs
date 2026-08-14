@@ -6,7 +6,7 @@ use tauri_plugin_opener::OpenerExt;
 
 use super::apply;
 use super::data::{
-    BaseRequest, DirtySubmodulesRequest, OpenRepositoryInput, OperationOutcome, OperationReview,
+    BaseRequest, DirtySubmodulesRequest, OpenRepositoryInput, OperationOutcome, PrepareResult,
     PrepareOperationRequest, RepositorySnapshot,
 };
 use super::prepare;
@@ -64,9 +64,9 @@ pub fn set_skip_review(
 }
 
 #[tauri::command(async)]
-pub fn reveal_in_explorer(app: AppHandle, path: String) -> Result<(), String> {
+pub fn open_in_explorer(app: AppHandle, path: String) -> Result<(), String> {
     app.opener()
-        .reveal_item_in_dir(&path)
+        .open_path(&path, None::<&str>)
         .map_err(|error| error.to_string())
 }
 
@@ -247,10 +247,17 @@ pub fn list_dirty_submodules(
 pub fn prepare_operation(
     state: State<'_, AppState>,
     request: PrepareOperationRequest,
-) -> Result<OperationReview, String> {
+) -> Result<PrepareResult, String> {
     let prepared = prepare::prepare(state.inner(), plan_id(), request)?;
-    state.set_pending(prepared.pending)?;
-    Ok(prepared.review)
+    if let Some(pending) = prepared.pending {
+        state.set_pending(pending)?;
+    } else {
+        state.clear_pending()?;
+    }
+    Ok(PrepareResult {
+        review: prepared.review,
+        block: prepared.block,
+    })
 }
 
 #[tauri::command(async)]

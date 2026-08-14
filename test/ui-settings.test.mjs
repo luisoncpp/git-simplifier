@@ -1,11 +1,13 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 import { renderShell } from "../ui/app/index.ts";
-import { loadUiPreferences, setCodechartPath } from "../ui/app/Private/preferences.ts";
+import { loadUiPreferences, setBashPath, setCodechartPath, setTerminalPath } from "../ui/app/Private/preferences.ts";
 import { setCustomIdeCommand, setIdeKind } from "../ui/app/Private/project-settings.ts";
 import { controllerWith, snapshotWith } from "./support/controller.mjs";
 
 const GUESSED = "C:/Users/me/AppData/Local/codechart/codechart.exe";
+const DEFAULT_TERM = "Windows Terminal (PowerShell)";
+const GUESSED_BASH = "C:/Program Files/Git/bin/bash.exe";
 
 function withSettings(extra = {}) {
   const replies = {
@@ -13,10 +15,16 @@ function withSettings(extra = {}) {
       skip_review: false,
       codechart_path: "",
       guessed_codechart_path: GUESSED,
+      terminal_path: "",
+      default_terminal_name: DEFAULT_TERM,
+      bash_path: "",
+      guessed_bash_path: GUESSED_BASH,
     }),
     get_project_settings: () => ({ ide: { kind: "vscode" } }),
     set_project_ide: (args) => ({ ide: args.ide }),
     set_codechart_path: (args) => ({ codechart_path: args.codechartPath, skip_review: false }),
+    set_terminal_path: (args) => ({ terminal_path: args.terminalPath, skip_review: false }),
+    set_bash_path: (args) => ({ bash_path: args.bashPath, skip_review: false }),
   };
   const controller = controllerWith({
     async invoke(command, args) {
@@ -26,6 +34,8 @@ function withSettings(extra = {}) {
   });
   Object.assign(controller.state, {
     guessedCodechartPath: GUESSED,
+    defaultTerminalName: DEFAULT_TERM,
+    guessedBashPath: GUESSED_BASH,
     ...extra,
   });
   return controller;
@@ -100,7 +110,7 @@ test("typing a custom command persists it for the open repository", async () => 
   ]);
 });
 
-test("settings without an open repository still shows the codechart field", () => {
+test("settings without an open repository still shows the codechart, terminal, and bash fields", () => {
   const controller = controllerWith({
     async invoke(command) {
       if (command === "get_ui_preferences") {
@@ -108,6 +118,10 @@ test("settings without an open repository still shows the codechart field", () =
           skip_review: false,
           codechart_path: "",
           guessed_codechart_path: GUESSED,
+          terminal_path: "",
+          default_terminal_name: DEFAULT_TERM,
+          bash_path: "",
+          guessed_bash_path: GUESSED_BASH,
         };
       }
       return [];
@@ -116,10 +130,16 @@ test("settings without an open repository still shows the codechart field", () =
   controller.state.snapshot = null;
   controller.state.view = "settings";
   controller.state.guessedCodechartPath = GUESSED;
+  controller.state.defaultTerminalName = DEFAULT_TERM;
+  controller.state.guessedBashPath = GUESSED_BASH;
   const markup = renderShell(controller.state);
 
   assert.match(markup, /data-event="codechart-path"/);
   assert.match(markup, /placeholder="C:\/Users\/me\/AppData\/Local\/codechart\/codechart\.exe"/);
+  assert.match(markup, /data-event="terminal-path"/);
+  assert.match(markup, /placeholder="Windows Terminal \(PowerShell\)"/);
+  assert.match(markup, /data-event="bash-path"/);
+  assert.match(markup, /placeholder="C:\/Program Files\/Git\/bin\/bash\.exe"/);
   assert.match(markup, /Open a repository to configure its default IDE/);
   assert.doesNotMatch(markup, /data-event="select-ide"/);
   assert.match(markup, /data-event="pick-repository"/);
@@ -131,6 +151,22 @@ test("the codechart field shows the guessed path as placeholder when empty", () 
   assert.match(markup, /data-event="codechart-path"/);
   assert.match(markup, /placeholder="C:\/Users\/me\/AppData\/Local\/codechart\/codechart\.exe"/);
   assert.doesNotMatch(markup, /value="C:\/Users\/me\/AppData\/Local\/codechart\/codechart\.exe"/);
+});
+
+test("the terminal field shows the default terminal as placeholder when empty", () => {
+  const controller = withSettings({ view: "settings", terminalPath: "" });
+  const markup = renderShell(controller.state);
+  assert.match(markup, /data-event="terminal-path"/);
+  assert.match(markup, /placeholder="Windows Terminal \(PowerShell\)"/);
+  assert.doesNotMatch(markup, /value="Windows Terminal/);
+});
+
+test("the bash field shows the guessed path as placeholder when empty", () => {
+  const controller = withSettings({ view: "settings", bashPath: "" });
+  const markup = renderShell(controller.state);
+  assert.match(markup, /data-event="bash-path"/);
+  assert.match(markup, /placeholder="C:\/Program Files\/Git\/bin\/bash\.exe"/);
+  assert.doesNotMatch(markup, /value="C:\/Program Files\/Git\/bin\/bash\.exe"/);
 });
 
 test("changing the codechart path persists the user preference", async () => {
@@ -151,7 +187,43 @@ test("changing the codechart path persists the user preference", async () => {
   assert.deepEqual(commands[0], ["set_codechart_path", { codechartPath: "C:/tools/codechart.exe" }]);
 });
 
-test("loadUiPreferences restores codechart_path and guessed path from app data", async () => {
+test("changing the terminal path persists the user preference", async () => {
+  const controller = withSettings({ view: "settings", terminalPath: "" });
+  const commands = [];
+  controller.bridge.invoke = async (command, args) => {
+    commands.push([command, args]);
+    if (command === "set_terminal_path") {
+      return { terminal_path: args.terminalPath, skip_review: false };
+    }
+    return [];
+  };
+
+  await setTerminalPath(controller, "C:/tools/alacritty.exe");
+  await Promise.resolve();
+
+  assert.equal(controller.state.terminalPath, "C:/tools/alacritty.exe");
+  assert.deepEqual(commands[0], ["set_terminal_path", { terminalPath: "C:/tools/alacritty.exe" }]);
+});
+
+test("changing the bash path persists the user preference", async () => {
+  const controller = withSettings({ view: "settings", bashPath: "" });
+  const commands = [];
+  controller.bridge.invoke = async (command, args) => {
+    commands.push([command, args]);
+    if (command === "set_bash_path") {
+      return { bash_path: args.bashPath, skip_review: false };
+    }
+    return [];
+  };
+
+  await setBashPath(controller, "C:/tools/bash.exe");
+  await Promise.resolve();
+
+  assert.equal(controller.state.bashPath, "C:/tools/bash.exe");
+  assert.deepEqual(commands[0], ["set_bash_path", { bashPath: "C:/tools/bash.exe" }]);
+});
+
+test("loadUiPreferences restores preferences from app data", async () => {
   const controller = controllerWith({ async invoke() { return []; } });
   controller.bridge.invoke = async (command) => {
     if (command === "get_ui_preferences") {
@@ -159,6 +231,10 @@ test("loadUiPreferences restores codechart_path and guessed path from app data",
         skip_review: false,
         codechart_path: "C:/tools/codechart.exe",
         guessed_codechart_path: GUESSED,
+        terminal_path: "C:/tools/alacritty.exe",
+        default_terminal_name: DEFAULT_TERM,
+        bash_path: "C:/tools/bash.exe",
+        guessed_bash_path: GUESSED_BASH,
       };
     }
     return [];
@@ -168,6 +244,10 @@ test("loadUiPreferences restores codechart_path and guessed path from app data",
 
   assert.equal(controller.state.codechartPath, "C:/tools/codechart.exe");
   assert.equal(controller.state.guessedCodechartPath, GUESSED);
+  assert.equal(controller.state.terminalPath, "C:/tools/alacritty.exe");
+  assert.equal(controller.state.defaultTerminalName, DEFAULT_TERM);
+  assert.equal(controller.state.bashPath, "C:/tools/bash.exe");
+  assert.equal(controller.state.guessedBashPath, GUESSED_BASH);
 });
 
 test("switching repositories on settings reloads the ide choice", async () => {

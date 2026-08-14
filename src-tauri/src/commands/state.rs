@@ -74,6 +74,13 @@ impl AppState {
             .map(|mut value| *value = Some(operation))
     }
 
+    pub fn clear_pending(&self) -> Result<(), String> {
+        self.pending
+            .lock()
+            .map_err(|_| "pending operation lock was poisoned".to_string())
+            .map(|mut value| *value = None)
+    }
+
     pub fn take_pending(&self, id: &str) -> Result<PendingOperation, String> {
         let mut pending = self
             .pending

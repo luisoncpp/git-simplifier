@@ -4,6 +4,7 @@ import { renderShell } from "../ui/app/index.ts";
 import { loadUiPreferences, setSkipReview } from "../ui/app/Private/preferences.ts";
 import { actionVerb, submitHint } from "../ui/app/Private/review-mode.ts";
 import { submitRow } from "../ui/app/Private/views/actions.ts";
+import { CLICK } from "../ui/app/Private/event-tables.ts";
 import { controllerWith } from "./support/controller.mjs";
 
 const REVIEW = {
@@ -16,12 +17,14 @@ const REVIEW = {
   warnings: [],
 };
 
+const PREPARE = { review: REVIEW, block: null };
+
 test("skip mode prepares then applies without showing a review", async () => {
   const commands = [];
   const controller = controllerWith({
     async invoke(command, args) {
       commands.push(command);
-      if (command === "prepare_operation") return REVIEW;
+      if (command === "prepare_operation") return PREPARE;
       if (command === "apply_operation") return { headline: "Pushed", details: [] };
       if (command === "load_snapshot") return controller.state.snapshot;
       return [];
@@ -43,7 +46,7 @@ test("review mode stops after prepare", async () => {
   const controller = controllerWith({
     async invoke(command) {
       commands.push(command);
-      if (command === "prepare_operation") return REVIEW;
+      if (command === "prepare_operation") return PREPARE;
       return [];
     },
   });
@@ -53,6 +56,67 @@ test("review mode stops after prepare", async () => {
 
   assert.deepEqual(commands, ["prepare_operation"]);
   assert.equal(controller.state.review?.plan_id, "op-1");
+});
+
+test("blocked prepare with skip-review does not call apply_operation", async () => {
+  const commands = [];
+  const controller = controllerWith({
+    async invoke(command) {
+      commands.push(command);
+      if (command === "prepare_operation") {
+        return {
+          review: null,
+          block: {
+            kind: "untracked_overwrite",
+            message: "Untracked files would be overwritten on the target branch.",
+            paths: ["collision.txt"],
+          },
+        };
+      }
+      return [];
+    },
+  });
+  controller.state.skipReview = true;
+  controller.state.operation = "quick_switch";
+  controller.state.draft.targetBranch = "other";
+
+  await controller.prepare({
+    kind: "quick_switch",
+    target_branch: "other",
+    merge_untracked: false,
+  });
+
+  assert.deepEqual(commands, ["prepare_operation"]);
+  assert.equal(controller.state.block?.kind, "untracked_overwrite");
+  assert.equal(controller.state.review, null);
+  const markup = renderShell(controller.state);
+  assert.match(markup, /Switch with merge/);
+});
+
+test("switch with merge sends merge_untracked true", async () => {
+  const requests = [];
+  const controller = controllerWith({
+    async invoke(command, args) {
+      if (command === "prepare_operation") {
+        requests.push(args?.request);
+        return { review: null, block: null };
+      }
+      return [];
+    },
+  });
+  controller.state.operation = "quick_switch";
+  controller.state.draft.targetBranch = "other";
+  controller.state.block = {
+    kind: "untracked_overwrite",
+    message: "blocked",
+    paths: ["collision.txt"],
+  };
+
+  await CLICK["switch-with-merge"](controller, "");
+
+  assert.equal(controller.state.draft.mergeUntracked, true);
+  assert.equal(controller.state.block, null);
+  assert.equal(requests.at(-1)?.merge_untracked, true);
 });
 
 test("skip toggle sits in the repo bar and turns orange when Skip is on", () => {

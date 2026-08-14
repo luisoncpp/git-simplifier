@@ -1,17 +1,9 @@
 use std::path::PathBuf;
 use std::process::Command;
 
-use serde::Serialize;
 use tauri::AppHandle;
 
 use super::prefs::{PrefsStore, UiPreferences};
-
-#[derive(Debug, Clone, Serialize)]
-pub struct UiPreferencesResponse {
-    pub skip_review: bool,
-    pub codechart_path: String,
-    pub guessed_codechart_path: String,
-}
 
 pub fn guessed_codechart_path(local_app_data: &str, user_profile: &str) -> String {
     let base = if !local_app_data.trim().is_empty() {
@@ -39,18 +31,6 @@ pub fn resolve_codechart_program(saved: &str, guessed: &str) -> String {
 }
 
 #[tauri::command(async)]
-pub fn get_ui_preferences(app: AppHandle) -> Result<UiPreferencesResponse, String> {
-    let store = PrefsStore::from_app(&app)?;
-    let prefs = store.load()?;
-    let guessed = env_guessed_codechart_path();
-    Ok(UiPreferencesResponse {
-        skip_review: prefs.skip_review,
-        codechart_path: prefs.codechart_path,
-        guessed_codechart_path: guessed,
-    })
-}
-
-#[tauri::command(async)]
 pub fn set_codechart_path(app: AppHandle, codechart_path: String) -> Result<UiPreferences, String> {
     PrefsStore::from_app(&app)?.set_codechart_path(codechart_path)
 }
@@ -67,7 +47,7 @@ pub fn open_in_codechart(app: AppHandle, path: String) -> Result<(), String> {
     spawn_codechart(&program, &path)
 }
 
-fn env_guessed_codechart_path() -> String {
+pub fn env_guessed_codechart_path() -> String {
     let local = std::env::var("LOCALAPPDATA").unwrap_or_default();
     let profile = std::env::var("USERPROFILE").unwrap_or_default();
     guessed_codechart_path(&local, &profile)

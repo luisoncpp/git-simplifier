@@ -16,6 +16,8 @@ pub enum SwitchError {
     ExistingSavedWork(String),
     #[error("untracked files would be overwritten on the target branch: {0}")]
     UntrackedConflict(String),
+    #[error("untracked files overlap the target branch on the same path")]
+    UntrackedOverlap(Vec<String>),
     #[error("quick branch switch recording failed: {0}")]
     Recording(String),
 }

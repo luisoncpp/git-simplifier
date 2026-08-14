@@ -22,9 +22,11 @@ export const CLICK: Record<string, ClickHandler> = {
   "open-recent": (controller, value) => repos.openRecentRepository(controller, value),
   "remove-recent": (controller, value) => repos.removeRecentRepository(controller, value),
   "copy-repository-path": (controller, value) => repos.copyRepositoryPath(controller, value),
-  "reveal-repository": (controller, value) => repos.revealRepository(controller, value),
+  "open-in-explorer": (controller, value) => repos.openRepositoryInExplorer(controller, value),
   "open-in-ide": (controller, value) => repos.openRepositoryInIde(controller, value),
   "open-in-codechart": (controller, value) => repos.openRepositoryInCodechart(controller, value),
+  "open-in-terminal": (controller, value) => repos.openRepositoryInTerminal(controller, value),
+  "open-in-bash": (controller, value) => repos.openRepositoryInBash(controller, value),
   "view-path-diff": (controller, value) => pathDiff.openPathDiff(controller, value),
   "edit-path-in-ide": (controller, value) => pathDiff.openPathInIde(controller, value),
   "toggle-branch-menu": (controller) => branches.toggleBranchMenu(controller),
@@ -60,6 +62,8 @@ export const CLICK: Record<string, ClickHandler> = {
   "select-paths": (controller, value) => edit.selectPaths(controller, value),
   "reset-message": (controller) => edit.resetMessage(controller),
   "dismiss-error": (controller) => edit.dismissError(controller),
+  "dismiss-block": (controller) => edit.dismissBlock(controller),
+  "switch-with-merge": (controller) => edit.switchWithMerge(controller),
   "dismiss-warning": (controller) => edit.dismissWarning(controller),
   "dismiss-outcome": (controller) => edit.dismissOutcome(controller),
   "dismiss-saved-work-notice": (controller) => edit.dismissSavedWorkNotice(controller),
@@ -107,6 +111,8 @@ export const INPUT: Record<string, FieldHandler> = {
   "cleanup-filter": edit.setCleanupFilter,
   "custom-ide-command": (controller, node) => project.setCustomIdeCommand(controller, node.value),
   "codechart-path": (controller, node) => prefs.setCodechartPath(controller, node.value),
+  "terminal-path": (controller, node) => prefs.setTerminalPath(controller, node.value),
+  "bash-path": (controller, node) => prefs.setBashPath(controller, node.value),
 };
 
 export const TAB_STEP: Record<string, number> = { ArrowRight: 1, ArrowLeft: -1 };

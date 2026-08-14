@@ -30,8 +30,9 @@ pub(super) fn split_branch(
         repo.plan_split_branch(request).map_err(|e| e.to_string())
     })?;
     Ok(Prepared {
-        review: review(id.clone(), &plan),
-        pending: PendingOperation::Split { id, plan },
+        review: Some(review(id.clone(), &plan)),
+        pending: Some(PendingOperation::Split { id, plan }),
+        block: None,
     })
 }
 
@@ -45,8 +46,9 @@ pub(super) fn publish_branch(
             .map_err(|e| e.to_string())
     })?;
     Ok(Prepared {
-        review: publish_review(id.clone(), &plan),
-        pending: PendingOperation::Publish { id, plan },
+        review: Some(publish_review(id.clone(), &plan)),
+        pending: Some(PendingOperation::Publish { id, plan }),
+        block: None,
     })
 }
 

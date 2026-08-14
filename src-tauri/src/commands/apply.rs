@@ -153,8 +153,9 @@ fn quick_switch(state: &AppState, plan: QuickSwitchPlan) -> Result<OperationOutc
         repo.apply_quick_switch(&plan).map_err(|e| e.to_string())
     })?;
     let offer_restore = result.target_saved_work.is_some() && !result.pull_decision_needed;
-    let has_warning =
-        result.carry_warning.is_some() || result.pull_warning.is_some();
+    let has_warning = result.carry_warning.is_some()
+        || result.pull_warning.is_some()
+        || result.untracked_merge_warning.is_some();
     let headline = if result.pull_decision_needed {
         "Pull needs a decision"
     } else if has_warning {
@@ -191,8 +192,9 @@ fn resolve_pull(
             result.target_branch
         ));
     }
-    let has_warning =
-        result.carry_warning.is_some() || result.pull_warning.is_some();
+    let has_warning = result.carry_warning.is_some()
+        || result.pull_warning.is_some()
+        || result.untracked_merge_warning.is_some();
     let headline = if has_warning {
         "Pull decision applied with conflicts"
     } else {
@@ -242,6 +244,9 @@ fn resolve_details(result: &QuickSwitchResult) -> Vec<String> {
     if let Some(warning) = &result.carry_warning {
         details.push(warning.clone());
     }
+    if let Some(warning) = &result.untracked_merge_warning {
+        details.push(warning.clone());
+    }
     details
 }
 
@@ -250,6 +255,9 @@ fn push_warnings(details: &mut Vec<String>, result: &QuickSwitchResult) {
         details.push(warning.clone());
     }
     if let Some(warning) = &result.pull_warning {
+        details.push(warning.clone());
+    }
+    if let Some(warning) = &result.untracked_merge_warning {
         details.push(warning.clone());
     }
 }

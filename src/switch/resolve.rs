@@ -5,7 +5,7 @@ use crate::recording::Oplog;
 
 use super::errors::SwitchError;
 use super::model::{PullResolution, QuickSwitchPhase, QuickSwitchResult, QuickSwitchStatus};
-use super::{pull, record, state};
+use super::{pull, record, state, untracked};
 
 pub(crate) fn status(runner: &GitRunner) -> Result<Option<QuickSwitchStatus>, SwitchError> {
     let oplog = Oplog::open_existing(&runner.git_dir()?);
@@ -18,6 +18,7 @@ pub(crate) fn status(runner: &GitRunner) -> Result<Option<QuickSwitchStatus>, Sw
         remote_ref: context.remote_ref,
         phase: QuickSwitchPhase::PullFastForwardFailed,
         carry_reference: context.carry_reference,
+        untracked_merge_reference: context.untracked_merge_reference,
     }))
 }
 
@@ -38,7 +39,10 @@ pub(crate) fn resolve(
         ));
     }
     let (pulled, pull_warning) = apply_resolution(runner, resolution, &context.remote_ref)?;
-    let (carried_index, carry_warning) = reapply_carry(runner, context.carry_reference.as_deref())?;
+    let (carried_index, carry_warning) =
+        reapply_carry(runner, context.carry_reference.as_deref())?;
+    let untracked_merge_warning =
+        reapply_untracked_merge(runner, context.untracked_merge_reference.as_deref())?;
     let mut after = BTreeMap::new();
     after.insert(
         "HEAD".to_string(),
@@ -57,6 +61,7 @@ pub(crate) fn resolve(
         pulled,
         pull_warning,
         pull_decision_needed: false,
+        untracked_merge_warning,
     })
 }
 
@@ -97,7 +102,6 @@ fn reapply_carry(
     if state::optional_id(runner, reference)?.is_none() {
         return Ok((None, None));
     }
-    // Leave carry anchored when a merge left conflicts; applying over MERGE_HEAD is unsafe.
     if merge_in_progress(runner)? {
         return Ok((
             None,
@@ -108,6 +112,24 @@ fn reapply_carry(
     }
     let (indexed, warning) = pull::apply_carry_ref(runner, reference)?;
     Ok((Some(indexed), warning))
+}
+
+fn reapply_untracked_merge(
+    runner: &GitRunner,
+    untracked_reference: Option<&str>,
+) -> Result<Option<String>, SwitchError> {
+    let Some(reference) = untracked_reference else {
+        return Ok(None);
+    };
+    if state::optional_id(runner, reference)?.is_none() {
+        return Ok(None);
+    }
+    if merge_in_progress(runner)? {
+        return Ok(Some(format!(
+            "Untracked overlap merge remains at {reference} until merge conflicts are resolved."
+        )));
+    }
+    untracked::reapply(runner, reference)
 }
 
 fn merge_in_progress(runner: &GitRunner) -> Result<bool, SwitchError> {

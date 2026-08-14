@@ -92,8 +92,9 @@ pub(super) fn cleanup_submodules(
         apply_label: "Apply cleanup".to_string(),
     };
     Ok(Prepared {
-        review,
-        pending: PendingOperation::SubmoduleCleanup { id, plan },
+        review: Some(review),
+        pending: Some(PendingOperation::SubmoduleCleanup { id, plan }),
+        block: None,
     })
 }
 

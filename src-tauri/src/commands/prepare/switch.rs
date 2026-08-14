@@ -1,12 +1,17 @@
-use git_helper_core::QuickSwitchRequest;
+use git_helper_core::{QuickSwitchRequest, SwitchError};
 
 use super::super::data::{
-    OperationReview, PendingOperation, QuickSwitchInput, ResolvePullInput,
+    OperationBlock, OperationReview, PendingOperation, QuickSwitchInput, ResolvePullInput,
 };
 use super::super::repository::with_repository;
 use super::super::review_commands;
 use super::Prepared;
 use crate::commands::state::AppState;
+
+enum PlanOutcome {
+    Plan(git_helper_core::QuickSwitchPlan),
+    Block(OperationBlock),
+}
 
 pub(super) fn quick_switch(
     state: &AppState,
@@ -18,27 +23,25 @@ pub(super) fn quick_switch(
         carry_changes: input.carry_changes,
         pull_after_switch: input.pull_after_switch,
         create_from_remote: input.create_from_remote,
+        merge_untracked: input.merge_untracked,
     };
-    let plan = with_repository(state, |repo| {
-        repo.plan_quick_switch(request).map_err(|e| e.to_string())
+    let outcome = with_repository(state, |repo| match repo.plan_quick_switch(request) {
+        Ok(plan) => Ok(PlanOutcome::Plan(plan)),
+        Err(SwitchError::UntrackedOverlap(paths)) => Ok(PlanOutcome::Block(OperationBlock {
+            kind: "untracked_overwrite".to_string(),
+            message: "Untracked files would be overwritten on the target branch.".to_string(),
+            paths,
+        })),
+        Err(error) => Err(error.to_string()),
     })?;
-    let review = OperationReview {
-        plan_id: id.clone(),
-        kind: "quick_switch".to_string(),
-        title: format!("Switch to {}", plan.target_branch),
-        impact: switch_impact(&plan),
-        preserves: vec![
-            "Untracked files and submodule checkouts".to_string(),
-            format!("The commits on {}", plan.source_branch),
-        ],
-        warnings: switch_warnings(&plan),
-        commands: review_commands::quick_switch(&plan),
-        apply_label: "Switch branch".to_string(),
-    };
-    Ok(Prepared {
-        review,
-        pending: PendingOperation::QuickSwitch { id, plan },
-    })
+    match outcome {
+        PlanOutcome::Plan(plan) => build_prepared(id, &plan),
+        PlanOutcome::Block(block) => Ok(Prepared {
+            review: None,
+            pending: None,
+            block: Some(block),
+        }),
+    }
 }
 
 pub(super) fn resolve_pull(
@@ -53,11 +56,33 @@ pub(super) fn resolve_pull(
     })?;
     let review = resolution_review(&id, &status, &input.resolution);
     Ok(Prepared {
-        review,
-        pending: PendingOperation::ResolveQuickSwitchPull {
+        review: Some(review),
+        pending: Some(PendingOperation::ResolveQuickSwitchPull {
             id,
             resolution: input.resolution,
-        },
+        }),
+        block: None,
+    })
+}
+
+fn build_prepared(id: String, plan: &git_helper_core::QuickSwitchPlan) -> Result<Prepared, String> {
+    let review = OperationReview {
+        plan_id: id.clone(),
+        kind: "quick_switch".to_string(),
+        title: format!("Switch to {}", plan.target_branch),
+        impact: switch_impact(plan),
+        preserves: vec![
+            "Untracked files and submodule checkouts".to_string(),
+            format!("The commits on {}", plan.source_branch),
+        ],
+        warnings: switch_warnings(plan),
+        commands: review_commands::quick_switch(plan),
+        apply_label: "Switch branch".to_string(),
+    };
+    Ok(Prepared {
+        review: Some(review),
+        pending: Some(PendingOperation::QuickSwitch { id, plan: plan.clone() }),
+        block: None,
     })
 }
 
@@ -82,6 +107,12 @@ fn switch_impact(plan: &git_helper_core::QuickSwitchPlan) -> Vec<String> {
             ));
         }
     }
+    if !plan.untracked_conflicts.is_empty() {
+        impact.push(format!(
+            "Merge {} untracked file(s) with the target branch after checkout",
+            plan.untracked_conflicts.len()
+        ));
+    }
     if let Some(remote) = &plan.pull_remote_ref {
         impact.push(format!("Fast-forward from {remote} after the switch"));
     }
@@ -96,6 +127,13 @@ fn switch_impact(plan: &git_helper_core::QuickSwitchPlan) -> Vec<String> {
 
 fn switch_warnings(plan: &git_helper_core::QuickSwitchPlan) -> Vec<String> {
     let mut warnings = Vec::new();
+    if !plan.untracked_conflicts.is_empty() {
+        warnings.push(
+            "Overlapping untracked files will be merged with the target branch and may leave \
+             conflict markers."
+                .to_string(),
+        );
+    }
     if plan.carry_changes && plan.has_tracked_changes {
         warnings.push(
             "Carry uses git stash push and stash pop. Conflicts are reported after the switch \
@@ -154,6 +192,12 @@ fn resolution_review(
     if status.carry_reference.is_some() {
         warnings.push(
             "Carried changes are anchored and will be reapplied after this choice when safe."
+                .to_string(),
+        );
+    }
+    if status.untracked_merge_reference.is_some() {
+        warnings.push(
+            "Untracked overlap merge is anchored and will be reapplied after this choice when safe."
                 .to_string(),
         );
     }

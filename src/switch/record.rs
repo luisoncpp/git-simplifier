@@ -5,6 +5,7 @@ use crate::rewrite::ObjectId;
 
 use super::errors::SwitchError;
 use super::model::{QuickSwitchPhase, QuickSwitchPlan, SavedWork};
+use super::record_commands;
 
 pub(super) struct PullContext {
     pub id: String,
@@ -12,6 +13,12 @@ pub(super) struct PullContext {
     pub target_branch: String,
     pub remote_ref: String,
     pub carry_reference: Option<String>,
+    pub untracked_merge_reference: Option<String>,
+}
+
+pub(super) struct PullPauseSnapshots {
+    pub carry: Option<String>,
+    pub untracked_merge: Option<String>,
 }
 
 pub(super) fn begin_switch(
@@ -37,7 +44,7 @@ pub(super) fn begin_switch(
         snapshots: BTreeMap::new(),
         details,
         phase: None,
-        commands: switch_commands(switch_plan),
+        commands: record_commands::switch_commands(switch_plan),
         reversible: true,
     };
     begin(oplog, record, id)
@@ -46,18 +53,18 @@ pub(super) fn begin_switch(
 pub(super) fn mark_pull_failed(
     oplog: &Oplog,
     id: &str,
-    remote_ref: &str,
-    carry_reference: Option<&str>,
+    snapshots: PullPauseSnapshots,
 ) -> Result<(), SwitchError> {
-    let mut snapshots = BTreeMap::new();
-    if let Some(reference) = carry_reference {
-        snapshots.insert("carry".to_string(), reference.to_string());
+    let mut map = BTreeMap::new();
+    if let Some(reference) = snapshots.carry {
+        map.insert("carry".to_string(), reference);
+    }
+    if let Some(reference) = snapshots.untracked_merge {
+        map.insert("untracked_merge".to_string(), reference);
     }
     oplog
-        .update_phase(id, QuickSwitchPhase::PullFastForwardFailed.as_str(), snapshots)
-        .map_err(|error| SwitchError::Recording(error.to_string()))?;
-    let _ = remote_ref;
-    Ok(())
+        .update_phase(id, QuickSwitchPhase::PullFastForwardFailed.as_str(), map)
+        .map_err(|error| SwitchError::Recording(error.to_string()))
 }
 
 pub(super) fn active_pull_decision(oplog: &Oplog) -> Result<Option<PullContext>, SwitchError> {
@@ -77,6 +84,7 @@ pub(super) fn active_pull_decision(oplog: &Oplog) -> Result<Option<PullContext>,
         target_branch: detail(&record, "target_branch")?,
         remote_ref: detail(&record, "remote_ref")?,
         carry_reference: record.snapshots.get("carry").cloned(),
+        untracked_merge_reference: record.snapshots.get("untracked_merge").cloned(),
     }))
 }
 
@@ -109,46 +117,6 @@ struct SimpleRecord {
     refs_before: BTreeMap<String, String>,
     commands: Vec<String>,
     reversible: bool,
-}
-
-fn switch_commands(switch_plan: &QuickSwitchPlan) -> Vec<String> {
-    let mut commands = Vec::new();
-    if switch_plan.has_tracked_changes && switch_plan.carry_changes {
-        commands.push("git stash push -m \"git-helper carry\"".to_string());
-    } else if switch_plan.has_tracked_changes {
-        commands.push("git stash create".to_string());
-        commands.push(format!(
-            "git update-ref {} <snapshot>",
-            switch_plan.saved_work_reference
-        ));
-        commands.push("git reset --hard HEAD".to_string());
-    }
-    if let Some(remote) = &switch_plan.create_from_remote {
-        let start = remote
-            .strip_prefix("refs/remotes/")
-            .unwrap_or(remote.as_str());
-        commands.push(format!(
-            "git switch --track -c {} {}",
-            switch_plan.target_branch, start
-        ));
-    } else {
-        commands.push(format!(
-            "git switch --no-guess -- {}",
-            switch_plan.target_branch
-        ));
-    }
-    if let Some(remote) = &switch_plan.pull_remote_ref {
-        let short = remote
-            .strip_prefix("refs/remotes/")
-            .unwrap_or(remote.as_str());
-        let (remote_name, branch) = short.split_once('/').unwrap_or(("origin", short));
-        commands.push(format!("git pull --ff-only {remote_name} {branch}"));
-    }
-    if switch_plan.has_tracked_changes && switch_plan.carry_changes {
-        commands.push("git stash pop --index".to_string());
-        commands.push("git stash pop  # fallback".to_string());
-    }
-    commands
 }
 
 fn begin_simple(oplog: &Oplog, draft: SimpleRecord) -> Result<String, SwitchError> {

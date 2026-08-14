@@ -108,6 +108,8 @@ pub struct QuickSwitchInput {
     pub pull_after_switch: bool,
     #[serde(default)]
     pub create_from_remote: Option<String>,
+    #[serde(default)]
+    pub merge_untracked: bool,
 }
 
 fn default_true() -> bool {
@@ -172,6 +174,19 @@ pub struct OperationReview {
     pub warnings: Vec<String>,
     pub commands: Vec<String>,
     pub apply_label: String,
+}
+
+#[derive(Clone, Debug, Serialize)]
+pub struct OperationBlock {
+    pub kind: String,
+    pub message: String,
+    pub paths: Vec<String>,
+}
+
+#[derive(Clone, Debug, Serialize)]
+pub struct PrepareResult {
+    pub review: Option<OperationReview>,
+    pub block: Option<OperationBlock>,
 }
 
 #[derive(Clone, Debug, Serialize)]

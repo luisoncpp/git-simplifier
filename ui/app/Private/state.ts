@@ -39,6 +39,7 @@ export function createState(): AppState {
     expanded: new Set(),
     review: null,
     outcome: null,
+    block: null,
     changingBase: false,
     busy: false,
     fetch: { active: false, phase: "", done: 0, total: 0 },
@@ -48,6 +49,10 @@ export function createState(): AppState {
     skipReview: false,
     codechartPath: "",
     guessedCodechartPath: "",
+    terminalPath: "",
+    defaultTerminalName: "",
+    bashPath: "",
+    guessedBashPath: "",
     projectIde: defaultIde(),
     customIdeCommand: "",
   };

@@ -34,8 +34,9 @@ pub(super) fn sync(state: &AppState, id: String, input: BaseRequest) -> Result<P
         apply_label: "Start sync".to_string(),
     };
     Ok(Prepared {
-        review,
-        pending: PendingOperation::Sync { id, base, head },
+        review: Some(review),
+        pending: Some(PendingOperation::Sync { id, base, head }),
+        block: None,
     })
 }
 
@@ -77,11 +78,12 @@ pub(super) fn resume_sync(state: &AppState, id: String) -> Result<Prepared, Stri
         apply_label: title.to_string(),
     };
     Ok(Prepared {
-        review,
-        pending: PendingOperation::Resume {
+        review: Some(review),
+        pending: Some(PendingOperation::Resume {
             id,
             operation_id: status.operation_id,
-        },
+        }),
+        block: None,
     })
 }
 
@@ -136,7 +138,8 @@ pub(super) fn commit_merge(state: &AppState, id: String) -> Result<Prepared, Str
         apply_label: "Commit merge".to_string(),
     };
     Ok(Prepared {
-        review,
-        pending: PendingOperation::CommitMerge { id, plan, head },
+        review: Some(review),
+        pending: Some(PendingOperation::CommitMerge { id, plan, head }),
+        block: None,
     })
 }

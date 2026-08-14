@@ -163,7 +163,7 @@ fn switch_rejects_an_untracked_file_that_target_would_overwrite() {
 
     assert!(matches!(
         result,
-        Err(SwitchError::UntrackedConflict(paths)) if paths.contains("collision.txt")
+        Err(SwitchError::UntrackedOverlap(paths)) if paths.contains(&"collision.txt".to_string())
     ));
     assert_eq!(current_branch(&fixture), "feature");
     assert_eq!(
@@ -171,6 +171,87 @@ fn switch_rejects_an_untracked_file_that_target_would_overwrite() {
         "local\n"
     );
     assert!(fixture.repo.list_saved_work().unwrap().is_empty());
+}
+
+#[test]
+fn switch_rejects_prefix_untracked_overlap_without_merge_offer() {
+    let fixture = fixture_with_target("other");
+    fixture.checkout("other");
+    fixture.commit_file("collision", "target file\n", "file named collision");
+    fixture.checkout("feature");
+    fixture.write_worktree_file("collision/inside.txt", "local\n");
+
+    let result = fixture.repo.plan_quick_switch(request("other"));
+
+    assert!(matches!(result, Err(SwitchError::UntrackedConflict(_))));
+    assert_eq!(current_branch(&fixture), "feature");
+    assert_eq!(
+        fs::read_to_string(fixture.root.path().join("collision/inside.txt")).unwrap(),
+        "local\n"
+    );
+}
+
+#[test]
+fn switch_with_merge_untracked_overlaps_onto_target() {
+    let fixture = fixture_with_target("other");
+    fixture.checkout("other");
+    fixture.commit_file("collision.txt", "target\n", "target file");
+    fixture.checkout("feature");
+    fixture.write_worktree_file("collision.txt", "local\n");
+
+    let plan = fixture.repo.plan_quick_switch(merge_request("other")).unwrap();
+    assert!(plan.untracked_conflicts.contains(&"collision.txt".to_string()));
+    fixture.repo.apply_quick_switch(&plan).unwrap();
+
+    assert_eq!(current_branch(&fixture), "other");
+    let content = fs::read_to_string(fixture.root.path().join("collision.txt")).unwrap();
+    assert!(content.contains("<<<<<<<") || content == "local\n");
+    assert!(fixture.repo.list_saved_work().unwrap().is_empty());
+}
+
+#[test]
+fn pull_ff_failed_then_resolve_reapplies_untracked_park() {
+    let fixture = fixture_with_target("other");
+    let _remote = fixture.add_bare_origin();
+    run(&fixture.repo, &["push", "-u", "origin", "other:other"]);
+    fixture.checkout("other");
+    fixture.commit_file("collision.txt", "remote collision\n", "remote collision");
+    run(&fixture.repo, &["push", "origin", "other"]);
+    fixture.commit_file("README.md", "remote ahead\n", "ahead on other");
+    run(&fixture.repo, &["push", "origin", "other"]);
+    run(&fixture.repo, &["reset", "--hard", "HEAD~1"]);
+    fixture.commit_file("README.md", "local only\n", "local only on other");
+    fixture.checkout("feature");
+    fixture.write_worktree_file("collision.txt", "local untracked\n");
+
+    let plan = fixture
+        .repo
+        .plan_quick_switch(QuickSwitchRequest {
+            target_branch: "other".to_string(),
+            carry_changes: false,
+            pull_after_switch: true,
+            create_from_remote: None,
+            merge_untracked: true,
+        })
+        .unwrap();
+    assert!(plan.untracked_conflicts.contains(&"collision.txt".to_string()));
+    let result = fixture.repo.apply_quick_switch(&plan).unwrap();
+    assert!(result.pull_decision_needed);
+
+    let resolved = fixture
+        .repo
+        .resolve_quick_switch_pull(git_helper_core::PullResolution::ReplaceWithRemote)
+        .unwrap();
+    assert!(resolved.pulled);
+    assert_eq!(current_branch(&fixture), "other");
+    let content = fs::read_to_string(fixture.root.path().join("collision.txt")).unwrap();
+    assert!(
+        content.contains("<<<<<<<") || content.contains("local untracked"),
+        "content was {:?}, warning={:?}",
+        content,
+        resolved.untracked_merge_warning
+    );
+    assert!(fixture.repo.quick_switch_status().unwrap().is_none());
 }
 
 #[test]
@@ -280,6 +361,7 @@ fn switch_creates_a_local_branch_from_a_remote_tracking_ref() {
             carry_changes: false,
             pull_after_switch: false,
             create_from_remote: Some("refs/remotes/origin/from-remote".to_string()),
+            merge_untracked: false,
         })
         .unwrap();
     fixture.repo.apply_quick_switch(&plan).unwrap();
@@ -331,6 +413,7 @@ fn switch_pulls_same_named_remote_with_ff_only() {
             carry_changes: false,
             pull_after_switch: true,
             create_from_remote: None,
+            merge_untracked: false,
         })
         .unwrap();
     assert_eq!(
@@ -364,6 +447,7 @@ fn diverged_pull_pauses_for_a_user_decision() {
             carry_changes: false,
             pull_after_switch: true,
             create_from_remote: None,
+            merge_untracked: false,
         })
         .unwrap();
     let result = fixture.repo.apply_quick_switch(&plan).unwrap();
@@ -459,6 +543,17 @@ fn request(target_branch: &str) -> QuickSwitchRequest {
         carry_changes: false,
         pull_after_switch: false,
         create_from_remote: None,
+        merge_untracked: false,
+    }
+}
+
+fn merge_request(target_branch: &str) -> QuickSwitchRequest {
+    QuickSwitchRequest {
+        target_branch: target_branch.to_string(),
+        carry_changes: false,
+        pull_after_switch: false,
+        create_from_remote: None,
+        merge_untracked: true,
     }
 }
 
@@ -468,6 +563,7 @@ fn carry_request(target_branch: &str) -> QuickSwitchRequest {
         carry_changes: true,
         pull_after_switch: false,
         create_from_remote: None,
+        merge_untracked: false,
     }
 }
 

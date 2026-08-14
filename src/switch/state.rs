@@ -107,6 +107,10 @@ pub(super) fn carry_ref(operation_id: &str) -> String {
     format!("refs/githelper/carry/{operation_id}")
 }
 
+pub(super) fn untracked_merge_ref(operation_id: &str) -> String {
+    format!("refs/githelper/untracked-merge/{operation_id}")
+}
+
 /// Accepts `origin/feature` or `refs/remotes/origin/feature`.
 pub(super) fn remote_tracking_ref(remote: &str) -> Result<String, SwitchError> {
     if remote.starts_with("refs/remotes/") {
@@ -153,6 +157,23 @@ pub(super) fn same_named_remote(
 pub(super) fn text(bytes: &[u8]) -> Result<String, SwitchError> {
     String::from_utf8(bytes.to_vec())
         .map_err(|_| SwitchError::InvalidState("Git output is not UTF-8".to_string()))
+}
+
+pub(super) fn update_ref(
+    runner: &GitRunner,
+    reference: &str,
+    value: &ObjectId,
+    old: &str,
+) -> Result<(), SwitchError> {
+    runner.run_unlocked(GitCommand::write(vec![
+        OsString::from("update-ref"),
+        OsString::from("-m"),
+        OsString::from("git-helper save-work"),
+        OsString::from(reference),
+        OsString::from(value.as_str()),
+        OsString::from(old),
+    ]))?;
+    Ok(())
 }
 
 pub(super) fn args(values: &[&str]) -> Vec<OsString> {

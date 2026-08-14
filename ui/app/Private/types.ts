@@ -142,6 +142,17 @@ export interface OperationReview {
   apply_label: string;
 }
 
+export interface OperationBlock {
+  kind: string;
+  message: string;
+  paths: string[];
+}
+
+export interface PrepareResult {
+  review: OperationReview | null;
+  block: OperationBlock | null;
+}
+
 export interface OperationOutcome {
   kind: string;
   headline: string;
@@ -164,7 +175,7 @@ export type OperationRequest =
   | { kind: "cleanup_submodules"; base: string; paths: string[]; uncommit: boolean; revert: boolean }
   | { kind: "split_branch"; base: string; new_branch: string; paths: string[]; message: string }
   | { kind: "publish_branch"; branch: string }
-  | { kind: "quick_switch"; target_branch: string; carry_changes?: boolean; pull_after_switch?: boolean; create_from_remote?: string | null }
+  | { kind: "quick_switch"; target_branch: string; carry_changes?: boolean; pull_after_switch?: boolean; create_from_remote?: string | null; merge_untracked?: boolean }
   | { kind: "resolve_quick_switch_pull"; resolution: "replace_with_remote" | "merge_pull" | "cancel" }
   | { kind: "sync"; base: string }
   | { kind: "cleanup"; base: string; references: string[]; delete_remotes: boolean }
@@ -236,6 +247,8 @@ export interface Draft {
   /// and the three filters can change the visible set without reseeding.
   cleanupOverrides: Map<string, boolean>;
   cleanupFilter: string;
+  /// Set when the user chooses Switch with merge for untracked overlaps.
+  mergeUntracked: boolean;
 }
 
 /// Payload of the desktop `fetch-progress` event, mirroring the Rust
@@ -282,6 +295,7 @@ export interface AppState {
   expanded: Set<string>;
   review: OperationReview | null;
   outcome: OperationOutcome | null;
+  block: OperationBlock | null;
   changingBase: boolean;
   busy: boolean;
   /// Live fetch progress, fed by the desktop `fetch-progress` event while the
@@ -295,6 +309,10 @@ export interface AppState {
   skipReview: boolean;
   codechartPath: string;
   guessedCodechartPath: string;
+  terminalPath: string;
+  defaultTerminalName: string;
+  bashPath: string;
+  guessedBashPath: string;
   projectIde: IdeChoice;
   customIdeCommand: string;
 }

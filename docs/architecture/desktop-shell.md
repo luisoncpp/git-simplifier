@@ -36,12 +36,16 @@ Implementation: `src-tauri/src/tray.rs`, wired from `lib.rs` via `.setup` and `.
 
 Successful `open_repository` calls append/promote the path in the app data file owned by `commands/recents.rs`. This is machine-local preference data, separate from repository-local `.git/githelper/` state. See [switch-repository.md](../flows/switch-repository.md).
 
-## Project settings, open in IDE, and open in Codechart
+## Project settings, open in IDE, Codechart, Terminal, and Bash
 
 Per-repository preferences live in `project-settings.json` under app data (`commands/project_settings.rs`). The first field is `ide`: a tagged choice (`vscode`, `cursor`, `visual-studio`, `rider`, or `custom` with a command path). Missing entries default to VS Code.
 
-Global user preferences live in `ui-preferences.json` (`commands/prefs.rs`). `codechart_path` overrides the default Codechart install location; empty means auto-guess under `%LOCALAPPDATA%\codechart\codechart.exe`.
+Global user preferences live in `ui-preferences.json` (`commands/prefs.rs`). `codechart_path` overrides the default Codechart install location; empty means auto-guess under `%LOCALAPPDATA%\codechart\codechart.exe`. `terminal_path` overrides the default terminal; empty uses Windows Terminal (`wt.exe`) running PowerShell if available, otherwise Windows PowerShell (`powershell.exe`). `bash_path` overrides Git's default bash executable; empty autodetects Git Bash from the Git install (e.g. `C:\Program Files\Git\bin\bash.exe`, LocalAppData, or PATH).
 
 `open_in_ide` (`commands/ide.rs`) loads the path's IDE choice, maps presets to CLI programs (`code`, `cursor`, `devenv`, `rider`), and spawns the folder argument without waiting. `open_file_in_ide` uses the same IDE choice and opens a file inside the repository: VS Code and Cursor pass `--reuse-window`, Visual Studio passes `/edit`, Rider and custom commands receive the absolute file path. Windows uses `CREATE_NO_WINDOW` on the spawn so `.cmd` shims do not flash a console.
 
 `open_in_codechart` (`commands/codechart.rs`) resolves `codechart.exe` from saved or guessed paths and spawns it directly with the folder argument (no `cmd /C`; `CREATE_NO_WINDOW` on Windows). Settings are edited from the rail gear; see [settings.md](../flows/settings.md).
+
+`open_in_terminal` (`commands/terminal.rs`) spawns a terminal rooted in the repository folder: if `terminal_path` is configured it spawns that command/program; otherwise it prefers Windows Terminal (`wt.exe -d <path> powershell.exe`) or falls back to Windows PowerShell (`powershell.exe` with working directory and `CREATE_NEW_CONSOLE`). Unlike IDE/Codechart spawns, console windows are not suppressed (`CREATE_NO_WINDOW` is omitted) so the interactive terminal appears.
+
+`open_in_bash` (`commands/bash.rs`) launches Git Bash in the repository folder using the terminal configured for **Open in Terminal** (Windows Terminal `wt -d <path> <bash>`, custom terminal `<term> -e <bash>`, or direct bash console spawn when no custom terminal or wt is available). The bash executable defaults to Git's `bash.exe` or the user's `bash_path` override.

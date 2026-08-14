@@ -83,5 +83,6 @@ function quickSwitchRequest(state: AppState): OperationRequest {
     carry_changes: draft.carryChanges,
     pull_after_switch: draft.pullAfterSwitch,
     create_from_remote: draft.createFromRemote || null,
+    merge_untracked: draft.mergeUntracked,
   };
 }

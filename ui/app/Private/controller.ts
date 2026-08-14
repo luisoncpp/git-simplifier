@@ -24,6 +24,7 @@ import type {
   OperationOutcome,
   OperationRequest,
   OperationReview,
+  PrepareResult,
   RepositorySnapshot,
   ViewId,
 } from "./types.ts";
@@ -120,6 +121,8 @@ export class AppController {
     await this.cancelReview();
     this.state.operation = operation;
     this.state.outcome = null;
+    this.state.block = null;
+    this.state.draft.mergeUntracked = false;
     this.state.error = "";
     await this.run(() => loadOperationData(this));
   }
@@ -143,13 +146,22 @@ export class AppController {
     await this.run(async () => {
       this.state.outcome = null;
       this.state.error = "";
-      const review = await this.bridge.invoke<OperationReview>("prepare_operation", { request });
-      if (this.state.skipReview) {
-        await this.applyPlan(review.plan_id);
+      this.state.block = null;
+      const result = await this.bridge.invoke<PrepareResult>("prepare_operation", { request });
+      if (result.block) {
+        this.state.block = result.block;
+        this.state.review = null;
+        this.announce(result.block.message);
         return;
       }
-      this.state.review = review;
-      this.announce(`${review.title}. Review the plan, then apply it.`);
+      if (this.state.skipReview && result.review) {
+        await this.applyPlan(result.review.plan_id);
+        return;
+      }
+      if (result.review) {
+        this.state.review = result.review;
+        this.announce(`${result.review.title}. Review the plan, then apply it.`);
+      }
     });
     if (this.state.review) focusNode("#review-title");
   }
@@ -188,6 +200,8 @@ export class AppController {
     try {
       const outcome = await this.bridge.invoke<OperationOutcome>("apply_operation", { planId });
       this.state.review = null;
+      this.state.block = null;
+      this.state.draft.mergeUntracked = false;
       this.state.outcome = outcome;
       await this.reload();
       this.announce(outcome.headline);

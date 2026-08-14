@@ -30,7 +30,14 @@ pub(crate) fn create(
     let tree_ref = create_from_remote
         .clone()
         .unwrap_or_else(|| state::branch_ref(&request.target_branch));
-    preflight::ensure_untracked_safe(runner, &tree_ref, &untracked)?;
+    let untracked_conflicts = resolve_untracked_conflicts(
+        runner,
+        UntrackedInput {
+            tree_ref: &tree_ref,
+            paths: &untracked,
+            merge: request.merge_untracked,
+        },
+    )?;
     let pull_remote_ref = if request.pull_after_switch {
         resolve_pull_remote(runner, &request.target_branch, create_from_remote.as_deref())?
     } else {
@@ -49,6 +56,7 @@ pub(crate) fn create(
         create_from_remote,
         pull_remote_ref,
         target_saved_work,
+        untracked_conflicts,
     })
 }
 
@@ -83,8 +91,39 @@ pub(crate) fn verify_current(
         .create_from_remote
         .clone()
         .unwrap_or_else(|| state::branch_ref(&plan.target_branch));
-    preflight::ensure_untracked_safe(runner, &tree_ref, &untracked)?;
+    let merge_untracked = !plan.untracked_conflicts.is_empty();
+    let conflicts = resolve_untracked_conflicts(
+        runner,
+        UntrackedInput {
+            tree_ref: &tree_ref,
+            paths: &untracked,
+            merge: merge_untracked,
+        },
+    )?;
+    if conflicts != plan.untracked_conflicts {
+        return Err(SwitchError::StalePlan);
+    }
     Ok(())
+}
+
+struct UntrackedInput<'a> {
+    tree_ref: &'a str,
+    paths: &'a [String],
+    merge: bool,
+}
+
+fn resolve_untracked_conflicts(
+    runner: &GitRunner,
+    input: UntrackedInput<'_>,
+) -> Result<Vec<String>, SwitchError> {
+    let (mergeable, hard) = preflight::classify(runner, input.tree_ref, input.paths)?;
+    if !hard.is_empty() {
+        return Err(SwitchError::UntrackedConflict(hard.join(", ")));
+    }
+    if !mergeable.is_empty() && !input.merge {
+        return Err(SwitchError::UntrackedOverlap(mergeable));
+    }
+    Ok(mergeable)
 }
 
 pub(crate) fn list_saved_work(runner: &GitRunner) -> Result<Vec<SavedWork>, SwitchError> {

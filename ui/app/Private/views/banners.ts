@@ -5,7 +5,7 @@ import type { SyncPause } from "../snapshot.ts";
 import type { AppState, OperationOutcome } from "../types.ts";
 
 export function banners(state: AppState): string {
-  return `${syncBanner(state)}${quickSwitchBanner(state)}${savedWorkBanner(state)}${warningBanner(state)}${errorBanner(state)}${outcomeBanner(state)}`;
+  return `${syncBanner(state)}${quickSwitchBanner(state)}${untrackedBlockBanner(state)}${savedWorkBanner(state)}${warningBanner(state)}${errorBanner(state)}${outcomeBanner(state)}`;
 }
 
 function syncBanner(state: AppState): string {
@@ -28,6 +28,21 @@ function syncPrimaryAction(state: AppState, pause: SyncPause): string {
     return `<button class="primary small" data-event="resume-sync" ${disabled}>${actionVerb(state.skipReview)} ${pause.retry ? "retry" : "resume"}</button>`;
   }
   return `<button class="ghost small" data-event="set-view" data-value="recovery">Inspect recovery</button>`;
+}
+
+function untrackedBlockBanner(state: AppState): string {
+  const block = state.block;
+  if (!block || block.kind !== "untracked_overwrite") return "";
+  const disabled = state.busy ? "disabled" : "";
+  const paths = block.paths.map((path) => `<li>${esc(path)}</li>`).join("");
+  return `<div class="banner warn" role="alert">
+    <div><strong>Untracked files would be overwritten</strong>
+      <p>${esc(block.message)}</p><ul>${paths}</ul></div>
+    <div class="banner-actions">
+      <button class="primary small" data-event="switch-with-merge" ${disabled}>Switch with merge</button>
+      <button class="ghost small" data-event="dismiss-block" ${disabled}>Dismiss</button>
+    </div>
+  </div>`;
 }
 
 function quickSwitchBanner(state: AppState): string {

@@ -55,8 +55,9 @@ pub(super) fn revert(state: &AppState, id: String, input: RevertInput) -> Result
         apply_label: "Apply revert".to_string(),
     };
     Ok(Prepared {
-        review,
-        pending: PendingOperation::Revert { id, plan },
+        review: Some(review),
+        pending: Some(PendingOperation::Revert { id, plan }),
+        block: None,
     })
 }
 

@@ -8,9 +8,9 @@ import type { AppState, RecentRepository, RepositorySnapshot } from "./types.ts"
 export function filteredRecents(state: AppState): RecentRepository[] {
   const query = state.repoFilter.trim().toLowerCase();
   if (!query) return state.recentRepositories;
-  return state.recentRepositories.filter((entry) => {
-    return entry.name.toLowerCase().includes(query) || entry.path.toLowerCase().includes(query);
-  });
+  return state.recentRepositories.filter(
+    (e) => e.name.toLowerCase().includes(query) || e.path.toLowerCase().includes(query),
+  );
 }
 
 export async function loadRecentRepositories(controller: AppController): Promise<void> {
@@ -51,8 +51,7 @@ export function setRepoFilter(controller: AppController, node: { value: string }
 function moveRepoHighlight(controller: AppController, step: number): void {
   const total = filteredRecents(controller.state).length;
   if (!total) return;
-  const next = (controller.state.repoHighlight + step + total) % total;
-  controller.state.repoHighlight = next;
+  controller.state.repoHighlight = (controller.state.repoHighlight + step + total) % total;
   controller.render();
 }
 
@@ -62,8 +61,7 @@ export async function openPickedRepository(controller: AppController): Promise<v
     controller.render();
     return null;
   });
-  if (!path) return;
-  await openRepositoryPath(controller, path);
+  if (path) await openRepositoryPath(controller, path);
 }
 
 export async function openRecentRepository(controller: AppController, path: string): Promise<void> {
@@ -89,12 +87,7 @@ export async function removeRecentRepository(controller: AppController, path: st
   controller.render();
 }
 
-export function openRepoContextMenu(
-  controller: AppController,
-  path: string,
-  x: number,
-  y: number,
-): void {
+export function openRepoContextMenu(controller: AppController, path: string, x: number, y: number): void {
   if (!path || controller.state.busy) return;
   controller.state.pathContextMenu = null;
   controller.state.repoContextMenu = { path, x, y };
@@ -113,8 +106,8 @@ export async function copyRepositoryPath(controller: AppController, path: string
   await controller.copy(path, "Path copied to the clipboard");
 }
 
-export async function revealRepository(controller: AppController, path: string): Promise<void> {
-  await invokeRepoShellAction(controller, "reveal_in_explorer", path);
+export async function openRepositoryInExplorer(controller: AppController, path: string): Promise<void> {
+  await invokeRepoShellAction(controller, "open_in_explorer", path);
 }
 
 export async function openRepositoryInIde(controller: AppController, path: string): Promise<void> {
@@ -125,11 +118,15 @@ export async function openRepositoryInCodechart(controller: AppController, path:
   await invokeRepoShellAction(controller, "open_in_codechart", path);
 }
 
-async function invokeRepoShellAction(
-  controller: AppController,
-  command: string,
-  path: string,
-): Promise<void> {
+export async function openRepositoryInTerminal(controller: AppController, path: string): Promise<void> {
+  await invokeRepoShellAction(controller, "open_in_terminal", path);
+}
+
+export async function openRepositoryInBash(controller: AppController, path: string): Promise<void> {
+  await invokeRepoShellAction(controller, "open_in_bash", path);
+}
+
+async function invokeRepoShellAction(controller: AppController, command: string, path: string): Promise<void> {
   if (!path) return;
   closeRepoContextMenu(controller);
   try {
@@ -142,8 +139,7 @@ async function invokeRepoShellAction(
 
 async function activateHighlightedRepository(controller: AppController): Promise<void> {
   const entry = filteredRecents(controller.state)[controller.state.repoHighlight];
-  if (!entry) return;
-  await openRecentRepository(controller, entry.path);
+  if (entry) await openRecentRepository(controller, entry.path);
 }
 
 async function openRepositoryPath(controller: AppController, path: string): Promise<void> {
@@ -159,7 +155,6 @@ async function openRepositoryPath(controller: AppController, path: string): Prom
       controller.state.draft = createDraft();
       controller.state.outcome = null;
       controller.state.expanded.clear();
-      // Paint from the returned snapshot first so fetch runs behind the bar.
       await controller.reload(snapshot);
       controller.state.warning = await fetchRemotes(controller);
       if (controller.state.warning) controller.announce(controller.state.warning);
@@ -174,7 +169,6 @@ async function openRepositoryPath(controller: AppController, path: string): Prom
   });
 }
 
-/// Return true when the repo menu consumed the key; Enter may return a promise.
 export function handleKeys(controller: AppController, event: KeyboardEvent): boolean | Promise<void> {
   if (!controller.state.repoMenuOpen) return false;
   if (event.key === "Escape") {

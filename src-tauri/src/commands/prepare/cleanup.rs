@@ -22,8 +22,9 @@ pub(super) fn cleanup(
         repo.plan_cleanup(request).map_err(|e| e.to_string())
     })?;
     Ok(Prepared {
-        review: review(id.clone(), &plan),
-        pending: PendingOperation::Cleanup { id, plan },
+        review: Some(review(id.clone(), &plan)),
+        pending: Some(PendingOperation::Cleanup { id, plan }),
+        block: None,
     })
 }
 

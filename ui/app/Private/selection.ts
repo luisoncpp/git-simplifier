@@ -1,5 +1,5 @@
 import { pathSetFor, pathValue, visiblePaths } from "./draft/index.ts";
-import { OPERATIONS } from "./operations/index.ts";
+import { buildRequest, OPERATIONS } from "./operations/index.ts";
 import { currentBranch } from "./snapshot.ts";
 import { messageTools } from "./views/form-history.ts";
 import { submitRow } from "./views/actions.ts";
@@ -148,7 +148,21 @@ export function setChangingBase(controller: AppController, value: string): void 
 
 export function dismissError(controller: AppController): void {
   controller.state.error = "";
+  controller.state.block = null;
+  controller.state.draft.mergeUntracked = false;
   controller.render();
+}
+
+export function dismissBlock(controller: AppController): void {
+  controller.state.block = null;
+  controller.state.draft.mergeUntracked = false;
+  controller.render();
+}
+
+export function switchWithMerge(controller: AppController): Promise<void> {
+  controller.state.draft.mergeUntracked = true;
+  controller.state.block = null;
+  return controller.prepare(buildRequest(controller.state));
 }
 
 export function dismissWarning(controller: AppController): void {

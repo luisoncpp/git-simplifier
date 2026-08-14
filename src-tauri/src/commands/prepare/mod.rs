@@ -14,8 +14,9 @@ use super::repository::with_repository;
 use super::state::AppState;
 
 pub(super) struct Prepared {
-    pub review: OperationReview,
-    pub pending: PendingOperation,
+    pub review: Option<OperationReview>,
+    pub pending: Option<PendingOperation>,
+    pub block: Option<super::data::OperationBlock>,
 }
 
 pub(super) fn prepare(

@@ -22,19 +22,49 @@ export function settingsView(state: AppState): string {
   </div>`;
 }
 
-function userSettings(state: AppState): string {
+function codechartField(state: AppState): string {
   const placeholder = state.guessedCodechartPath || "…\\Local\\codechart\\codechart.exe";
+  return `<label class="field">
+    <span>Codechart</span>
+    <input type="text" data-event="codechart-path" data-focus="codechart-path"
+      value="${esc(state.codechartPath)}"
+      placeholder="${esc(placeholder)}"
+      ${state.busy ? "disabled" : ""} />
+    <p class="field-hint">Leave empty to use the default install under LocalAppData. Used by <strong>Open in Codechart</strong> from the repository menu.</p>
+  </label>`;
+}
+
+function terminalField(state: AppState): string {
+  const placeholder = state.defaultTerminalName || "Windows Terminal (PowerShell)";
+  return `<label class="field">
+    <span>Terminal</span>
+    <input type="text" data-event="terminal-path" data-focus="terminal-path"
+      value="${esc(state.terminalPath)}"
+      placeholder="${esc(placeholder)}"
+      ${state.busy ? "disabled" : ""} />
+    <p class="field-hint">Leave empty to use Windows Terminal or Windows PowerShell. Used by <strong>Open in Terminal</strong> from the repository menu.</p>
+  </label>`;
+}
+
+function bashField(state: AppState): string {
+  const placeholder = state.guessedBashPath || "…\\Git\\bin\\bash.exe";
+  return `<label class="field">
+    <span>Bash</span>
+    <input type="text" data-event="bash-path" data-focus="bash-path"
+      value="${esc(state.bashPath)}"
+      placeholder="${esc(placeholder)}"
+      ${state.busy ? "disabled" : ""} />
+    <p class="field-hint">Leave empty to use Git Bash from your Git installation. Used by <strong>Open in bash</strong> from the repository menu.</p>
+  </label>`;
+}
+
+function userSettings(state: AppState): string {
   return `<section class="settings-section" aria-labelledby="settings-user">
     <h2 id="settings-user" class="settings-section-title">User settings</h2>
     <div class="settings-card">
-      <label class="field">
-        <span>Codechart</span>
-        <input type="text" data-event="codechart-path" data-focus="codechart-path"
-          value="${esc(state.codechartPath)}"
-          placeholder="${esc(placeholder)}"
-          ${state.busy ? "disabled" : ""} />
-        <p class="field-hint">Leave empty to use the default install under LocalAppData. Used by <strong>Open in Codechart</strong> from the repository menu.</p>
-      </label>
+      ${codechartField(state)}
+      ${terminalField(state)}
+      ${bashField(state)}
     </div>
   </section>`;
 }

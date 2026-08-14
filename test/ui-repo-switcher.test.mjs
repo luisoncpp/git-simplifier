@@ -8,9 +8,11 @@ import {
   openRecentRepository,
   openRepoContextMenu,
   removeRecentRepository,
-  revealRepository,
+  openRepositoryInExplorer,
   openRepositoryInIde,
   openRepositoryInCodechart,
+  openRepositoryInTerminal,
+  openRepositoryInBash,
   setRepoFilter,
   toggleRepoMenu,
 } from "../ui/app/Private/repository-switcher.ts";
@@ -24,18 +26,19 @@ const RECENTS = [
 
 function withRecents(extra = {}) {
   let current = snapshotWith({});
+  const handlers = {
+    list_recent_repositories: () => [...RECENTS],
+    remove_recent_repository: (args) => RECENTS.filter((entry) => entry.path !== args.path),
+    open_repository: (args) => {
+      current = snapshotWith({ path: args.request.path, name: args.request.path.split("/").pop() });
+      return current;
+    },
+    load_snapshot: () => current,
+  };
   const controller = controllerWith({
     async invoke(command, args) {
-      if (command === "list_recent_repositories") return [...RECENTS];
-      if (command === "remove_recent_repository") {
-        return RECENTS.filter((entry) => entry.path !== args.path);
-      }
-      if (command === "open_repository") {
-        current = snapshotWith({ path: args.request.path, name: args.request.path.split("/").pop() });
-        return current;
-      }
-      if (command === "load_snapshot") return current;
-      return [];
+      const handler = handlers[command];
+      return handler ? handler(args) : [];
     },
   });
   controller.state.recentRepositories = [...RECENTS];
@@ -186,13 +189,13 @@ test("copy path writes the repository path to the clipboard", async () => {
   assert.equal(controller.state.repoContextMenu, null);
 });
 
-test("the repository context menu offers reveal in file explorer", () => {
+test("the repository context menu offers open in file explorer", () => {
   const controller = withRecents({ repoMenuOpen: true });
   openRepoContextMenu(controller, "C:/work/beta", 120, 80);
 
   const markup = renderShell(controller.state);
-  assert.match(markup, /Reveal in File Explorer/);
-  assert.match(markup, /data-event="reveal-repository"/);
+  assert.match(markup, /Open in File Explorer/);
+  assert.match(markup, /data-event="open-in-explorer"/);
   assert.match(markup, /style="left:120px;top:80px"/);
 });
 
@@ -205,7 +208,7 @@ test("the repository context menu offers open in the ide", () => {
   assert.match(markup, /data-event="open-in-ide"/);
 });
 
-test("reveal in file explorer asks the desktop shell to show the folder", async () => {
+test("open in file explorer asks the desktop shell to open the folder", async () => {
   const controller = withRecents();
   const commands = [];
   const original = controller.bridge.invoke.bind(controller.bridge);
@@ -214,9 +217,9 @@ test("reveal in file explorer asks the desktop shell to show the folder", async 
     return original(command, args);
   };
 
-  await revealRepository(controller, "C:/work/beta");
+  await openRepositoryInExplorer(controller, "C:/work/beta");
 
-  assert.deepEqual(commands[0], ["reveal_in_explorer", { path: "C:/work/beta" }]);
+  assert.deepEqual(commands[0], ["open_in_explorer", { path: "C:/work/beta" }]);
   assert.equal(controller.state.repoContextMenu, null);
 });
 
@@ -258,6 +261,56 @@ test("open in the ide asks the desktop shell to launch the configured editor", a
   await openRepositoryInIde(controller, "C:/work/beta");
 
   assert.deepEqual(commands[0], ["open_in_ide", { path: "C:/work/beta" }]);
+  assert.equal(controller.state.repoContextMenu, null);
+});
+
+test("the repository context menu offers open in terminal", () => {
+  const controller = withRecents({ repoMenuOpen: true });
+  openRepoContextMenu(controller, "C:/work/beta", 120, 80);
+
+  const markup = renderShell(controller.state);
+  assert.match(markup, /Open in Terminal/);
+  assert.match(markup, /data-event="open-in-terminal"/);
+});
+
+test("open in terminal asks the desktop shell to launch the terminal", async () => {
+  const controller = withRecents();
+  controller.state.repoContextMenu = { path: "C:/work/beta", x: 10, y: 20 };
+  const commands = [];
+  const original = controller.bridge.invoke.bind(controller.bridge);
+  controller.bridge.invoke = async (command, args) => {
+    commands.push([command, args]);
+    return original(command, args);
+  };
+
+  await openRepositoryInTerminal(controller, "C:/work/beta");
+
+  assert.deepEqual(commands[0], ["open_in_terminal", { path: "C:/work/beta" }]);
+  assert.equal(controller.state.repoContextMenu, null);
+});
+
+test("the repository context menu offers open in bash", () => {
+  const controller = withRecents({ repoMenuOpen: true });
+  openRepoContextMenu(controller, "C:/work/beta", 120, 80);
+
+  const markup = renderShell(controller.state);
+  assert.match(markup, /Open in bash/);
+  assert.match(markup, /data-event="open-in-bash"/);
+});
+
+test("open in bash asks the desktop shell to launch bash", async () => {
+  const controller = withRecents();
+  controller.state.repoContextMenu = { path: "C:/work/beta", x: 10, y: 20 };
+  const commands = [];
+  const original = controller.bridge.invoke.bind(controller.bridge);
+  controller.bridge.invoke = async (command, args) => {
+    commands.push([command, args]);
+    return original(command, args);
+  };
+
+  await openRepositoryInBash(controller, "C:/work/beta");
+
+  assert.deepEqual(commands[0], ["open_in_bash", { path: "C:/work/beta" }]);
   assert.equal(controller.state.repoContextMenu, null);
 });
 

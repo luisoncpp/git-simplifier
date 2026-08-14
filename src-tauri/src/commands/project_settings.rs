@@ -4,21 +4,16 @@ use std::path::PathBuf;
 use serde::{Deserialize, Serialize};
 use tauri::{AppHandle, Manager};
 
-#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq, Default)]
 #[serde(tag = "kind", rename_all = "kebab-case")]
 pub enum IdeChoice {
+    #[default]
     Vscode,
     Cursor,
     #[serde(rename = "visual-studio")]
     VisualStudio,
     Rider,
     Custom { command: String },
-}
-
-impl Default for IdeChoice {
-    fn default() -> Self {
-        Self::Vscode
-    }
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq, Default)]

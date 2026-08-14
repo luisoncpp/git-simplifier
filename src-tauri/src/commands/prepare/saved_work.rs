@@ -23,8 +23,9 @@ pub(super) fn restore(state: &AppState, id: String) -> Result<Prepared, String> 
         apply_label: "Restore Saved work".to_string(),
     };
     Ok(Prepared {
-        review,
-        pending: PendingOperation::Restore { id, head },
+        review: Some(review),
+        pending: Some(PendingOperation::Restore { id, head }),
+        block: None,
     })
 }
 
@@ -51,11 +52,12 @@ pub(super) fn delete(
         apply_label: "Delete Saved work".to_string(),
     };
     Ok(Prepared {
-        review,
-        pending: PendingOperation::Delete {
+        review: Some(review),
+        pending: Some(PendingOperation::Delete {
             id,
             branch: saved.branch,
             head,
-        },
+        }),
+        block: None,
     })
 }

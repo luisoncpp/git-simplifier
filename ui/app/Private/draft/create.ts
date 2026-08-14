@@ -31,5 +31,6 @@ export function createDraft(): Draft {
     cleanupAllRemote: false,
     cleanupOverrides: new Map(),
     cleanupFilter: "",
+    mergeUntracked: false,
   };
 }

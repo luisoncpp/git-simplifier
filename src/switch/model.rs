@@ -17,6 +17,9 @@ pub struct QuickSwitchRequest {
     /// `target_branch` is created to track it.
     #[serde(default)]
     pub create_from_remote: Option<String>,
+    /// When true, same-path untracked overlaps are parked and merged onto the target.
+    #[serde(default)]
+    pub merge_untracked: bool,
 }
 
 #[derive(Clone, Debug, Eq, PartialEq, Serialize, Deserialize)]
@@ -40,6 +43,9 @@ pub struct QuickSwitchPlan {
     /// Remote-tracking ref to fast-forward from after the switch, when present.
     pub pull_remote_ref: Option<String>,
     pub target_saved_work: Option<SavedWork>,
+    /// Untracked paths that overlap the target tree and will be merged after checkout.
+    #[serde(default)]
+    pub untracked_conflicts: Vec<String>,
 }
 
 #[derive(Clone, Debug, Eq, PartialEq, Serialize, Deserialize)]
@@ -77,6 +83,7 @@ pub struct QuickSwitchStatus {
     pub remote_ref: String,
     pub phase: QuickSwitchPhase,
     pub carry_reference: Option<String>,
+    pub untracked_merge_reference: Option<String>,
 }
 
 #[derive(Clone, Debug, Eq, PartialEq, Serialize, Deserialize)]
@@ -91,6 +98,8 @@ pub struct QuickSwitchResult {
     pub pull_warning: Option<String>,
     /// Set when `git pull --ff-only` failed and the user must choose a resolution.
     pub pull_decision_needed: bool,
+    /// Set when untracked overlap merge left conflict markers or could not finish cleanly.
+    pub untracked_merge_warning: Option<String>,
 }
 
 #[derive(Clone, Debug, Eq, PartialEq, Serialize, Deserialize)]

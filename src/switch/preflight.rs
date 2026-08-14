@@ -21,28 +21,37 @@ pub(super) fn read_untracked(runner: &GitRunner) -> Result<Vec<String>, SwitchEr
         .collect()
 }
 
-pub(super) fn ensure_untracked_safe(
+pub(super) fn classify(
     runner: &GitRunner,
     target_commitish: &str,
     untracked: &[String],
-) -> Result<(), SwitchError> {
+) -> Result<(Vec<String>, Vec<String>), SwitchError> {
     if untracked.is_empty() {
-        return Ok(());
+        return Ok((Vec::new(), Vec::new()));
     }
     let target_paths = read_target_paths(runner, target_commitish)?;
-    let conflicts = untracked
-        .iter()
-        .filter(|untracked_path| {
-            target_paths
-                .iter()
-                .any(|target| paths_overlap(untracked_path, target))
-        })
-        .cloned()
-        .collect::<Vec<_>>();
-    if conflicts.is_empty() {
-        return Ok(());
+    Ok(classify_conflicts(untracked, &target_paths))
+}
+
+fn classify_conflicts(
+    untracked: &[String],
+    target_paths: &BTreeSet<String>,
+) -> (Vec<String>, Vec<String>) {
+    let mut mergeable = Vec::new();
+    let mut hard = Vec::new();
+    for untracked_path in untracked {
+        for target in target_paths {
+            if untracked_path == target {
+                mergeable.push(untracked_path.clone());
+                break;
+            }
+            if prefix_overlap(untracked_path, target) {
+                hard.push(untracked_path.clone());
+                break;
+            }
+        }
     }
-    Err(SwitchError::UntrackedConflict(conflicts.join(", ")))
+    (mergeable, hard)
 }
 
 fn read_target_paths(
@@ -65,12 +74,12 @@ fn read_target_paths(
         .collect()
 }
 
-fn paths_overlap(left: &str, right: &str) -> bool {
-    left == right
-        || left
+fn prefix_overlap(left: &str, right: &str) -> bool {
+    left != right
+        && (left
             .strip_prefix(right)
             .is_some_and(|suffix| suffix.starts_with('/'))
-        || right
-            .strip_prefix(left)
-            .is_some_and(|suffix| suffix.starts_with('/'))
+            || right
+                .strip_prefix(left)
+                .is_some_and(|suffix| suffix.starts_with('/')))
 }

@@ -24,6 +24,16 @@ pub(crate) fn quick_switch(plan: &QuickSwitchPlan) -> Vec<String> {
         ));
         commands.push("git reset --hard --no-recurse-submodules HEAD".to_string());
     }
+    for path in &plan.untracked_conflicts {
+        commands.push(format!("git add -- :(top,literal){path}"));
+    }
+    if !plan.untracked_conflicts.is_empty() {
+        commands.push("git -c submodule.recurse=false stash create".to_string());
+        commands.push(
+            "git update-ref refs/githelper/untracked-merge/<operation-id> <snapshot> \"\"".to_string(),
+        );
+        commands.push("git restore --worktree --source=HEAD -- <paths>".to_string());
+    }
     commands.push(switch);
     if let Some(remote) = &plan.pull_remote_ref {
         let short = remote
@@ -37,6 +47,16 @@ pub(crate) fn quick_switch(plan: &QuickSwitchPlan) -> Vec<String> {
     if plan.has_tracked_changes && plan.carry_changes {
         commands.push("git -c submodule.recurse=false stash pop --index".to_string());
         commands.push("git -c submodule.recurse=false stash pop  # fallback".to_string());
+    }
+    if !plan.untracked_conflicts.is_empty() {
+        commands.push(
+            "git -c submodule.recurse=false stash apply --index refs/githelper/untracked-merge/<operation-id>"
+                .to_string(),
+        );
+        commands.push(
+            "git -c submodule.recurse=false stash apply refs/githelper/untracked-merge/<operation-id>  # fallback"
+                .to_string(),
+        );
     }
     commands
 }
@@ -103,6 +123,25 @@ mod tests {
     }
 
     #[test]
+    fn quick_switch_with_untracked_merge_lists_park_and_reapply() {
+        let mut plan = switch_plan(/*has_tracked_changes=*/ false, /*carry_changes=*/ false);
+        plan.untracked_conflicts = vec!["collision.txt".to_string()];
+
+        assert_eq!(
+            quick_switch(&plan),
+            vec![
+                "git add -- :(top,literal)collision.txt",
+                "git -c submodule.recurse=false stash create",
+                "git update-ref refs/githelper/untracked-merge/<operation-id> <snapshot> \"\"",
+                "git restore --worktree --source=HEAD -- <paths>",
+                "git switch --no-recurse-submodules --no-guess -- other",
+                "git -c submodule.recurse=false stash apply --index refs/githelper/untracked-merge/<operation-id>",
+                "git -c submodule.recurse=false stash apply refs/githelper/untracked-merge/<operation-id>  # fallback",
+            ]
+        );
+    }
+
+    #[test]
     fn clean_quick_switch_only_lists_the_switch() {
         let plan = switch_plan(/*has_tracked_changes=*/ false, /*carry_changes=*/ false);
 
@@ -161,6 +200,7 @@ mod tests {
             create_from_remote: None,
             pull_remote_ref: None,
             target_saved_work: None,
+            untracked_conflicts: Vec::new(),
         }
     }
 

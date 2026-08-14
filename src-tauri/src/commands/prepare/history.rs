@@ -49,8 +49,9 @@ pub(super) fn uncommit(
         apply_label: "Apply uncommit".to_string(),
     };
     Ok(Prepared {
-        review,
-        pending: PendingOperation::Uncommit { id, plan },
+        review: Some(review),
+        pending: Some(PendingOperation::Uncommit { id, plan }),
+        block: None,
     })
 }
 
@@ -91,8 +92,9 @@ pub(super) fn edit_message(
         apply_label: "Apply message edit".to_string(),
     };
     Ok(Prepared {
-        review,
-        pending: PendingOperation::EditMessage { id, plan },
+        review: Some(review),
+        pending: Some(PendingOperation::EditMessage { id, plan }),
+        block: None,
     })
 }
 
@@ -134,8 +136,9 @@ pub(super) fn exclude(
         apply_label: "Apply exclusion".to_string(),
     };
     Ok(Prepared {
-        review,
-        pending: PendingOperation::Exclude { id, plan },
+        review: Some(review),
+        pending: Some(PendingOperation::Exclude { id, plan }),
+        block: None,
     })
 }
 
@@ -162,8 +165,9 @@ pub(super) fn force_push(state: &AppState, id: String) -> Result<Prepared, Strin
         apply_label: "Force push with lease".to_string(),
     };
     Ok(Prepared {
-        review,
-        pending: PendingOperation::ForcePush { id, plan },
+        review: Some(review),
+        pending: Some(PendingOperation::ForcePush { id, plan }),
+        block: None,
     })
 }
 

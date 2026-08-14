@@ -8,11 +8,13 @@ mod preflight;
 mod preview;
 mod pull;
 mod record;
+mod record_commands;
 mod resolve;
 mod restore_apply;
 mod saved;
 mod state;
 mod stash;
+mod untracked;
 
 pub use errors::SwitchError;
 pub use model::{
