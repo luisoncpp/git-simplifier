@@ -1,6 +1,7 @@
 mod branch;
 mod cleanup;
 mod history;
+mod history_switch;
 mod revert;
 mod saved_work;
 mod submodules;
@@ -36,6 +37,7 @@ pub(super) fn prepare(
         PrepareOperationRequest::SplitBranch(input) => branch::split_branch(state, id, input),
         PrepareOperationRequest::PublishBranch(input) => branch::publish_branch(state, id, input),
         PrepareOperationRequest::QuickSwitch(input) => switch::quick_switch(state, id, input),
+        PrepareOperationRequest::History(input) => history_switch::history_switch(state, id, input),
         PrepareOperationRequest::ResolveQuickSwitchPull(input) => {
             switch::resolve_pull(state, id, input)
         }

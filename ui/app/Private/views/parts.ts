@@ -1,6 +1,19 @@
 import { esc } from "../dom.ts";
+import { commitValue } from "../draft/index.ts";
+import type { AppState, EditableCommit } from "../types.ts";
 
 export const fieldNote = (text: string): string => `<p class="note">${esc(text)}</p>`;
+
+export function commitOption(state: AppState, commit: EditableCommit): string {
+  const id = commitValue(commit);
+  const selected = id === state.draft.commit ? " selected" : "";
+  return `<option value="${esc(id)}"${selected}>${esc(commit.short_id)} — ${esc(commit.subject)}</option>`;
+}
+
+export function commitMeta(commit: EditableCommit): string {
+  return `<p class="meta"><code>${esc(commit.short_id)}</code> by ${esc(commit.author.name)}
+    <span class="muted">· ${esc(humanTime(commit.author.date))}</span></p>`;
+}
 
 export function emptyState(title: string, body: string): string {
   return `<div class="empty-state"><strong>${esc(title)}</strong><p>${esc(body)}</p></div>`;

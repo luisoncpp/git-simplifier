@@ -27,6 +27,7 @@ fn exclusion_plans_exact_config_hook_and_staging_guidance() {
         ]
     );
     assert!(plan.hook_preview.contains("--ignore-submodules=none"));
+    assert!(plan.hook_preview.contains("MERGE_HEAD"));
     assert_eq!(plan.staging_command, "git add -u -- ':!Modules/Engine'");
 }
 

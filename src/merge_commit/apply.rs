@@ -10,7 +10,10 @@ use super::plan::{check_pr_subset, verify_current};
 use super::record;
 use super::state::{args, read_id, read_tree_id};
 
-pub(crate) fn apply(runner: &GitRunner, plan: &CommitMergePlan) -> Result<CommitMergeResult, CommitMergeError> {
+pub(crate) fn apply(
+    runner: &GitRunner,
+    plan: &CommitMergePlan,
+) -> Result<CommitMergeResult, CommitMergeError> {
     verify_current(runner, plan)?;
     let oplog = Oplog::open(&runner.git_dir()?)
         .map_err(|error| CommitMergeError::Recording(error.to_string()))?;
@@ -49,6 +52,7 @@ fn commit_merge(runner: &GitRunner) -> Result<ObjectId, CommitMergeError> {
         "submodule.recurse=false",
         "commit",
         "--no-edit",
+        "--no-verify",
     ])))?;
     read_id(runner, "HEAD")
 }

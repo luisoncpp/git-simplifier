@@ -5,7 +5,7 @@ use crate::recording::Oplog;
 
 use super::errors::SwitchError;
 use super::model::{QuickSwitchPlan, QuickSwitchResult, SavedWork};
-use super::{carry, checkout, plan, pull, record, state, stash, untracked};
+use super::{carry, checkout, plan, prep, pull, record, state, untracked};
 
 struct TrackedPrep {
     saved_work: Option<SavedWork>,
@@ -105,7 +105,14 @@ fn finish_switch(
     prep: &SwitchPrep,
     pulled: bool,
 ) -> Result<QuickSwitchResult, SwitchError> {
-    let carry = carry::pop(ctx.runner, ctx.plan, prep.tracked.carry_pushed)?;
+    let carry = carry::pop(
+        ctx.runner,
+        carry::CarrySource {
+            branch: &ctx.plan.source_branch,
+            saved_work_reference: &ctx.plan.saved_work_reference,
+        },
+        prep.tracked.carry_pushed,
+    )?;
     let untracked_merge_warning = prep
         .untracked_park
         .as_ref()
@@ -142,29 +149,18 @@ fn prepare_tracked_changes(
     runner: &GitRunner,
     switch_plan: &QuickSwitchPlan,
 ) -> Result<TrackedPrep, SwitchError> {
-    if !switch_plan.has_tracked_changes {
-        return Ok(TrackedPrep {
-            saved_work: None,
-            carry_pushed: false,
-        });
-    }
-    if switch_plan.carry_changes {
-        stash::push_tracked(runner)?;
-        return Ok(TrackedPrep {
-            saved_work: None,
-            carry_pushed: true,
-        });
-    }
-    let snapshot = stash::snapshot(runner)?;
-    stash::reset_tracked(runner)?;
-    state::update_ref(runner, &switch_plan.saved_work_reference, &snapshot, "")?;
+    let prepared = prep::prepare_tracked(
+        runner,
+        prep::TrackedSpec {
+            source_branch: &switch_plan.source_branch,
+            saved_work_reference: &switch_plan.saved_work_reference,
+            has_tracked_changes: switch_plan.has_tracked_changes,
+            carry_changes: switch_plan.carry_changes,
+        },
+    )?;
     Ok(TrackedPrep {
-        saved_work: Some(SavedWork {
-            branch: switch_plan.source_branch.clone(),
-            reference: switch_plan.saved_work_reference.clone(),
-            snapshot,
-        }),
-        carry_pushed: false,
+        saved_work: prepared.saved_work,
+        carry_pushed: prepared.carry_pushed,
     })
 }
 

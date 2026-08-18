@@ -3,7 +3,7 @@ use crate::rewrite::ObjectId;
 
 use super::errors::SwitchError;
 use super::model::{QuickSwitchPlan, QuickSwitchRequest, SavedWork};
-use super::{preflight, state};
+use super::{preflight, source, state};
 
 pub(crate) fn create(
     runner: &GitRunner,
@@ -11,8 +11,8 @@ pub(crate) fn create(
 ) -> Result<QuickSwitchPlan, SwitchError> {
     state::validate_branch_name(runner, &request.target_branch)?;
     state::ensure_no_operation(runner)?;
-    let source_branch = state::read_branch(runner)?;
-    if source_branch == request.target_branch {
+    let source_branch = source::branch_for_switch(runner, &request)?;
+    if source::already_on_target(runner, &request.target_branch)? {
         return Err(SwitchError::InvalidState(
             "target branch is already checked out".to_string(),
         ));
@@ -22,6 +22,7 @@ pub(crate) fn create(
         resolve_target(runner, &request.target_branch, request.create_from_remote.as_deref())?;
     let saved_work_reference = state::wip_ref(&source_branch);
     if !request.carry_changes
+        && !source_branch.is_empty()
         && state::optional_id(runner, &saved_work_reference)?.is_some()
     {
         return Err(SwitchError::ExistingSavedWork(source_branch));
@@ -65,9 +66,7 @@ pub(crate) fn verify_current(
     plan: &QuickSwitchPlan,
 ) -> Result<(), SwitchError> {
     state::ensure_no_operation(runner)?;
-    if state::read_branch(runner)? != plan.source_branch {
-        return Err(SwitchError::StalePlan);
-    }
+    source::verify_source(runner, plan)?;
     if state::read_id(runner, "HEAD")? != plan.source_head {
         return Err(SwitchError::StalePlan);
     }
@@ -79,6 +78,7 @@ pub(crate) fn verify_current(
         return Err(SwitchError::StalePlan);
     }
     if !plan.carry_changes
+        && !plan.source_branch.is_empty()
         && state::optional_id(runner, &plan.saved_work_reference)?.is_some()
     {
         return Err(SwitchError::ExistingSavedWork(plan.source_branch.clone()));
@@ -106,13 +106,13 @@ pub(crate) fn verify_current(
     Ok(())
 }
 
-struct UntrackedInput<'a> {
-    tree_ref: &'a str,
-    paths: &'a [String],
-    merge: bool,
+pub(super) struct UntrackedInput<'a> {
+    pub tree_ref: &'a str,
+    pub paths: &'a [String],
+    pub merge: bool,
 }
 
-fn resolve_untracked_conflicts(
+pub(super) fn resolve_untracked_conflicts(
     runner: &GitRunner,
     input: UntrackedInput<'_>,
 ) -> Result<Vec<String>, SwitchError> {

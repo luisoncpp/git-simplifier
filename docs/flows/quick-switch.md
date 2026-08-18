@@ -6,8 +6,8 @@ Backend caller submits another branch name (local, or a remote-tracking ref that
 
 ## Switch sequence
 
-0. When selecting the initial target branch in the UI, if the current branch is not Base, the target defaults to Base (preferring the local branch of the same name, or the remote-tracking ref if the local branch does not exist). Auto-defaults stay unmarked (`branchPicked` false) so a later Base change or refresh can replace an alphabetical fallback; a row the user picked is kept.
-1. Preflight rejects detached HEAD, an active merge/rebase/cherry-pick/bisect, an invalid target, a missing local target (unless creating from remote), an already-existing local when creating from remote, and an existing Saved work ref for the source branch when changes are not being carried. Nested submodule dirt is excluded from the superproject tracked-change check.
+0. When selecting the initial target branch in the UI, Present (`overview.present_branch`) wins if History left a branch that is still a non-current local row; otherwise if the current branch is not Base, the target defaults to Base (preferring the local branch of the same name, or the remote-tracking ref if the local branch does not exist). Auto-defaults stay unmarked (`branchPicked` false) so a later Base change, refresh, or return from History can replace an alphabetical fallback; a row the user picked is kept.
+1. Preflight rejects a symbolic HEAD that already names the target, an active merge/rebase/cherry-pick/bisect, an invalid target, a missing local target (unless creating from remote), an already-existing local when creating from remote, and an existing Saved work ref for the source branch when changes are not being carried. Detached HEAD is allowed: `source_branch` is the present branch when `refs/githelper/present` exists (for Saved work naming). Nested submodule dirt is excluded from the superproject tracked-change check.
 2. Preflight lists untracked paths. Same-path overlaps without `merge_untracked` return a typed prepare block (`untracked_overwrite`) with paths and a **Switch with merge** offer. Directory-vs-file prefix overlaps hard-refuse as a string error with no merge offer. With `merge_untracked`, the plan records same-path overlaps and proceeds. Non-conflicting untracked files remain in the checkout.
 3. When **pull after switch** is enabled (default), planning records a same-named remote-tracking ref (`origin/<branch>` preferred) as the pull target when one exists.
 4. Applying the plan records an in-flight `quick-switch` operation.
@@ -16,6 +16,7 @@ Backend caller submits another branch name (local, or a remote-tracking ref that
 7. Checkout moves:
    - existing local: `git switch --no-recurse-submodules --no-guess -- <target>`
    - remote-only: `git switch -c <local> <remote-ref>` then `branch.<local>.remote` / `.merge` are set so the remote is upstream
+   After a successful landing on any local branch, `refs/githelper/present` is deleted.
 8. When **carry changes** is enabled, tracked changes are stored with `git stash push`, the checkout switches, optional pull runs, then the stash is restored with `git stash pop --index` (falling back to a plain pop). Pop conflicts do not block the switch; the result reports a warning and leaves conflict markers for the user to resolve. When **both** pops fail, the left-behind entry is moved onto `refs/githelper/wip/<source-branch>` and dropped from the shared stash stack, so it becomes listable Saved work rather than a `refs/stash` entry the app cannot see. The rescue is skipped when the source branch already owns Saved work, since overwriting would trade one lost snapshot for another. Otherwise no Saved work ref is written for the source branch. The UI surfaces carry, untracked-merge, and merge-pull warnings as a warn-tone result banner (`has_warning`) with a conflict headline, not a green success banner.
 9. After carry pop (when present), untracked overlap parks are reapplied with `stash apply --index` (plain apply only when no unmerged paths exist). Conflict markers or a partial apply set `untracked_merge_warning`; the park ref is deleted when the snapshot was consumed into the tree.
 10. When a pull remote is planned, `git pull --ff-only` runs after the switch and before any carry pop.
@@ -39,7 +40,8 @@ Backend caller submits another branch name (local, or a remote-tracking ref that
 
 ## Reads
 
-- Current symbolic branch and HEAD.
+- Current symbolic branch (optional when detached) and HEAD.
+- `refs/githelper/present` when History left a branch.
 - Local target branch commit, or remote-tracking start point when creating a local branch.
 - Same-named remote-tracking refs for optional pull.
 - Git operation markers and porcelain-v2 status.
@@ -50,6 +52,7 @@ Backend caller submits another branch name (local, or a remote-tracking ref that
 ## Writes and side effects
 
 - Creates/deletes `refs/githelper/wip/<branch>`.
+- Deletes `refs/githelper/present` after landing on a local branch.
 - May create a local branch and write `branch.<name>.remote` / `.merge`.
 - May write `refs/githelper/carry/<operation-id>` and `refs/githelper/untracked-merge/<operation-id>` while a pull decision is pending.
 - May write a temporary stash snapshot object, reset tracked files, switch the current checkout, and pull/reset.

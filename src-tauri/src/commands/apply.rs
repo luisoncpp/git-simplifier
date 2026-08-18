@@ -1,7 +1,8 @@
 use git_helper_core::{
-    CleanupPlan, CommitMergePlan, ExcludeSubmodulePlan, ForcePushPlan, ObjectId,
-    PublishBranchPlan, QuickSwitchPlan, QuickSwitchResult, RefName, RevertPlan, RewritePlan,
-    SplitBranchPlan, SubmoduleCleanupPlan, SyncPhase, SyncRequest, SyncResult,
+    CleanupPlan, CommitMergePlan, ExcludeSubmodulePlan, ForcePushPlan, HistorySwitchPlan,
+    HistorySwitchResult, ObjectId, PublishBranchPlan, QuickSwitchPlan, QuickSwitchResult, RefName,
+    RevertPlan, RewritePlan, SplitBranchPlan, SubmoduleCleanupPlan, SyncPhase, SyncRequest,
+    SyncResult,
 };
 
 use super::data::{OperationOutcome, PendingOperation};
@@ -22,6 +23,7 @@ pub(super) fn apply(
         PendingOperation::Split { plan, .. } => split_branch(state, plan),
         PendingOperation::Publish { plan, .. } => publish_branch(state, plan),
         PendingOperation::QuickSwitch { plan, .. } => quick_switch(state, plan),
+        PendingOperation::HistorySwitch { plan, .. } => history_switch(state, plan),
         PendingOperation::ResolveQuickSwitchPull { resolution, .. } => {
             resolve_pull(state, resolution)
         }
@@ -168,6 +170,45 @@ fn quick_switch(state: &AppState, plan: QuickSwitchPlan) -> Result<OperationOutc
     outcome.offer_restore_saved_work = offer_restore;
     outcome.has_warning = has_warning;
     Ok(outcome)
+}
+
+fn history_switch(
+    state: &AppState,
+    plan: HistorySwitchPlan,
+) -> Result<OperationOutcome, String> {
+    let result = with_repository(state, |repo| {
+        repo.apply_history_switch(&plan).map_err(|e| e.to_string())
+    })?;
+    let has_warning = result.carry_warning.is_some() || result.untracked_merge_warning.is_some();
+    let headline = if has_warning {
+        "History switch completed with conflicts"
+    } else {
+        "Now in History"
+    };
+    let mut outcome = bare("history", headline, history_details(&result));
+    outcome.offer_switch_to_present = Some(result.present_branch);
+    outcome.has_warning = has_warning;
+    Ok(outcome)
+}
+
+fn history_details(result: &HistorySwitchResult) -> Vec<String> {
+    let mut details = vec![
+        format!("HEAD is at {}", result.target_commit),
+        format!("{} remains at present", result.present_branch),
+    ];
+    if let Some(saved) = &result.saved_work {
+        details.push(format!("Tracked changes saved for {}", saved.branch));
+    }
+    if result.carried_index.is_some() && result.carry_warning.is_none() {
+        details.push("Tracked changes were carried onto this commit".to_string());
+    }
+    if let Some(warning) = &result.carry_warning {
+        details.push(warning.clone());
+    }
+    if let Some(warning) = &result.untracked_merge_warning {
+        details.push(warning.clone());
+    }
+    details
 }
 
 fn resolve_pull(
@@ -416,6 +457,7 @@ fn bare(kind: &str, headline: &str, details: Vec<String>) -> OperationOutcome {
         offer_resolve_pull: false,
         offer_restore_saved_work: false,
         offer_resume_sync: false,
+        offer_switch_to_present: None,
         has_warning: false,
     }
 }

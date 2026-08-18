@@ -27,6 +27,7 @@ export interface RepositoryOverview {
   recovery_count: number;
   sync_status: string | null;
   quick_switch_status?: string | null;
+  present_branch?: string | null;
   merge_in_progress?: boolean;
 }
 
@@ -162,6 +163,7 @@ export interface OperationOutcome {
   offer_resolve_pull?: boolean;
   offer_restore_saved_work?: boolean;
   offer_resume_sync?: boolean;
+  offer_switch_to_present?: string | null;
   has_warning?: boolean;
 }
 
@@ -176,6 +178,7 @@ export type OperationRequest =
   | { kind: "split_branch"; base: string; new_branch: string; paths: string[]; message: string }
   | { kind: "publish_branch"; branch: string }
   | { kind: "quick_switch"; target_branch: string; carry_changes?: boolean; pull_after_switch?: boolean; create_from_remote?: string | null; merge_untracked?: boolean }
+  | { kind: "history"; commit?: string | null; until?: string | null; carry_changes?: boolean; merge_untracked?: boolean }
   | { kind: "resolve_quick_switch_pull"; resolution: "replace_with_remote" | "merge_pull" | "cancel" }
   | { kind: "sync"; base: string }
   | { kind: "cleanup"; base: string; references: string[]; delete_remotes: boolean }
@@ -208,6 +211,7 @@ export type OperationId =
   | "submodules"
   | "split_branch"
   | "quick_switch"
+  | "history"
   | "sync"
   | "commit_merge"
   | "force_push"
@@ -236,6 +240,10 @@ export interface Draft {
   branchPicked: boolean;
   pullAfterSwitch: boolean;
   carryChanges: boolean;
+  historyCarryChanges: boolean;
+  historyMode: "commit" | "until";
+  historyUntil: string;
+  historyFilter: string;
   branchFilter: string;
   branchMenuOpen: boolean;
   branchHighlight: number;

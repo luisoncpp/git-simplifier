@@ -25,7 +25,8 @@ Backend caller submits a repository path and chooses whether to install the loca
 - Repo-local `.git/config` values only.
 - The repo-local `pre-commit` hook, either created or appended to.
 - `.git/githelper/oplog.json`.
-- The hook blocks staged changes to the selected gitlink using `--ignore-submodules=none`, even when status display uses `ignore = all`.
+- The hook blocks staged changes to the selected gitlink using `--ignore-submodules=none`, even when status display uses `ignore = all`, unless `MERGE_HEAD` exists and the staged pointer already matches it (a Base-only gitlink update during merge).
+- **Commit merge** records that merge-tree gitlink (theirs) so `Base…HEAD` does not gain the submodule; it commits with `--no-verify` because older guards still compare only to HEAD. See [commit-merge.md](./commit-merge.md).
 
 ## Files to inspect
 

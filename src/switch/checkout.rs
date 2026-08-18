@@ -4,6 +4,7 @@ use crate::git::GitCommand;
 
 use super::errors::SwitchError;
 use super::model::QuickSwitchPlan;
+use super::present;
 
 pub(crate) fn switch_branch(
     runner: &crate::git::GitRunner,
@@ -20,7 +21,10 @@ pub(crate) fn switch_branch(
             OsString::from(&switch_plan.target_branch),
             OsString::from(remote),
         ]))?;
-        return set_upstream(runner, &switch_plan.target_branch, start);
+        return match set_upstream(runner, &switch_plan.target_branch, start) {
+            Ok(()) => present::delete(runner),
+            Err(error) => Err(error),
+        };
     }
     runner.run_unlocked(GitCommand::write(vec![
         OsString::from("switch"),
@@ -28,6 +32,20 @@ pub(crate) fn switch_branch(
         OsString::from("--no-guess"),
         OsString::from("--"),
         OsString::from(&switch_plan.target_branch),
+    ]))?;
+    present::delete(runner)?;
+    Ok(())
+}
+
+pub(crate) fn switch_detach(
+    runner: &crate::git::GitRunner,
+    commit: &str,
+) -> Result<(), SwitchError> {
+    runner.run_unlocked(GitCommand::write(vec![
+        OsString::from("switch"),
+        OsString::from("--no-recurse-submodules"),
+        OsString::from("--detach"),
+        OsString::from(commit),
     ]))?;
     Ok(())
 }

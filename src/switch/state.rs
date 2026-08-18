@@ -8,6 +8,18 @@ use super::errors::SwitchError;
 
 pub(super) const WIP_PREFIX: &str = "refs/githelper/wip/";
 
+pub(super) fn optional_branch(runner: &GitRunner) -> Result<Option<String>, SwitchError> {
+    let Ok(output) = runner.run(GitCommand::read(args(&[
+        "symbolic-ref",
+        "--quiet",
+        "--short",
+        "HEAD",
+    ]))) else {
+        return Ok(None);
+    };
+    Ok(Some(text(&output.stdout)?.trim().to_string()).filter(|value| !value.is_empty()))
+}
+
 pub(super) fn read_branch(runner: &GitRunner) -> Result<String, SwitchError> {
     let output = runner
         .run(GitCommand::read(args(&[

@@ -1,8 +1,8 @@
 import { esc } from "../dom.ts";
-import { commitValue, messageChanged, messageFor, newestFirst, selectedCommit } from "../draft/index.ts";
+import { messageChanged, messageFor, newestFirst, selectedCommit } from "../draft/index.ts";
 import { baseRef } from "../snapshot.ts";
-import type { AppState, EditableCommit } from "../types.ts";
-import { emptyState, fieldNote, humanTime } from "./parts.ts";
+import type { AppState } from "../types.ts";
+import { commitMeta, commitOption, emptyState, fieldNote } from "./parts.ts";
 import { pathChecklist } from "./path-list.ts";
 
 export function uncommitForm(state: AppState): string {
@@ -40,15 +40,4 @@ export function editMessageForm(state: AppState): string {
 export function messageTools(state: AppState): string {
   if (!messageChanged(state)) return `<span class="hint">Edit the text above to enable the review.</span>`;
   return `<button class="link" data-event="reset-message">Reset to the original message</button>`;
-}
-
-function commitOption(state: AppState, commit: EditableCommit): string {
-  const id = commitValue(commit);
-  const selected = id === state.draft.commit ? " selected" : "";
-  return `<option value="${esc(id)}"${selected}>${esc(commit.short_id)} — ${esc(commit.subject)}</option>`;
-}
-
-function commitMeta(commit: EditableCommit): string {
-  return `<p class="meta"><code>${esc(commit.short_id)}</code> by ${esc(commit.author.name)}
-    <span class="muted">· ${esc(humanTime(commit.author.date))}</span></p>`;
 }

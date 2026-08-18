@@ -7,7 +7,22 @@ pub(crate) fn block(path: &RepoPath) -> String {
         path.as_str()
     ));
     format!(
-        "# git-helper excluded submodule guard\nif ! git diff --cached --quiet --ignore-submodules=none -- {pathspec}; then\n    echo {message} >&2\n    exit 1\nfi\n",
+        "# git-helper excluded submodule guard\n{}",
+        guard_body(&pathspec, &message)
+    )
+}
+
+fn guard_body(pathspec: &str, message: &str) -> String {
+    format!(
+        "if ! git diff --cached --quiet --ignore-submodules=none -- {pathspec}; then\n\
+         if git rev-parse --verify --quiet MERGE_HEAD >/dev/null \\\n\
+         && git diff --cached --quiet --ignore-submodules=none MERGE_HEAD -- {pathspec}; then\n\
+         :\n\
+         else\n\
+         echo {message} >&2\n\
+         exit 1\n\
+         fi\n\
+         fi\n"
     )
 }
 

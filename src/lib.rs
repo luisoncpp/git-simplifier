@@ -46,8 +46,8 @@ pub use submodule_cleanup::{
     SubmoduleCleanupError, SubmoduleCleanupPlan, SubmoduleCleanupRequest, SubmoduleCleanupResult,
 };
 pub use switch::{
-    DeleteSavedWorkResult, PullResolution, QuickSwitchPhase, QuickSwitchPlan, QuickSwitchRequest,
-    QuickSwitchResult, QuickSwitchStatus, RestoreSavedWorkResult, SavedWork,
-    SavedWorkApplyPreview, SwitchError,
+    DeleteSavedWorkResult, HistorySwitchPlan, HistorySwitchRequest, HistorySwitchResult,
+    PullResolution, QuickSwitchPhase, QuickSwitchPlan, QuickSwitchRequest, QuickSwitchResult,
+    QuickSwitchStatus, RestoreSavedWorkResult, SavedWork, SavedWorkApplyPreview, SwitchError,
 };
 pub use sync::{SyncError, SyncPhase, SyncRequest, SyncResult, SyncSnapshot, SyncStatus};

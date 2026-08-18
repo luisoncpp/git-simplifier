@@ -4,8 +4,13 @@
 use crate::git::GitCommand;
 
 use super::errors::SwitchError;
-use super::model::{QuickSwitchPlan, SavedWork};
+use super::model::SavedWork;
 use super::{state, stash};
+
+pub(super) struct CarrySource<'a> {
+    pub branch: &'a str,
+    pub saved_work_reference: &'a str,
+}
 
 #[derive(Default)]
 pub(super) struct CarryOutcome {
@@ -18,7 +23,7 @@ pub(super) struct CarryOutcome {
 
 pub(super) fn pop(
     runner: &crate::git::GitRunner,
-    switch_plan: &QuickSwitchPlan,
+    source: CarrySource<'_>,
     carry_pushed: bool,
 ) -> Result<CarryOutcome, SwitchError> {
     if !carry_pushed {
@@ -32,7 +37,7 @@ pub(super) fn pop(
             warning: None,
         });
     };
-    let saved_work = anchor_left_behind(runner, switch_plan)?;
+    let saved_work = anchor_left_behind(runner, source)?;
     Ok(CarryOutcome {
         carried_index: Some(outcome.applied_index),
         warning: Some(left_behind_message(warning, saved_work.as_ref())),
@@ -60,12 +65,12 @@ fn left_behind_message(warning: String, saved_work: Option<&SavedWork>) -> Strin
 /// Saved work; overwriting that would trade one lost snapshot for another.
 fn anchor_left_behind(
     runner: &crate::git::GitRunner,
-    switch_plan: &QuickSwitchPlan,
+    source: CarrySource<'_>,
 ) -> Result<Option<SavedWork>, SwitchError> {
     let Some(snapshot) = state::optional_id(runner, "refs/stash")? else {
         return Ok(None);
     };
-    let reference = &switch_plan.saved_work_reference;
+    let reference = source.saved_work_reference;
     if state::optional_id(runner, reference)?.is_some() {
         return Ok(None);
     }
@@ -79,8 +84,8 @@ fn anchor_left_behind(
     ])))?;
     stash::drop_top(runner)?;
     Ok(Some(SavedWork {
-        branch: switch_plan.source_branch.clone(),
-        reference: reference.clone(),
+        branch: source.branch.to_string(),
+        reference: reference.to_string(),
         snapshot,
     }))
 }

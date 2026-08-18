@@ -112,6 +112,18 @@ pub struct QuickSwitchInput {
     pub merge_untracked: bool,
 }
 
+#[derive(Clone, Debug, Deserialize)]
+pub struct HistorySwitchInput {
+    #[serde(default)]
+    pub commit: Option<String>,
+    #[serde(default)]
+    pub until: Option<String>,
+    #[serde(default)]
+    pub carry_changes: bool,
+    #[serde(default)]
+    pub merge_untracked: bool,
+}
+
 fn default_true() -> bool {
     true
 }
@@ -154,6 +166,7 @@ pub enum PrepareOperationRequest {
     SplitBranch(SplitBranchInput),
     PublishBranch(PublishBranchInput),
     QuickSwitch(QuickSwitchInput),
+    History(HistorySwitchInput),
     ResolveQuickSwitchPull(ResolvePullInput),
     Sync(BaseRequest),
     Cleanup(CleanupInput),
@@ -205,6 +218,9 @@ pub struct OperationOutcome {
     /// When set, a Sync paused at base-merge-conflict can resume after the merge commit.
     #[serde(default)]
     pub offer_resume_sync: bool,
+    /// When set, History left this branch as present; Quick switch returns there.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub offer_switch_to_present: Option<String>,
     /// Conflict or warning details are present; the result banner should not look like success.
     pub has_warning: bool,
 }
@@ -242,6 +258,10 @@ pub enum PendingOperation {
     QuickSwitch {
         id: String,
         plan: git_helper_core::QuickSwitchPlan,
+    },
+    HistorySwitch {
+        id: String,
+        plan: git_helper_core::HistorySwitchPlan,
     },
     ResolveQuickSwitchPull {
         id: String,
@@ -291,6 +311,7 @@ impl PendingOperation {
             | Self::Split { id, .. }
             | Self::Publish { id, .. }
             | Self::QuickSwitch { id, .. }
+            | Self::HistorySwitch { id, .. }
             | Self::ResolveQuickSwitchPull { id, .. }
             | Self::ForcePush { id, .. }
             | Self::Cleanup { id, .. }
@@ -320,6 +341,8 @@ mod tests {
             r#"{"kind":"split_branch","base":"refs/remotes/origin/main","new_branch":"carved","paths":["a.txt"],"message":""}"#,
             r#"{"kind":"publish_branch","branch":"carved"}"#,
             r#"{"kind":"quick_switch","target_branch":"develop"}"#,
+            r#"{"kind":"history","commit":"abcdef1"}"#,
+            r#"{"kind":"history","until":"2021-01-01T00:00:00"}"#,
             r#"{"kind":"resolve_quick_switch_pull","resolution":"cancel"}"#,
             r#"{"kind":"sync","base":"refs/remotes/origin/main"}"#,
             r#"{"kind":"cleanup","base":"refs/remotes/origin/main","references":["refs/heads/spike"],"delete_remotes":true}"#,

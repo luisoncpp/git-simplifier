@@ -15,6 +15,7 @@ pub(crate) fn name_only_diff(
         "diff",
         "--name-only",
         "--no-relative",
+        "--ignore-submodules=none",
         "-z",
         left,
         right,
@@ -43,6 +44,7 @@ pub(crate) fn triple_dot_paths(
         "diff",
         "--name-only",
         "--no-relative",
+        "--ignore-submodules=none",
         "-z",
         &range,
     ])))?;
@@ -53,14 +55,13 @@ pub(crate) fn literal(path: &str) -> String {
     format!(":(top,literal){path}")
 }
 
-pub(crate) fn staged_vs_merge_head(
-    runner: &GitRunner,
-) -> Result<Vec<RepoPath>, CommitMergeError> {
+pub(crate) fn staged_vs_merge_head(runner: &GitRunner) -> Result<Vec<RepoPath>, CommitMergeError> {
     let output = runner.run(GitCommand::read(state::args(&[
         "diff",
         "--cached",
         "--name-only",
         "--no-relative",
+        "--ignore-submodules=none",
         "-z",
         "MERGE_HEAD",
     ])))?;
@@ -95,9 +96,8 @@ fn parse_paths(bytes: &[u8]) -> Result<Vec<RepoPath>, CommitMergeError> {
         .split(|byte| *byte == 0)
         .filter(|entry| !entry.is_empty())
         .map(|entry| {
-            let text = String::from_utf8(entry.to_vec()).map_err(|_| {
-                CommitMergeError::InvalidState("path is not UTF-8".to_string())
-            })?;
+            let text = String::from_utf8(entry.to_vec())
+                .map_err(|_| CommitMergeError::InvalidState("path is not UTF-8".to_string()))?;
             RepoPath::new(text).map_err(CommitMergeError::InvalidState)
         })
         .collect()

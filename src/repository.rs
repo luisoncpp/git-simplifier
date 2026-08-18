@@ -21,8 +21,9 @@ use crate::submodule_cleanup::{
 };
 use crate::split::{self, SplitBranchPlan, SplitBranchRequest, SplitBranchResult, SplitError};
 use crate::switch::{
-    self, DeleteSavedWorkResult, PullResolution, QuickSwitchPlan, QuickSwitchRequest,
-    QuickSwitchResult, QuickSwitchStatus, RestoreSavedWorkResult, SavedWork, SwitchError,
+    self, DeleteSavedWorkResult, HistorySwitchPlan, HistorySwitchRequest, HistorySwitchResult,
+    PullResolution, QuickSwitchPlan, QuickSwitchRequest, QuickSwitchResult, QuickSwitchStatus,
+    RestoreSavedWorkResult, SavedWork, SwitchError,
 };
 use crate::sync::{self, SyncError, SyncRequest, SyncResult, SyncStatus};
 
@@ -147,6 +148,21 @@ impl GitRepository {
     ) -> Result<QuickSwitchResult, SwitchError> {
         self.runner
             .with_write_lock(|| switch::apply_plan(&self.runner, plan))
+    }
+
+    pub fn plan_history_switch(
+        &self,
+        request: HistorySwitchRequest,
+    ) -> Result<HistorySwitchPlan, SwitchError> {
+        switch::create_history_plan(&self.runner, request)
+    }
+
+    pub fn apply_history_switch(
+        &self,
+        plan: &HistorySwitchPlan,
+    ) -> Result<HistorySwitchResult, SwitchError> {
+        self.runner
+            .with_write_lock(|| switch::apply_history_plan(&self.runner, plan))
     }
 
     pub fn resolve_quick_switch_pull(

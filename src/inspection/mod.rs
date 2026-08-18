@@ -75,6 +75,11 @@ pub(crate) fn editable_commits(
 ) -> Result<Vec<EditableCommit>, InspectionError> {
     queries::editable_commits(runner, base)
 }
+pub(crate) fn history_commits(
+    runner: &GitRunner,
+) -> Result<Vec<EditableCommit>, InspectionError> {
+    queries::history_commits(runner)
+}
 pub(crate) fn local_branches(
     runner: &GitRunner,
 ) -> Result<Vec<LocalBranchChoice>, InspectionError> {

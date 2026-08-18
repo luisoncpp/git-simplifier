@@ -47,6 +47,7 @@ pub(crate) fn overview(runner: &GitRunner) -> Result<RepositoryOverview, Inspect
         recovery_count: 0,
         sync_status: None,
         quick_switch_status: None,
+        present_branch: None,
     })
 }
 
@@ -114,6 +115,28 @@ pub(crate) fn editable_commits(
         ],
     )?;
     parse_commits(&output)
+}
+
+pub(crate) fn history_commits(
+    runner: &GitRunner,
+) -> Result<Vec<EditableCommit>, InspectionError> {
+    let head = object_id(runner, &["rev-parse", "--verify", "HEAD^{commit}"])?;
+    let output = run(
+        runner,
+        &[
+            "log",
+            "--first-parent",
+            "--reverse",
+            "--max-count=301",
+            "--format=%H%x00%h%x00%an%x00%ae%x00%aI%x00%s%x00%B%x1e",
+            "HEAD",
+        ],
+    )?;
+    let mut commits = parse_commits(&output)?;
+    if commits.last().is_some_and(|commit| commit.id == head) {
+        commits.pop();
+    }
+    Ok(commits)
 }
 
 pub(crate) fn local_branches(

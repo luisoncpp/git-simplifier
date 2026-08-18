@@ -10,6 +10,7 @@ export const overviewOf = (state: AppState): RepositoryOverview | null => state.
 export const baseRef = (state: AppState): string => refValue(overviewOf(state)?.base);
 export const upstreamRef = (state: AppState): string => refValue(overviewOf(state)?.upstream);
 export const currentBranch = (state: AppState): string => overviewOf(state)?.branch ?? "";
+export const presentBranch = (state: AppState): string => overviewOf(state)?.present_branch ?? "";
 
 export function worktreeCounts(state: AppState): [string, number][] {
   const worktree = overviewOf(state)?.worktree;

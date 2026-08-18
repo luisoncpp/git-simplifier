@@ -53,6 +53,7 @@ Keep these docs operational. Prefer short tables, explicit file names, and seque
 | [force-push.md](./force-push.md) | Backend explicit force-push after a rewrite |
 | [recovery-panel.md](./recovery-panel.md) | Backend operation history and ref-only recovery guidance |
 | [quick-switch.md](./quick-switch.md) | Backend Quick branch switch and Saved work restoration |
+| [history-switch.md](./history-switch.md) | History checkout of a past commit; return to present via Quick switch |
 | [saved-work-diff.md](./saved-work-diff.md) | Saved work restore apply preview in a secondary window |
 | [switch-repository.md](./switch-repository.md) | Recent repository menu, persistence, open/prune, copy path, open in explorer, open in IDE |
 | [settings.md](./settings.md) | Rail gear Settings view: global Codechart path and per-repository IDE preference |

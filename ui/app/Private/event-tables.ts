@@ -1,5 +1,6 @@
 import * as branches from "./branch-switcher.ts";
 import * as diff from "./files-diff/index.ts";
+import * as history from "./history-selection.ts";
 import * as edit from "./selection.ts";
 import * as pathDiff from "./path-diff-menu.ts";
 import * as savedDiff from "./saved-work-diff/index.ts";
@@ -92,6 +93,8 @@ export const CHANGE: Record<string, FieldHandler> = {
   "toggle-cleanup-uncommit": edit.setCleanupUncommit,
   "toggle-cleanup-revert": edit.setCleanupRevert,
   "toggle-carry-changes": edit.setCarryChanges,
+  "toggle-history-carry": history.setHistoryCarry,
+  "select-history-mode": history.setHistoryMode,
   "toggle-pull-after-switch": branches.setPullAfterSwitch,
   "toggle-cleanup-only-mine": edit.setCleanupOnlyMine,
   "toggle-cleanup-remotes": edit.setCleanupRemotes,
@@ -106,6 +109,8 @@ export const INPUT: Record<string, FieldHandler> = {
   "repo-filter": repos.setRepoFilter,
   "branch-filter": branches.setBranchFilter,
   "commit-message": edit.setMessage,
+  "history-until": history.setHistoryUntil,
+  "history-filter": history.setHistoryFilter,
   "split-branch-name": edit.setNewBranch,
   "split-message": edit.setSplitMessage,
   "cleanup-filter": edit.setCleanupFilter,

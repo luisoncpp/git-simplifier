@@ -9,6 +9,7 @@ export function buildRequest(state: AppState): OperationRequest {
   if (kind === "edit_message") return editMessageRequest(state);
   if (kind === "split_branch") return splitBranchRequest(state);
   if (kind === "quick_switch") return quickSwitchRequest(state);
+  if (kind === "history") return historyRequest(state);
   if (kind === "sync") return { kind, base: baseRef(state) };
   if (kind === "commit_merge") return { kind };
   if (kind === "cleanup") return cleanupRequest(state);
@@ -72,6 +73,24 @@ function splitBranchRequest(state: AppState): OperationRequest {
     new_branch: state.draft.newBranch.trim(),
     paths: [...pathSetFor(state)],
     message: state.draft.splitMessage,
+  };
+}
+
+function historyRequest(state: AppState): OperationRequest {
+  const draft = state.draft;
+  if (draft.historyMode === "until") {
+    return {
+      kind: "history",
+      until: draft.historyUntil.trim() || null,
+      carry_changes: draft.historyCarryChanges,
+      merge_untracked: draft.mergeUntracked,
+    };
+  }
+  return {
+    kind: "history",
+    commit: draft.commit || null,
+    carry_changes: draft.historyCarryChanges,
+    merge_untracked: draft.mergeUntracked,
   };
 }
 

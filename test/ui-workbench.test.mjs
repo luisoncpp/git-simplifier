@@ -172,6 +172,37 @@ test("quick switch offers carry changes when the worktree is dirty", async () =>
   assert.match(renderShell(controller.state), /will be saved before the switch/);
 });
 
+test("History tab sits next to Quick switch and defaults carry off", async () => {
+  assert.equal(
+    OPERATIONS.findIndex((operation) => operation.id === "history"),
+    OPERATIONS.findIndex((operation) => operation.id === "quick_switch") + 1,
+  );
+  const controller = withData(
+    {},
+    { worktree: { staged: 0, unstaged: 2, untracked: 0, conflicts: 0 } },
+  );
+  await controller.selectOperation("history");
+  assert.equal(controller.state.draft.historyCarryChanges, false);
+  assert.equal(controller.state.draft.carryChanges, true);
+  assert.match(renderShell(controller.state), />History</);
+  assert.doesNotMatch(renderShell(controller.state), /toggle-history-carry"\s+checked/);
+});
+
+test("quick switch defaults to present_branch while detached", async () => {
+  const branches = [
+    { name: "feature", head: "a".repeat(40), current: false, saved_work: false },
+    { name: "main", head: "b".repeat(40), current: false, saved_work: false },
+    { name: "alpha", head: "c".repeat(40), current: false, saved_work: false },
+  ];
+  const controller = withData(
+    { branches },
+    { branch: null, present_branch: "feature", base: "refs/remotes/origin/main" },
+  );
+  await controller.selectOperation("quick_switch");
+  assert.equal(controller.state.draft.targetBranch, "feature");
+  assert.equal(controller.state.draft.branchPicked, false);
+});
+
 test("quick switch never offers the branch that is already checked out", async () => {
   const branches = [
     { name: "feature", head: "a".repeat(40), current: true, saved_work: false },

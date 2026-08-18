@@ -1,4 +1,5 @@
 use std::ffi::OsString;
+use std::fs;
 use std::path::{Path, PathBuf};
 
 use crate::git::{GitCommand, GitRunner};
@@ -14,11 +15,13 @@ pub(crate) fn read_branch(runner: &GitRunner) -> Result<RefName, CommitMergeErro
     let output = runner
         .run(GitCommand::read(args(&["symbolic-ref", "--quiet", "HEAD"])))
         .map_err(|_| CommitMergeError::InvalidState("HEAD is detached".to_string()))?;
-    RefName::new(text(&output.stdout)?.trim().to_string())
-        .map_err(CommitMergeError::InvalidState)
+    RefName::new(text(&output.stdout)?.trim().to_string()).map_err(CommitMergeError::InvalidState)
 }
 
-pub(crate) fn read_tree_id(runner: &GitRunner, commit: &ObjectId) -> Result<ObjectId, CommitMergeError> {
+pub(crate) fn read_tree_id(
+    runner: &GitRunner,
+    commit: &ObjectId,
+) -> Result<ObjectId, CommitMergeError> {
     let spec = format!("{commit}^{{tree}}");
     let output = runner.run(GitCommand::read(args(&["rev-parse", "--verify", &spec])))?;
     parse_id(&output.stdout)
@@ -30,7 +33,10 @@ pub(crate) fn read_id(runner: &GitRunner, name: &str) -> Result<ObjectId, Commit
     parse_id(&output.stdout)
 }
 
-pub(crate) fn optional_id(runner: &GitRunner, name: &str) -> Result<Option<ObjectId>, CommitMergeError> {
+pub(crate) fn optional_id(
+    runner: &GitRunner,
+    name: &str,
+) -> Result<Option<ObjectId>, CommitMergeError> {
     let spec = format!("{name}^{{commit}}");
     let Ok(output) = runner.run(GitCommand::read(args(&["rev-parse", "--verify", &spec]))) else {
         return Ok(None);
@@ -51,7 +57,9 @@ pub(crate) fn optional_base(runner: &GitRunner) -> Result<Option<RefName>, Commi
             if text.is_empty() {
                 Ok(None)
             } else {
-                Ok(Some(RefName::new(text).map_err(CommitMergeError::InvalidState)?))
+                Ok(Some(
+                    RefName::new(text).map_err(CommitMergeError::InvalidState)?,
+                ))
             }
         }
         Err(_) => Ok(None),
@@ -87,7 +95,12 @@ pub(crate) fn has_unmerged_entries(runner: &GitRunner) -> Result<bool, CommitMer
 }
 
 pub(crate) fn refuse_other_operations(runner: &GitRunner) -> Result<(), CommitMergeError> {
-    for marker in ["CHERRY_PICK_HEAD", "BISECT_LOG", "rebase-merge", "rebase-apply"] {
+    for marker in [
+        "CHERRY_PICK_HEAD",
+        "BISECT_LOG",
+        "rebase-merge",
+        "rebase-apply",
+    ] {
         if git_path(runner, marker)?.exists() {
             return Err(CommitMergeError::InvalidState(format!(
                 "Git operation is in progress: {marker}"
@@ -99,7 +112,8 @@ pub(crate) fn refuse_other_operations(runner: &GitRunner) -> Result<(), CommitMe
 
 pub(crate) fn temp_index_path(runner: &GitRunner) -> Result<PathBuf, CommitMergeError> {
     let dir = runner.git_dir()?.join("githelper");
-    std::fs::create_dir_all(&dir).map_err(|error| CommitMergeError::InvalidState(error.to_string()))?;
+    std::fs::create_dir_all(&dir)
+        .map_err(|error| CommitMergeError::InvalidState(error.to_string()))?;
     Ok(dir.join(format!("merge-index-{}", std::process::id())))
 }
 
@@ -114,8 +128,10 @@ pub(crate) fn git_path(runner: &GitRunner, marker: &str) -> Result<PathBuf, Comm
 }
 
 pub(crate) fn index_command(index: &Path, cmd: &[&str]) -> GitCommand {
-    GitCommand::write(args(cmd))
-        .with_environment(OsString::from("GIT_INDEX_FILE"), index.as_os_str().to_os_string())
+    GitCommand::write(args(cmd)).with_environment(
+        OsString::from("GIT_INDEX_FILE"),
+        index.as_os_str().to_os_string(),
+    )
 }
 
 pub(crate) fn text(bytes: &[u8]) -> Result<String, CommitMergeError> {
@@ -134,4 +150,18 @@ fn parse_id(bytes: &[u8]) -> Result<ObjectId, CommitMergeError> {
 
 fn trim_line(line: &[u8]) -> &[u8] {
     line.trim_ascii_end()
+}
+
+pub(crate) struct TempIndex(PathBuf);
+
+impl TempIndex {
+    pub(crate) fn new(path: PathBuf) -> Self {
+        Self(path)
+    }
+}
+
+impl Drop for TempIndex {
+    fn drop(&mut self) {
+        let _ = fs::remove_file(&self.0);
+    }
 }

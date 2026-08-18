@@ -1,11 +1,11 @@
 import { esc } from "../dom.ts";
 import { actionVerb } from "../review-mode.ts";
-import { currentBranch, overviewOf, quickSwitchPause, savedWorkFor, syncPause } from "../snapshot.ts";
+import { currentBranch, overviewOf, presentBranch, quickSwitchPause, savedWorkFor, syncPause } from "../snapshot.ts";
 import type { SyncPause } from "../snapshot.ts";
 import type { AppState, OperationOutcome } from "../types.ts";
 
 export function banners(state: AppState): string {
-  return `${syncBanner(state)}${quickSwitchBanner(state)}${untrackedBlockBanner(state)}${savedWorkBanner(state)}${warningBanner(state)}${errorBanner(state)}${outcomeBanner(state)}`;
+  return `${syncBanner(state)}${quickSwitchBanner(state)}${untrackedBlockBanner(state)}${presentBanner(state)}${savedWorkBanner(state)}${warningBanner(state)}${errorBanner(state)}${outcomeBanner(state)}`;
 }
 
 function syncBanner(state: AppState): string {
@@ -60,6 +60,25 @@ function quickSwitchBanner(state: AppState): string {
   </div>`;
 }
 
+function presentBanner(state: AppState): string {
+  if (hidesPresentBanner(state)) return "";
+  const present = presentBranch(state);
+  return present ? presentMarkup(present, state.busy) : "";
+}
+
+function hidesPresentBanner(state: AppState): boolean {
+  return Boolean(currentBranch(state) || state.outcome?.offer_switch_to_present);
+}
+
+function presentMarkup(present: string, busy: boolean): string {
+  const disabled = busy ? "disabled" : "";
+  return `<div class="banner warn" role="status">
+    <div><strong>You are in History</strong>
+      <p>Switch to ${esc(present)} to return to present.</p></div>
+    <button class="primary small" data-event="switch-to" data-value="${esc(present)}" ${disabled}>Switch to ${esc(present)}</button>
+  </div>`;
+}
+
 /// Notice and offer — never auto-restore. Hidden while a result already offers
 /// restore, or while a pull decision must finish first.
 function savedWorkBanner(state: AppState): string {
@@ -111,10 +130,18 @@ function followUp(state: AppState, outcome: OperationOutcome): string {
       <button class="ghost small" data-event="dismiss-outcome" ${disabled}>Dismiss</button>
     </div>`;
   }
-  if (outcome.offer_resume_sync) {
-    return `<button class="primary small" data-event="resume-sync" ${disabled}>${actionVerb(state.skipReview)} resume sync</button>`;
-  }
-  return "";
+  return presentFollowUp(outcome, disabled) || resumeFollowUp(state, outcome, disabled);
+}
+
+function presentFollowUp(outcome: OperationOutcome, disabled: string): string {
+  if (!outcome.offer_switch_to_present) return "";
+  return `<button class="primary small" data-event="switch-to"
+      data-value="${esc(outcome.offer_switch_to_present)}" ${disabled}>Switch to ${esc(outcome.offer_switch_to_present)}</button>`;
+}
+
+function resumeFollowUp(state: AppState, outcome: OperationOutcome, disabled: string): string {
+  if (!outcome.offer_resume_sync) return "";
+  return `<button class="primary small" data-event="resume-sync" ${disabled}>${actionVerb(state.skipReview)} resume sync</button>`;
 }
 
 /// With no repository open the empty pane already carries the reason, so the

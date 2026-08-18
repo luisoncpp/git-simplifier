@@ -1,7 +1,6 @@
 use std::collections::BTreeSet;
 use std::ffi::OsString;
-use std::fs;
-use std::path::{Path, PathBuf};
+use std::path::Path;
 
 use crate::git::{GitCommand, GitRunner};
 use crate::rewrite::{ObjectId, RepoPath};
@@ -9,14 +8,17 @@ use crate::rewrite::{ObjectId, RepoPath};
 use super::errors::CommitMergeError;
 use super::model::{IndexEntry, MergeParents};
 use super::paths::literal;
-use super::state::{index_command, temp_index_path, text};
+use super::state::{index_command, temp_index_path, text, TempIndex};
 
 pub(crate) struct BuiltTree {
     pub tree: ObjectId,
     pub conflicted_paths: Vec<RepoPath>,
 }
 
-pub(crate) fn build(runner: &GitRunner, parents: &MergeParents) -> Result<BuiltTree, CommitMergeError> {
+pub(crate) fn build(
+    runner: &GitRunner,
+    parents: &MergeParents,
+) -> Result<BuiltTree, CommitMergeError> {
     let index = temp_index_path(runner)?;
     let _guard = TempIndex::new(index.clone());
     read_merge_tree(runner, &index, parents)?;
@@ -65,16 +67,21 @@ fn overlay_resolutions(
 fn conflicted_paths(runner: &GitRunner, index: &Path) -> Result<Vec<RepoPath>, CommitMergeError> {
     let output = runner.run_unlocked(index_command(index, &["ls-files", "-u", "-z"]))?;
     let mut paths = BTreeSet::new();
-    for record in output.stdout.split(|byte| *byte == 0).filter(|part| !part.is_empty()) {
+    for record in output
+        .stdout
+        .split(|byte| *byte == 0)
+        .filter(|part| !part.is_empty())
+    {
         paths.insert(parse_unmerged_path(record)?);
     }
     Ok(paths.into_iter().collect())
 }
 
 fn parse_unmerged_path(record: &[u8]) -> Result<RepoPath, CommitMergeError> {
-    let tab = record.iter().position(|byte| *byte == b'\t').ok_or_else(|| {
-        CommitMergeError::InvalidState("ls-files record had no path".to_string())
-    })?;
+    let tab = record
+        .iter()
+        .position(|byte| *byte == b'\t')
+        .ok_or_else(|| CommitMergeError::InvalidState("ls-files record had no path".to_string()))?;
     let path = String::from_utf8(record[tab + 1..].to_vec())
         .map_err(|_| CommitMergeError::InvalidState("path is not UTF-8".to_string()))?;
     RepoPath::new(path).map_err(CommitMergeError::InvalidState)
@@ -89,7 +96,11 @@ fn stage_zero(runner: &GitRunner, path: &RepoPath) -> Result<Option<IndexEntry>,
         OsString::from("--"),
         OsString::from(spec),
     ]))?;
-    for record in output.stdout.split(|byte| *byte == 0).filter(|part| !part.is_empty()) {
+    for record in output
+        .stdout
+        .split(|byte| *byte == 0)
+        .filter(|part| !part.is_empty())
+    {
         let entry = parse_stage_record(record, path)?;
         if entry.stage == 0 {
             return Ok(Some(entry.into()));
@@ -106,9 +117,10 @@ struct StageEntry {
 }
 
 fn parse_stage_record(record: &[u8], path: &RepoPath) -> Result<StageEntry, CommitMergeError> {
-    let tab = record.iter().position(|byte| *byte == b'\t').ok_or_else(|| {
-        CommitMergeError::InvalidState("ls-files record had no path".to_string())
-    })?;
+    let tab = record
+        .iter()
+        .position(|byte| *byte == b'\t')
+        .ok_or_else(|| CommitMergeError::InvalidState("ls-files record had no path".to_string()))?;
     let head = text(&record[..tab])?;
     let parts: Vec<&str> = head.split(' ').collect();
     if parts.len() != 3 {
@@ -136,7 +148,11 @@ impl From<StageEntry> for IndexEntry {
     }
 }
 
-fn copy_entry(runner: &GitRunner, index: &Path, entry: &IndexEntry) -> Result<(), CommitMergeError> {
+fn copy_entry(
+    runner: &GitRunner,
+    index: &Path,
+    entry: &IndexEntry,
+) -> Result<(), CommitMergeError> {
     runner.run_unlocked(index_command(
         index,
         &[
@@ -168,18 +184,4 @@ pub(crate) fn stage_zero_for_commands(
     path: &RepoPath,
 ) -> Result<Option<IndexEntry>, CommitMergeError> {
     stage_zero(runner, path)
-}
-
-struct TempIndex(PathBuf);
-
-impl TempIndex {
-    fn new(path: PathBuf) -> Self {
-        Self(path)
-    }
-}
-
-impl Drop for TempIndex {
-    fn drop(&mut self) {
-        let _ = fs::remove_file(&self.0);
-    }
 }

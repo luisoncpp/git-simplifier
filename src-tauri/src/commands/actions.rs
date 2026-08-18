@@ -190,6 +190,17 @@ pub fn list_editable_commits(
 }
 
 #[tauri::command(async)]
+pub fn list_history_commits(
+    state: State<'_, AppState>,
+) -> Result<Vec<git_helper_core::EditableCommit>, String> {
+    with_repository(state.inner(), |repository| {
+        repository
+            .list_history_commits()
+            .map_err(|error| error.to_string())
+    })
+}
+
+#[tauri::command(async)]
 pub fn list_local_branches(
     state: State<'_, AppState>,
 ) -> Result<Vec<git_helper_core::LocalBranchChoice>, String> {

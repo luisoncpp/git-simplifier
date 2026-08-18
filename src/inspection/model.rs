@@ -27,6 +27,9 @@ pub struct RepositoryOverview {
     pub sync_status: Option<String>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub quick_switch_status: Option<String>,
+    /// Branch left behind by History; set while HEAD is detached at a past commit.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub present_branch: Option<String>,
 }
 
 #[derive(Clone, Debug, Eq, PartialEq, Serialize, Deserialize)]

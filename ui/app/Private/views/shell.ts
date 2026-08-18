@@ -1,7 +1,7 @@
 import { esc } from "../dom.ts";
 import { filesDiffView } from "../files-diff/index.ts";
 import { pathContextMenuMarkup } from "../path-diff-menu.ts";
-import { baseRef, currentBranch, overviewOf, refValue, upstreamRef, worktreeCounts } from "../snapshot.ts";
+import { baseRef, currentBranch, overviewOf, presentBranch, refValue, upstreamRef, worktreeCounts } from "../snapshot.ts";
 import { isInspectionView } from "../state.ts";
 import type { AppState, ViewId } from "../types.ts";
 import { actionsView } from "./actions.ts";
@@ -114,11 +114,19 @@ function emptyPane(state: AppState): string {
   </div>`;
 }
 
+function branchLabel(state: AppState): string {
+  const branch = currentBranch(state);
+  if (branch) return branch;
+  const present = presentBranch(state);
+  if (present) return `History · present: ${present}`;
+  return "detached HEAD";
+}
+
 function repoBar(state: AppState): string {
   const overview = overviewOf(state);
   if (!overview) return `<header class="repo-bar"><span class="muted">Repository unavailable</span></header>`;
   return `<header class="repo-bar">
-    <div class="fact"><span class="eyebrow">Branch</span><strong>${esc(currentBranch(state) || "detached HEAD")}</strong></div>
+    <div class="fact"><span class="eyebrow">Branch</span><strong>${esc(branchLabel(state))}</strong></div>
     <div class="fact"><span class="eyebrow">Base</span>${baseControl(state)}</div>
     ${upstreamRef(state) ? `<div class="fact"><span class="eyebrow">Upstream</span><code>${esc(upstreamRef(state))}</code></div>` : ""}
     <div class="fact worktree"><span class="eyebrow">Working tree</span>${worktreeChips(state)}</div>

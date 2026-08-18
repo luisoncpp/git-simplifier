@@ -60,6 +60,14 @@ The same selection, but the original branch must also lose the change — by **R
 Finishing an in-progress Git merge (`MERGE_HEAD`) with a merge commit whose tree is the three-way result plus staged conflict resolutions only. Unrelated staged or untracked work stays in the worktree so **Base…HEAD** cannot gain paths that were not in the PR before the conflict.
 _Avoid_: amend, `git add -A` — those sweep unrelated files into the merge commit.
 
+**History**:
+Checking out a past commit on the current branch — picked from the first-parent log, or resolved as the newest first-parent commit at or before a date-time — without moving the branch pointer. HEAD detaches; the working tree matches that commit. Tracked changes default to **Saved work** on the branch left behind.
+_Avoid_: reset, checkout, revert — those Git verbs either move the branch, overwrite paths, or rewrite commits.
+
+**Present**:
+The tip of the branch left by **History**. Quick switch onto that branch returns the checkout there and clears the History session.
+_Avoid_: HEAD, tip, current — **Present** is specifically the branch that History left behind.
+
 **Undo**:
 Reversing the effect of an operation the app itself performed. A safety net over any operation, not a git concept.
 _Avoid_: rollback — and never label Undo as **Revert**

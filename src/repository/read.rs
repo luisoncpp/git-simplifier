@@ -29,6 +29,8 @@ impl GitRepository {
             .quick_switch_status()
             .map_err(|error| InspectionError::Parse(error.to_string()))?
             .map(|status| status.phase.as_str().to_string());
+        overview.present_branch = switch::present_branch(&self.runner)
+            .map_err(|error| InspectionError::Parse(error.to_string()))?;
         overview.saved_work_count = saved_work.len();
         overview.recovery_count = operations.len();
         Ok(RepositoryState {
@@ -107,6 +109,10 @@ impl GitRepository {
         base: RefName,
     ) -> Result<Vec<EditableCommit>, InspectionError> {
         inspection::editable_commits(&self.runner, &base)
+    }
+
+    pub fn list_history_commits(&self) -> Result<Vec<EditableCommit>, InspectionError> {
+        inspection::history_commits(&self.runner)
     }
 
     pub fn list_local_branches(&self) -> Result<Vec<LocalBranchChoice>, InspectionError> {

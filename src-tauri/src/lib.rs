@@ -55,6 +55,7 @@ pub fn run() {
             saved_work_diff_window::open_saved_work_diff_window,
             saved_work_diff_window::saved_work_diff_session,
             commands::actions::list_editable_commits,
+            commands::actions::list_history_commits,
             commands::actions::list_local_branches,
             commands::actions::list_cleanup_branches,
             commands::actions::list_submodules,

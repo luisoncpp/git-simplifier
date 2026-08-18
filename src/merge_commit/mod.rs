@@ -21,6 +21,9 @@ pub fn create(runner: &GitRunner) -> Result<CommitMergePlan, errors::CommitMerge
     plan::create(runner)
 }
 
-pub fn apply(runner: &GitRunner, plan: &CommitMergePlan) -> Result<CommitMergeResult, errors::CommitMergeError> {
+pub fn apply(
+    runner: &GitRunner,
+    plan: &CommitMergePlan,
+) -> Result<CommitMergeResult, errors::CommitMergeError> {
     apply::apply(runner, plan)
 }

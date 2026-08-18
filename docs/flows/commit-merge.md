@@ -10,7 +10,7 @@ The user finishes resolving an in-progress Git merge (`MERGE_HEAD` is set, every
 2. A temporary index runs `read-tree --empty` then `read-tree -m <merge-base> HEAD MERGE_HEAD`.
 3. For each path still conflicted in that index, stage 0 from the real index is copied (or the path is removed if the resolution deleted it).
 4. `write-tree` produces the merge tree; unrelated staged paths (diff `--cached` vs `MERGE_HEAD` but absent from that tree) are listed as `excluded_paths` in the review.
-5. Apply installs the tree with `read-tree <tree>` on the real index, then `git -c submodule.recurse=false commit --no-edit` while `MERGE_HEAD` is still present.
+5. Apply installs the tree with `read-tree <tree>` on the real index, then `git -c submodule.recurse=false commit --no-edit --no-verify` while `MERGE_HEAD` is still present. `--no-verify` is required because an already-installed excluded-submodule guard compares the index to HEAD and would refuse Base's gitlink even though that pointer never belonged on the branch.
 6. When Base is configured and `MERGE_HEAD` equals Base, apply verifies every path in `Base…HEAD` after the commit was already in that set before HEAD moved.
 7. If Sync is paused at `base-merge-conflict`, the outcome offers **Resume sync** (Saved work is not reapplied until then).
 
@@ -36,4 +36,5 @@ The user finishes resolving an in-progress Git merge (`MERGE_HEAD` is set, every
 - Unmerged paths still present → prepare refused.
 - No `MERGE_HEAD` → empty form / submit blocked.
 - HEAD or `MERGE_HEAD` moved since prepare → stale plan on apply.
-- `commit --no-edit` fails after `read-tree` (hook, empty message) → error with Git stderr; index may already match the planned tree.
+- `commit --no-edit` fails after `read-tree` (empty message) → error with Git stderr; index may already match the planned tree.
+- Keeping HEAD's excluded gitlink when only Base moved it makes `wiki` appear in `Base…HEAD` after the merge. The merge tree must keep theirs so the MR file list stays the same as before Sync.

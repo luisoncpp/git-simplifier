@@ -64,3 +64,4 @@ Avoid: "bug description + fix". Prefer: "what I learned that applies to future w
 | [fetch-progress-streaming.md](./fetch-progress-streaming.md) | Git progress needs `--progress` and `\r`-splitting; cancel kills via a child slot, never a lock held across wait | 2026-11-08 |
 | [fetch-stop-must-survive-progress-rerenders.md](./fetch-stop-must-survive-progress-rerenders.md) | Progress full-renders swallow stop clicks; arm on pointerdown and patch the bar; Windows cancel needs process-tree kill | 2026-08-12 |
 | [quick-switch-untracked-merge.md](./quick-switch-untracked-merge.md) | Untracked overlaps must park onto the target branch; mergeable prepare failures need typed blocks, not string errors | 2026-08-13 |
+| [three-way-merge-takes-unrelated-gitlink-from-theirs.md](./three-way-merge-takes-unrelated-gitlink-from-theirs.md) | Taking theirs for a Base-only gitlink keeps it out of `Base...HEAD`; pinning ours puts the submodule into the MR | 2026-08-17 |

@@ -6,7 +6,7 @@ import {
   pathSetFor,
   selectedCommit,
 } from "../draft/index.ts";
-import { baseRef, upstreamRef } from "../snapshot.ts";
+import { baseRef, currentBranch, upstreamRef } from "../snapshot.ts";
 import { OPERATIONS } from "./catalog.ts";
 import type { AppState, OperationId } from "../types.ts";
 
@@ -90,6 +90,7 @@ const SPECIFIC_REASON: Partial<Record<OperationId, (state: AppState) => string>>
     if (!state.draft.targetBranch) return "Select a branch.";
     return "";
   },
+  history: (state) => historyReason(state),
   force_push: (state) => (upstreamRef(state) ? "" : "The current branch has no upstream to push to."),
   commit_merge: (state) => {
     if (!state.snapshot?.overview.merge_in_progress) return "No merge in progress.";
@@ -103,3 +104,19 @@ const SPECIFIC_REASON: Partial<Record<OperationId, (state: AppState) => string>>
     return "";
   },
 };
+
+function historyReason(state: AppState): string {
+  if (!currentBranch(state)) return "Return to present first.";
+  if (state.draft.historyMode === "until") return untilReason(state);
+  return commitHistoryReason(state);
+}
+
+function untilReason(state: AppState): string {
+  return state.draft.historyUntil.trim() ? "" : "Choose a date and time.";
+}
+
+function commitHistoryReason(state: AppState): string {
+  if (!state.commits.length) return "No earlier commit on this branch.";
+  if (!selectedCommit(state)) return "Select a commit.";
+  return "";
+}

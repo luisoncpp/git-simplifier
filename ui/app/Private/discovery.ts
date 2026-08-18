@@ -2,7 +2,7 @@ import { adoptBranch, adoptCleanup, adoptCommit, adoptDirtySubmodules, adoptPath
 import { loadFileDiffs } from "./files-diff/index.ts";
 import { discoveryFor } from "./operations/index.ts";
 import { loadProjectSettings } from "./project-settings.ts";
-import { baseRef, currentBranch, savedWorkFor } from "./snapshot.ts";
+import { baseRef, currentBranch, presentBranch, savedWorkFor } from "./snapshot.ts";
 import { isInspectionView } from "./state.ts";
 import type { AppController } from "./controller.ts";
 import type { AppState, BaseChoice, RepositorySnapshot } from "./types.ts";
@@ -120,6 +120,9 @@ function adoptSelections(state: AppState): void {
   adoptPaths(state.draft, state.paths);
   adoptCommit(state.draft, state.commits);
   adoptSubmodule(state.draft, state.submodules);
-  adoptBranch(state.draft, state.branches, baseRef(state));
+  adoptBranch(state.draft, state.branches, {
+    base: baseRef(state),
+    present: presentBranch(state),
+  });
   adoptCleanup(state.draft, state.cleanupBranches);
 }

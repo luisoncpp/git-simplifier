@@ -46,11 +46,20 @@ fn derive_commands(
 ) -> Result<Vec<String>, CommitMergeError> {
     let mut commands = vec![
         "git read-tree --empty".to_string(),
-        format!(
-            "git read-tree -m {} HEAD MERGE_HEAD",
-            parents.base
-        ),
+        format!("git read-tree -m {} HEAD MERGE_HEAD", parents.base),
     ];
+    push_resolution_commands(runner, built, &mut commands)?;
+    commands.push(format!("git write-tree  # -> {}", built.tree));
+    commands.push(format!("git read-tree {}", built.tree));
+    commands.push("git -c submodule.recurse=false commit --no-edit --no-verify".to_string());
+    Ok(commands)
+}
+
+fn push_resolution_commands(
+    runner: &GitRunner,
+    built: &super::tree::BuiltTree,
+    commands: &mut Vec<String>,
+) -> Result<(), CommitMergeError> {
     for path in &built.conflicted_paths {
         let line = match stage_zero_for_commands(runner, path)? {
             Some(entry) => format!(
@@ -59,17 +68,11 @@ fn derive_commands(
                 entry.object,
                 literal(path.as_str())
             ),
-            None => format!(
-                "git update-index --force-remove {}",
-                literal(path.as_str())
-            ),
+            None => format!("git update-index --force-remove {}", literal(path.as_str())),
         };
         commands.push(line);
     }
-    commands.push(format!("git write-tree  # -> {}", built.tree));
-    commands.push(format!("git read-tree {}", built.tree));
-    commands.push("git -c submodule.recurse=false commit --no-edit".to_string());
-    Ok(commands)
+    Ok(())
 }
 
 pub(crate) fn verify_current(

@@ -38,6 +38,7 @@ const ACTION_WORDS: Record<string, string> = {
   submodules: "submodule",
   split_branch: "split",
   quick_switch: "switch",
+  history: "history",
   sync: "sync",
   commit_merge: "merge commit",
   force_push: "force push",

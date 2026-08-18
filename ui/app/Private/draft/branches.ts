@@ -12,7 +12,22 @@ function matchesBaseRemote(branch: LocalBranch, base: string): boolean {
   return Boolean(remote) && (remote === base || `refs/remotes/${remote}` === base);
 }
 
-function findDefaultSwitchBranch(available: LocalBranch[], base: string): LocalBranch | undefined {
+function presentLocal(
+  available: LocalBranch[],
+  present: string | undefined,
+): LocalBranch | undefined {
+  if (!present) return undefined;
+  return available.find((branch) => branch.name === present && !branch.remote);
+}
+
+function findDefaultSwitchBranch(
+  available: LocalBranch[],
+  refs: { base?: string; present?: string },
+): LocalBranch | undefined {
+  return presentLocal(available, refs.present) ?? findBaseSwitchBranch(available, refs.base ?? "");
+}
+
+function findBaseSwitchBranch(available: LocalBranch[], base: string): LocalBranch | undefined {
   if (!base) return available[0];
   const name = baseBranchName(base);
   return (
@@ -30,18 +45,27 @@ function selectionStillValid(draft: Draft, available: LocalBranch[]): boolean {
   );
 }
 
-function applyDefaultBranch(draft: Draft, available: LocalBranch[], base: string): void {
-  const chosen = findDefaultSwitchBranch(available, base);
+function applyDefaultBranch(
+  draft: Draft,
+  available: LocalBranch[],
+  refs: { base?: string; present?: string },
+): void {
+  const chosen = findDefaultSwitchBranch(available, refs);
   draft.targetBranch = chosen ? chosen.name : "";
   draft.createFromRemote = chosen?.remote ? chosen.remote : "";
   draft.branchHighlight = 0;
   draft.branchPicked = false;
 }
 
-/// Auto-defaults prefer Base until the user picks a row. A prior alphabetical
-/// fallback must not stick after Base becomes available or discovery refreshes.
-export function adoptBranch(draft: Draft, branches: LocalBranch[], base = ""): void {
+/// Auto-defaults prefer Present (when History left a branch), then Base, until
+/// the user picks a row. A prior alphabetical fallback must not stick.
+export function adoptBranch(
+  draft: Draft,
+  branches: LocalBranch[],
+  refs: string | { base?: string; present?: string } = "",
+): void {
+  const resolved = typeof refs === "string" ? { base: refs } : refs;
   const available = branches.filter((branch) => !branch.current);
   if (draft.branchPicked && selectionStillValid(draft, available)) return;
-  applyDefaultBranch(draft, available, base);
+  applyDefaultBranch(draft, available, resolved);
 }
