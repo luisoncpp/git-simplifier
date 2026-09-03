@@ -16,6 +16,6 @@ function navigatorRow(file: FileDiff): string {
   const path = esc(file.path);
   return `<li data-path-context="${path}"><button class="nav-file" data-event="jump-to-file"
     data-value="${path}" title="${path}">
-    ${statusTag(file)}<code>${path}</code>${fileCounts(file)}
+    ${statusTag(file)}<code>&lrm;${path}&lrm;</code>${fileCounts(file)}
   </button></li>`;
 }

@@ -22,7 +22,8 @@ export function lineCode(render: FileRender, line: DiffLine): string {
   const marker = line.no_newline
     ? `<span class="no-newline" title="No newline at end of file">&crarr;</span>`
     : "";
-  return `${highlightCode(line.text, render.language)}${marker}`;
+  const code = render.highlights?.get(line) ?? highlightCode(line.text, render.language);
+  return `${code}${marker}`;
 }
 
 /// The gap that precedes hunk `index`, rendered as the block revealed downward,

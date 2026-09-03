@@ -75,6 +75,7 @@ export interface DiffViewState {
   /// repository path may contain any character.
   reveals: Map<string, Map<number, GapReveal>>;
   navigatorOpen: boolean;
+  navigatorWidth: number;
   untrackedFilters: UntrackedFilters;
   untrackedFiltersOpen: boolean;
 }
@@ -102,6 +103,7 @@ export function createDiffView(): DiffViewState {
     collapsed: new Set(),
     reveals: new Map(),
     navigatorOpen: false,
+    navigatorWidth: 240,
     untrackedFilters: createUntrackedFilters(),
     untrackedFiltersOpen: false,
   };

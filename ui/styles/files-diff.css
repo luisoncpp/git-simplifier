@@ -61,7 +61,24 @@
 }
 
 .files-diff-body.with-navigator {
-  grid-template-columns: minmax(0, 1fr) 240px;
+  grid-template-columns: minmax(0, 1fr) 6px var(--navigator-width, 240px);
+  gap: 6px;
+}
+
+.navigator-resizer {
+  cursor: col-resize;
+  width: 6px;
+  height: 100%;
+  border-radius: 3px;
+  background: transparent;
+  align-self: stretch;
+  user-select: none;
+  touch-action: none;
+}
+
+.navigator-resizer:hover,
+.navigator-resizer:active {
+  background: var(--accent);
 }
 
 .file-list {
@@ -129,6 +146,8 @@
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
+  direction: rtl;
+  text-align: left;
 }
 
 .file-counts {
@@ -313,6 +332,8 @@ tr.gap > td {
   min-width: 0;
   text-overflow: ellipsis;
   white-space: nowrap;
+  direction: rtl;
+  text-align: left;
 }
 
 .token.comment,
@@ -379,6 +400,10 @@ tr.gap > td {
 @media (max-width: 860px) {
   .files-diff-body.with-navigator {
     grid-template-columns: minmax(0, 1fr);
+  }
+
+  .navigator-resizer {
+    display: none;
   }
 
   .file-navigator {

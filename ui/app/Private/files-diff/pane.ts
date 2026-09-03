@@ -18,10 +18,16 @@ export function multiFileDiffBody(
 ): string {
   if (!files.length) return emptyState(empty.title, empty.detail);
   const open = pane.diffView.navigatorOpen;
-  return `<div class="files-diff-body${open ? " with-navigator" : ""}">
+  const width = pane.diffView.navigatorWidth || 240;
+  const style = open ? ` style="--navigator-width: ${width}px;"` : "";
+  const resizer = open
+    ? `<div class="navigator-resizer" data-resize="navigator" role="separator" aria-orientation="vertical" aria-label="Resize changed files" title="Drag to resize"></div>`
+    : "";
+  return `<div class="files-diff-body${open ? " with-navigator" : ""}"${style}>
     <div class="file-list" data-scroll="${scrollKey}">
       ${files.map((file, index) => fileCard(pane, file, index)).join("")}
     </div>
+    ${resizer}
     ${open ? fileNavigator(files) : ""}
   </div>`;
 }

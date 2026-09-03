@@ -12,12 +12,17 @@ type ActionElement = HTMLElement & { disabled?: boolean };
 export function bindEvents(controller: AppController): void {
   const target = globalThis.document;
   if (!target) return;
-  target.addEventListener("pointerdown", /*armFetchStop=*/ (event) => handleFetchStop(controller, event));
+  target.addEventListener("pointerdown", /*handlePointerDown=*/ (event) => handlePointerDown(controller, event));
   target.addEventListener("click", /*handleClick=*/ (event) => handleClick(controller, event));
   target.addEventListener("contextmenu", /*handleContextMenu=*/ (event) => handleContextMenu(controller, event));
   target.addEventListener("change", /*handleChange=*/ (event) => dispatchNode(controller, event, CHANGE));
   target.addEventListener("input", /*handleInput=*/ (event) => handleInput(controller, event));
   target.addEventListener("keydown", /*handleKeys=*/ (event) => handleKeys(controller, event));
+}
+
+function handlePointerDown(controller: AppController, event: PointerEvent): void {
+  handleFetchStop(controller, event);
+  diff.startNavigatorResize(event, controller.state.diffView);
 }
 
 /// Progress re-renders can replace the stop button between mousedown and

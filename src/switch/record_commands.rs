@@ -99,11 +99,14 @@ fn push_switch_and_pull(commands: &mut Vec<String>, plan: &QuickSwitchPlan) {
             .strip_prefix("refs/remotes/")
             .unwrap_or(remote.as_str());
         commands.push(format!(
-            "git switch --track -c {} {}",
+            "git switch --no-recurse-submodules --ignore-other-worktrees --track -c {} {}",
             plan.target_branch, start
         ));
     } else {
-        commands.push(format!("git switch --no-guess -- {}", plan.target_branch));
+        commands.push(format!(
+            "git switch --no-recurse-submodules --ignore-other-worktrees --no-guess -- {}",
+            plan.target_branch
+        ));
     }
     let Some(remote) = &plan.pull_remote_ref else {
         return;

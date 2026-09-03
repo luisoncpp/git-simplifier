@@ -537,6 +537,18 @@ fn preview_saved_work_flags_worktree_conflicts() {
     assert!(preview.worktree_conflicts);
 }
 
+#[test]
+fn switch_succeeds_when_target_branch_is_used_by_another_worktree() {
+    let fixture = fixture_with_target("other");
+    let _holder = fixture.add_worktree("other");
+
+    let plan = fixture.repo.plan_quick_switch(request("other")).unwrap();
+    let result = fixture.repo.apply_quick_switch(&plan).unwrap();
+
+    assert_eq!(result.source_branch, "feature");
+    assert_eq!(current_branch(&fixture), "other");
+}
+
 fn request(target_branch: &str) -> QuickSwitchRequest {
     QuickSwitchRequest {
         target_branch: target_branch.to_string(),

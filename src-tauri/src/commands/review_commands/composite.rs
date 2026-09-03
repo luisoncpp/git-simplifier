@@ -3,11 +3,11 @@ use git_helper_core::{QuickSwitchPlan, RefName};
 pub(crate) fn quick_switch(plan: &QuickSwitchPlan) -> Vec<String> {
     let switch = match &plan.create_from_remote {
         Some(remote) => format!(
-            "git switch --no-recurse-submodules -c {} {remote}; git config branch.{}.remote/merge",
+            "git switch --no-recurse-submodules --ignore-other-worktrees -c {} {remote}; git config branch.{}.remote/merge",
             plan.target_branch, plan.target_branch
         ),
         None => format!(
-            "git switch --no-recurse-submodules --no-guess -- {}",
+            "git switch --no-recurse-submodules --ignore-other-worktrees --no-guess -- {}",
             plan.target_branch
         ),
     };
@@ -100,7 +100,7 @@ mod tests {
             quick_switch(&plan),
             vec![
                 "git -c submodule.recurse=false stash push -m \"git-helper carry\"",
-                "git switch --no-recurse-submodules --no-guess -- other",
+                "git switch --no-recurse-submodules --ignore-other-worktrees --no-guess -- other",
                 "git -c submodule.recurse=false stash pop --index",
                 "git -c submodule.recurse=false stash pop  # fallback",
             ]
@@ -117,7 +117,7 @@ mod tests {
                 "git -c submodule.recurse=false stash create",
                 "git update-ref refs/githelper/wip/feature <snapshot> \"\"",
                 "git reset --hard --no-recurse-submodules HEAD",
-                "git switch --no-recurse-submodules --no-guess -- other",
+                "git switch --no-recurse-submodules --ignore-other-worktrees --no-guess -- other",
             ]
         );
     }
@@ -134,7 +134,7 @@ mod tests {
                 "git -c submodule.recurse=false stash create",
                 "git update-ref refs/githelper/untracked-merge/<operation-id> <snapshot> \"\"",
                 "git restore --worktree --source=HEAD -- <paths>",
-                "git switch --no-recurse-submodules --no-guess -- other",
+                "git switch --no-recurse-submodules --ignore-other-worktrees --no-guess -- other",
                 "git -c submodule.recurse=false stash apply --index refs/githelper/untracked-merge/<operation-id>",
                 "git -c submodule.recurse=false stash apply refs/githelper/untracked-merge/<operation-id>  # fallback",
             ]
@@ -147,7 +147,7 @@ mod tests {
 
         assert_eq!(
             quick_switch(&plan),
-            vec!["git switch --no-recurse-submodules --no-guess -- other"]
+            vec!["git switch --no-recurse-submodules --ignore-other-worktrees --no-guess -- other"]
         );
     }
 
@@ -161,7 +161,7 @@ mod tests {
             quick_switch(&plan),
             vec![
                 "git -c submodule.recurse=false stash push -m \"git-helper carry\"",
-                "git switch --no-recurse-submodules --no-guess -- other",
+                "git switch --no-recurse-submodules --ignore-other-worktrees --no-guess -- other",
                 "git pull --ff-only --no-recurse-submodules --no-tags origin other",
                 "git -c submodule.recurse=false stash pop --index",
                 "git -c submodule.recurse=false stash pop  # fallback",

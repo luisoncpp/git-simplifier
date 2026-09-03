@@ -31,6 +31,7 @@ export interface FileRender {
   full: FileDiff | null;
   view: DiffViewState;
   language: string;
+  highlights?: Map<DiffLine, string>;
 }
 
 const NO_REVEAL: GapReveal = { down: 0, up: 0, all: false };

@@ -8,10 +8,13 @@ import {
   setAllFiles,
   setCompare,
   setLayout,
+  setNavigatorWidth,
   toggleFile,
   toggleNavigator,
   toggleUntrackedFilters,
   visibleFileDiffs,
+  ensureGrammars,
+  highlightLines,
 } from "../ui/app/Private/files-diff/index.ts";
 import { openPathContextMenu, openPathInIde } from "../ui/app/Private/path-diff-menu.ts";
 import { controllerWith, snapshotWith } from "./support/controller.mjs";
@@ -474,3 +477,91 @@ test("Files diff path menu offers Edit in IDE without View diff", async () => {
     args: { repoPath: "C:/repo", filePath: APP },
   });
 });
+
+test("the file navigator includes a drag resizer and applies navigator width", async () => {
+  const { controller } = diffController();
+  await controller.setView("files-diff");
+  toggleNavigator(controller);
+
+  let markup = renderShell(controller.state);
+  assert.match(markup, /data-resize="navigator"/);
+  assert.match(markup, /style="--navigator-width: 240px;"/);
+
+  setNavigatorWidth(controller.state.diffView, 320);
+  markup = renderShell(controller.state);
+  assert.match(markup, /style="--navigator-width: 320px;"/);
+});
+
+test("navigator width clamps to minimum bounds", () => {
+  const view = { navigatorWidth: 240 };
+  setNavigatorWidth(view, 50);
+  assert.equal(view.navigatorWidth, 140);
+
+  setNavigatorWidth(view, 450);
+  assert.equal(view.navigatorWidth, 450);
+});
+
+test("file paths in navigator and card headers use LRM marks and tail-prioritized styling", async () => {
+  const { controller } = diffController();
+  await controller.setView("files-diff");
+  toggleNavigator(controller);
+
+  const markup = renderShell(controller.state);
+  assert.match(markup, /<code>&lrm;src\/app\.ts&lrm;<\/code>/);
+  assert.match(markup, /<code class="file-path">&lrm;src\/app\.ts&lrm;<\/code>/);
+
+  const css = await readFile(new URL("../ui/styles/files-diff.css", import.meta.url), "utf8");
+  assert.match(css, /\.file-path\s*\{[^}]*direction:\s*rtl;[^}]*text-align:\s*left;/);
+  assert.match(css, /\.nav-file code\s*\{[^}]*direction:\s*rtl;[^}]*text-align:\s*left;/);
+  assert.match(css, /\.navigator-resizer\s*\{[^}]*cursor:\s*col-resize;/);
+});
+
+test("syntax highlighting highlights multi-line comments across all lines", async () => {
+  globalThis.document = { querySelector: () => null, querySelectorAll: () => [], getElementsByTagName: () => [] };
+  try {
+    await ensureGrammars(["typescript"]);
+    const directLines = highlightLines(["/*", " * const x = 1;", " * return false;", " */"], "typescript");
+    assert.match(directLines[0], /<span class="token comment">\/\*<\/span>/);
+    assert.match(directLines[1], /<span class="token comment"> \* const x = 1;<\/span>/);
+    assert.match(directLines[2], /<span class="token comment"> \* return false;<\/span>/);
+    assert.match(directLines[3], /<span class="token comment"> \*\/<\/span>/);
+    const { controller } = diffController();
+    await controller.setView("files-diff");
+    controller.state.fileDiffs = [
+      {
+        path: "src/comment.ts",
+        status: "modified",
+        new_mode: "100644",
+        binary: false,
+        complete: false,
+        hunks: [
+          {
+            old_start: 1,
+            old_lines: 4,
+            new_start: 1,
+            new_lines: 4,
+            heading: "",
+            lines: [
+              { kind: "context", old_line: 1, new_line: 1, text: "/*" },
+              { kind: "context", old_line: 2, new_line: 2, text: " * const x = 1;" },
+              { kind: "context", old_line: 3, new_line: 3, text: " * return false;" },
+              { kind: "context", old_line: 4, new_line: 4, text: " */" },
+            ],
+          },
+        ],
+      },
+    ];
+    const markup = renderShell(controller.state);
+
+    assert.match(markup, /<span class="token comment">\/\*<\/span>/);
+    assert.match(markup, /<span class="token comment"> \* const x = 1;<\/span>/);
+    assert.match(markup, /<span class="token comment"> \* return false;<\/span>/);
+    assert.match(markup, /<span class="token comment"> \*\/<\/span>/);
+    assert.doesNotMatch(markup, /<span class="token keyword">const<\/span>/);
+    assert.doesNotMatch(markup, /<span class="token keyword">return<\/span>/);
+  } finally {
+    delete globalThis.document;
+  }
+});
+
+

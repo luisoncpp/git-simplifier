@@ -1,5 +1,5 @@
 import { esc } from "../dom.ts";
-import { languageFor } from "./highlight.ts";
+import { highlightsFor, languageFor } from "./highlight.ts";
 import { addedCount, fullFor, removedCount } from "./reads.ts";
 import { splitTable } from "./split-table.ts";
 import { unifiedTable } from "./unified-table.ts";
@@ -43,7 +43,7 @@ function cardHead(file: FileDiff, open: { open: boolean; bodyId: string }): stri
     <button class="file-toggle" data-event="toggle-file" data-value="${path}" data-focus="diff-file:${path}"
       aria-expanded="${open.open}" aria-controls="${open.bodyId}">
       <span class="caret" aria-hidden="true">${open.open ? "&#9662;" : "&#9656;"}</span>
-      ${statusTag(file)}<code class="file-path">${path}</code>${was}
+      ${statusTag(file)}<code class="file-path">&lrm;${path}&lrm;</code>${was}
     </button>
     ${fileCounts(file)}
   </header>`;
@@ -63,7 +63,8 @@ export function fileContent(render: FileRender): string {
   const file = bodyFile(render);
   if (file.binary) return hint("Binary file not shown. Raw diff carries its patch header.");
   if (!file.hunks.length) return hint(modeNote(file));
-  const drawn = { ...render, file };
+  const highlights = render.highlights ?? highlightsFor(file, render.full, render.language);
+  const drawn = { ...render, file, highlights };
   return render.view.layout === "split" ? splitTable(drawn) : unifiedTable(drawn);
 }
 

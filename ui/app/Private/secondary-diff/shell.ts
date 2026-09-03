@@ -1,4 +1,6 @@
 import { renderInto } from "../dom.ts";
+import { startNavigatorResize } from "../files-diff/index.ts";
+import type { DiffViewState } from "../files-diff/index.ts";
 
 const errorMessage = (error: unknown): string => {
   const message = (error as { message?: unknown } | null | undefined)?.message;
@@ -12,12 +14,15 @@ export function renderApp(rootSelector: string, markup: string): void {
 
 type ClickHandler<T> = (app: T, value: string, node?: HTMLElement) => unknown;
 
-export function bindClickEvents<T extends { render(): void; state: { error: string } }>(
+export function bindClickEvents<T extends { render(): void; state: { error: string; diffView?: DiffViewState } }>(
   app: T,
   handlers: Record<string, ClickHandler<T>>,
 ): void {
   const target = globalThis.document;
   if (!target) return;
+  target.addEventListener("pointerdown", /*handlePointerDown=*/ (event) => {
+    if (app.state.diffView) startNavigatorResize(event, app.state.diffView);
+  });
   target.addEventListener("click", /*handleClick=*/ (event) => {
     const node = (event.target as HTMLElement | null)?.closest?.("[data-event]") as
       | (HTMLElement & { disabled?: boolean })

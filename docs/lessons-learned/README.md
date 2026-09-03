@@ -65,3 +65,4 @@ Avoid: "bug description + fix". Prefer: "what I learned that applies to future w
 | [fetch-stop-must-survive-progress-rerenders.md](./fetch-stop-must-survive-progress-rerenders.md) | Progress full-renders swallow stop clicks; arm on pointerdown and patch the bar; Windows cancel needs process-tree kill | 2026-08-12 |
 | [quick-switch-untracked-merge.md](./quick-switch-untracked-merge.md) | Untracked overlaps must park onto the target branch; mergeable prepare failures need typed blocks, not string errors | 2026-08-13 |
 | [three-way-merge-takes-unrelated-gitlink-from-theirs.md](./three-way-merge-takes-unrelated-gitlink-from-theirs.md) | Taking theirs for a Base-only gitlink keeps it out of `Base...HEAD`; pinning ours puts the submodule into the MR | 2026-08-17 |
+| [switch-must-ignore-other-worktrees.md](./switch-must-ignore-other-worktrees.md) | `git switch` refuses when target is used in another worktree unless `--ignore-other-worktrees` is passed | 2026-08-20 |

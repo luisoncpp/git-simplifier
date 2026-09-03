@@ -17,6 +17,7 @@ pub(crate) fn switch_branch(
         runner.run_unlocked(GitCommand::write(vec![
             OsString::from("switch"),
             OsString::from("--no-recurse-submodules"),
+            OsString::from("--ignore-other-worktrees"),
             OsString::from("-c"),
             OsString::from(&switch_plan.target_branch),
             OsString::from(remote),
@@ -29,6 +30,7 @@ pub(crate) fn switch_branch(
     runner.run_unlocked(GitCommand::write(vec![
         OsString::from("switch"),
         OsString::from("--no-recurse-submodules"),
+        OsString::from("--ignore-other-worktrees"),
         OsString::from("--no-guess"),
         OsString::from("--"),
         OsString::from(&switch_plan.target_branch),

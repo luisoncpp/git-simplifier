@@ -31,13 +31,15 @@ The user opens **Inspection → Files diff**, refreshes while it is open, change
 
 ## Navigator sequence
 
-`jump-to-file` deletes the path from `collapsed`, renders, and only then scrolls via `revealByDataset` — `renderInto` restores scroll synchronously after the swap, so an earlier scroll would be undone.
+1. `jump-to-file` deletes the path from `collapsed`, renders, and only then scrolls via `revealByDataset` — `renderInto` restores scroll synchronously after the swap, so an earlier scroll would be undone.
+2. File paths in the navigator and file headers use `direction: rtl; text-align: left;` with Unicode Left-to-Right Marks (`&lrm;`) so that overflowing long paths truncate the prefix with `...` on the left and keep the filename tail visible.
+3. The navigator sidebar width is adjustable via the vertical drag handle (`.navigator-resizer`); dragging updates the live `--navigator-width` CSS custom property and records `navigatorWidth` in `DiffViewState`.
 
 ## Reads and writes
 
 - Reads: configured Base, HEAD, their merge base, and — in **HEAD** mode — committed trees; in **Local** mode, the working tree as well.
 - Git writes: none.
-- Other side effects: **Edit in IDE** spawns the configured editor for that file. Layout, compare mode, untracked filter toggles, and navigator choices live in `AppState` for the session only.
+- Other side effects: **Edit in IDE** spawns the configured editor for that file. Layout, compare mode, untracked filter toggles, navigator choices, and navigator width live in `AppState` for the session only.
 
 ## Files to inspect
 

@@ -5,9 +5,10 @@
 
 export { expandGap, jumpToFile, setAllFiles, setCompare, setLayout, toggleFile, toggleNavigator, toggleUntrackedFilter, toggleUntrackedFilters, closeUntrackedFilters } from "./actions.ts";
 export { visibleFileDiffs } from "./filters.ts";
-export { ensureGrammars, languageFor } from "./highlight.ts";
+export { ensureGrammars, highlightLines, languageFor } from "./highlight.ts";
 export { loadFileDiffs, resetFileDiffs } from "./load.ts";
 export { layoutToggle, singleFileDiff } from "./single.ts";
+export { setNavigatorWidth, startNavigatorResize } from "./resize.ts";
 export { filesDiffView } from "./view.ts";
 export { createDiffView } from "./wire.ts";
 export type { DiffCompare, DiffViewState, FileDiff } from "./wire.ts";
