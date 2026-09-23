@@ -58,3 +58,4 @@ The user opens **Inspection → Files diff**, refreshes while it is open, change
 - A grammar that fails to load: the lines render as escaped plain text and no error is surfaced, because highlighting is decoration.
 - A very large diff: files past the row cap open collapsed with the reason in view; Raw diff remains the way to read one whole.
 - A modified file whose last hunk already reaches EOF still offers a trailing expander, because the file's length is unknown until it is fetched. One click resolves it and the control disappears. Added and deleted files are exempt — their patches already hold every line.
+- `0 file(s) +0 −0` while Raw diff is non-empty: a render exception left the busy frame on screen, not an empty parse — see [ui-code-must-not-touch-node-globals.md](../lessons-learned/ui-code-must-not-touch-node-globals.md).

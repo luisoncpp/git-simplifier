@@ -1,2 +1,7 @@
 [build]
 target-dir = ".cargo-target"
+
+# See docs/lessons-learned/msvc-144-lacks-msvcrt-needs-env-lib-pin.md
+[env]
+LIB = { value = "C:\\Program Files\\Microsoft Visual Studio\\2022\\Community\\VC\\Tools\\MSVC\\14.38.33130\\lib\\x64", relative = false }
+INCLUDE = { value = "C:\\Program Files\\Microsoft Visual Studio\\2022\\Community\\VC\\Tools\\MSVC\\14.38.33130\\include", relative = false }

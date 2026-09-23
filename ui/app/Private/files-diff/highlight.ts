@@ -87,8 +87,8 @@ export async function ensureGrammars(languages: string[]): Promise<void> {
   try {
     prism ??= await loadCore();
     for (const language of new Set(languages)) await loadGrammar(language);
-  } catch (err) {
-    process.stderr.write(`ensureGrammars ERROR: ${err}\n`);
+  } catch {
+    // Highlighting is decoration: a missing grammar must not fail the diff.
   }
 }
 
@@ -117,18 +117,13 @@ export function highlightsFor(
 
 export function highlightLines(lines: string[], language: string): string[] {
   const grammar = language && prism ? prism.languages[language] : undefined;
-  process.stderr.write(`highlightLines: prism=${!!prism} grammar=${!!grammar} lang=${language}\n`);
   if (!grammar || lines.some((line) => line.length > MAX_HIGHLIGHTED_LINE)) {
     return lines.map(esc);
   }
   try {
     const tokens = prism!.tokenize(lines.join("\n"), grammar);
-    process.stderr.write(`tokens: ${JSON.stringify(tokens)}\n`);
-    const result = splitTokensIntoLines(tokens, lines.length);
-    process.stderr.write(`result: ${JSON.stringify(result)}\n`);
-    return result;
-  } catch (err) {
-    process.stderr.write(`tokenize error: ${err}\n`);
+    return splitTokensIntoLines(tokens, lines.length);
+  } catch {
     return lines.map(esc);
   }
 }

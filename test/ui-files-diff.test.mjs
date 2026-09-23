@@ -18,6 +18,7 @@ import {
 } from "../ui/app/Private/files-diff/index.ts";
 import { openPathContextMenu, openPathInIde } from "../ui/app/Private/path-diff-menu.ts";
 import { controllerWith, snapshotWith } from "./support/controller.mjs";
+import { withPrismDom } from "./support/prism-dom.mjs";
 
 const APP = "src/app.ts";
 const TOTAL_LINES = 36;
@@ -517,8 +518,7 @@ test("file paths in navigator and card headers use LRM marks and tail-prioritize
 });
 
 test("syntax highlighting highlights multi-line comments across all lines", async () => {
-  globalThis.document = { querySelector: () => null, querySelectorAll: () => [], getElementsByTagName: () => [] };
-  try {
+  await withPrismDom(/*loadAndHighlight*/ async () => {
     await ensureGrammars(["typescript"]);
     const directLines = highlightLines(["/*", " * const x = 1;", " * return false;", " */"], "typescript");
     assert.match(directLines[0], /<span class="token comment">\/\*<\/span>/);
@@ -559,9 +559,7 @@ test("syntax highlighting highlights multi-line comments across all lines", asyn
     assert.match(markup, /<span class="token comment"> \*\/<\/span>/);
     assert.doesNotMatch(markup, /<span class="token keyword">const<\/span>/);
     assert.doesNotMatch(markup, /<span class="token keyword">return<\/span>/);
-  } finally {
-    delete globalThis.document;
-  }
+  });
 });
 
 

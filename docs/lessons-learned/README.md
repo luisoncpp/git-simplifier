@@ -66,3 +66,4 @@ Avoid: "bug description + fix". Prefer: "what I learned that applies to future w
 | [quick-switch-untracked-merge.md](./quick-switch-untracked-merge.md) | Untracked overlaps must park onto the target branch; mergeable prepare failures need typed blocks, not string errors | 2026-08-13 |
 | [three-way-merge-takes-unrelated-gitlink-from-theirs.md](./three-way-merge-takes-unrelated-gitlink-from-theirs.md) | Taking theirs for a Base-only gitlink keeps it out of `Base...HEAD`; pinning ours puts the submodule into the MR | 2026-08-17 |
 | [switch-must-ignore-other-worktrees.md](./switch-must-ignore-other-worktrees.md) | `git switch` refuses when target is used in another worktree unless `--ignore-other-worktrees` is passed | 2026-08-20 |
+| [ui-code-must-not-touch-node-globals.md](./ui-code-must-not-touch-node-globals.md) | A `process.*` call passes Node tests but throws in the webview; a render throw leaves the busy frame ("0 file(s)") on screen | 2026-09-23 |
